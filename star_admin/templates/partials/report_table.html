@@ -1,0 +1,69 @@
+
+
+<div class="reports-table-box">
+    <table class="reports-table">
+      <thead>
+        <tr>
+          <th>Bill No</th>
+          <th>Date</th>
+          <th>Customer</th>
+          <th>Category</th>
+          <th>Amount</th>
+          <th>Discount</th>
+          <th>Due</th>
+          <th>Final</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for bill in page_obj %}
+        <tr>
+          <td>{{ bill.bill_no }}</td>
+          <td>{{ bill.bill_date|date:'d-m-Y' }}</td>
+          <td>{{ bill.customer.name }}</td>
+          <td>{{ bill.customer.category }}</td>
+          <td>₹ {{ bill.total_amount }}</td>
+          <td>₹ {{ bill.discount }}</td>
+          <td>₹ {{ bill.due_amount }}</td>
+          <td class="final">₹ {{ bill.final_amount }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+</div>
+
+  <!-- Pagination -->
+   {% if page_obj.paginator.num_pages > 1 %}
+  <div class="paginations">
+
+    {% if page_obj.has_previous %}
+      <a href="#" data-page="{{ num }}" class="page-link page-btn">«</a>
+      <a href="#" data-page="{{ num }}" class="page-link page-btn">‹</a>
+    {% endif %}
+
+    {% for num in page_obj.paginator.page_range %}
+      {% if num >= page_obj.number|add:-2 and num <= page_obj.number|add:2 %}
+        
+        {% if page_obj.number == num %}
+          <span class="page-btn active">{{ num }}</span>
+        {% else %}
+          <a href="#" data-page="{{ num }}" class="page-link page-btn">{{ num }}</a>
+        {% endif %}
+
+      {% elif num == 1 or num == page_obj.paginator.num_pages %}
+        <a href="#" data-page="{{ num }}" class="page-link page-btn">{{ num }}</a>
+
+      {% elif num == page_obj.number|add:-3 or num == page_obj.number|add:3 %}
+        <span class="dots">...</span>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <a href="#" data-page="{{ num }}" class="page-link page-btn">›</a>
+      <a href="#" data-page="{{ num }}" class="page-link page-btn">»</a>
+    {% endif %}
+
+  </div>
+  {% endif %}
+
+

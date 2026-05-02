@@ -1,0 +1,77 @@
+{% extends 'auth_base.html' %}
+
+{% block title %}Verify OTP{% endblock %}
+{% block heading %}Enter OTP{% endblock %}
+
+{% block content %}
+
+<form method="POST" autocomplete="off">
+  {% csrf_token %}
+  <p class="otp-info">OTP sent to your registered email</p>
+  {% if error %}
+    <p style="color:red; text-align:center;">{{ error }}</p>
+  {% endif %}
+
+  <div class="otp-container">
+    <input type="text" maxlength="1" class="otp-box">
+    <input type="text" maxlength="1" class="otp-box">
+    <input type="text" maxlength="1" class="otp-box">
+    <input type="text" maxlength="1" class="otp-box">
+    <input type="text" maxlength="1" class="otp-box">
+    <input type="text" maxlength="1" class="otp-box">
+  </div>
+
+  <input type="hidden" name="otp" id="otp-value">
+
+  <button type="submit">Verify</button>
+
+  <div class="resend-container">
+  <span id="timer">Resend in 30s</span>
+  <a href="/resend-otp/" id="resend-btn" style="display:none;">Resend OTP</a>
+</div>
+</form>
+
+<script>
+const inputs = document.querySelectorAll('.otp-box');
+const hiddenInput = document.getElementById('otp-value');
+
+inputs.forEach((input, index) => {
+  input.addEventListener('input', () => {
+    if (input.value.length === 1 && index < inputs.length - 1) {
+      inputs[index + 1].focus();
+    }
+    updateOTP();
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === "Backspace" && !input.value && index > 0) {
+      inputs[index - 1].focus();
+    }
+  });
+});
+
+function updateOTP() {
+  let otp = "";
+  inputs.forEach(i => otp += i.value);
+  hiddenInput.value = otp;
+}
+</script>
+
+<script>
+let timeLeft = 30;
+const timer = document.getElementById("timer");
+const resendBtn = document.getElementById("resend-btn");
+
+const countdown = setInterval(() => {
+  timeLeft--;
+  timer.innerText = `Resend in ${timeLeft}s`;
+
+  if (timeLeft <= 0) {
+    clearInterval(countdown);
+    timer.style.display = "none";
+    resendBtn.style.display = "inline";
+  }
+}, 1000);
+</script>
+
+{% endblock %}

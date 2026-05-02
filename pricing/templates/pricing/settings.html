@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price Rules</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f4f6;
+            padding: 30px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: auto;
+        }
+
+        h2 {
+            font-size: 34px;
+            margin-bottom: 25px;
+            color: #111827;
+        }
+
+        .table-card {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        th {
+            background: #eff6ff;
+            color: #1e3a8a;
+            font-weight: 700;
+        }
+
+        th, td {
+            padding: 14px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+
+        td:first-child,
+        td:nth-child(2) {
+            text-align: left;
+            font-weight: 500;
+        }
+
+        tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        .none-price {
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            h2 {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h2>Price Rules</h2>
+
+    <div class="table-card">
+        <table>
+            <tr>
+                <th>Category</th>
+                <th>Size</th>
+                <th>Qty Range</th>
+                <th>Single Price</th>
+                <th>Double Price</th>
+            </tr>
+
+            {% for rule in price_rules %}
+            <tr>
+                <td>{{ rule.category.name }}</td>
+                <td>{{ rule.size.name }}</td>
+                <td>
+                    {{ rule.min_qty }} -
+                    {% if rule.max_qty %}
+                        {{ rule.max_qty }}
+                    {% else %}
+                        Above
+                    {% endif %}
+                </td>
+
+                <td>₹{{ rule.price }}</td>
+
+                
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+</div>
+
+</body>
+</html>

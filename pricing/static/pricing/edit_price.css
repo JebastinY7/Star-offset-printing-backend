@@ -1,0 +1,185 @@
+/* =========================
+   EDIT PRICE RULE PAGE
+   Unique: edit_price_rule.css
+========================= */
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #f4f6fb;
+    color: #1f2937;
+}
+
+/* MAIN WRAPPER */
+.container {
+    max-width: 820px;
+    margin: 50px auto;
+    padding: 0 20px;
+}
+
+/* PAGE TITLE */
+.container h1 {
+    font-size: 42px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 28px;
+    letter-spacing: -0.5px;
+}
+
+/* CARD */
+.section-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 35px 40px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    border: 1px solid #e5e7eb;
+}
+
+/* SUBTITLE */
+.section-card h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 30px;
+    color: #2563eb;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #eef2ff;
+}
+
+/* DJANGO FORM PARAGRAPHS */
+.section-card form p {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+/* LABELS */
+.section-card label {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #111827;
+}
+
+/* INPUTS + SELECTS */
+.section-card input,
+.section-card select,
+.section-card textarea {
+    width: 100%;
+    max-width: 100%;
+    padding: 14px 16px;
+    font-size: 16px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 14px;
+    background: #f8fafc;
+    color: #111827;
+    outline: none;
+    transition: all 0.25s ease;
+    box-sizing: border-box;
+}
+
+/* FOCUS */
+.section-card input:focus,
+.section-card select:focus,
+.section-card textarea:focus {
+    border-color: #2563eb;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+/* NUMBER INPUT CLEANER */
+.section-card input[type="number"] {
+    appearance: textfield;
+}
+
+/* BUTTON ROW */
+.form-actions,
+.section-card form > div {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 28px;
+}
+
+/* UPDATE BUTTON */
+.section-card button[type="submit"] {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    border: none;
+    padding: 14px 30px;
+    font-size: 17px;
+    font-weight: 700;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.25);
+}
+
+.section-card button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 22px rgba(37, 99, 235, 0.35);
+}
+
+/* CANCEL BUTTON */
+.delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #ef4444;
+    color: white;
+    text-decoration: none;
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 700;
+    border-radius: 14px;
+    transition: all 0.25s ease;
+}
+
+.delete-btn:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+}
+
+/* HELP TEXT */
+.helptext {
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: 6px;
+}
+
+/* ERRORS */
+.errorlist {
+    list-style: none;
+    padding: 10px 14px;
+    margin: 8px 0 0;
+    background: #fef2f2;
+    color: #dc2626;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .container {
+        margin: 25px auto;
+    }
+
+    .container h1 {
+        font-size: 30px;
+    }
+
+    .section-card {
+        padding: 24px 20px;
+        border-radius: 18px;
+    }
+
+    .section-card h2 {
+        font-size: 20px;
+    }
+
+    .section-card button[type="submit"],
+    .delete-btn {
+        width: 100%;
+    }
+}

@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Price Rule</title>
+
+    <link rel="stylesheet" href="{% static 'pricing/edit_price.css' %}">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Edit Price Rule</h1>
+
+    <div class="section-card">
+
+        <h2>
+            Editing:
+            {{ rule.category.name }} -
+            {{ rule.size.name }}
+        </h2>
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            {{ form.as_p }}
+
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:20px;">
+
+                <button type="submit">
+                    Update Rule
+                </button>
+
+                <a href="{% url 'manage_pricing' %}" class="delete-btn">
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

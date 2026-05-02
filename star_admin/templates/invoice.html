@@ -1,0 +1,162 @@
+{% extends 'form_base.html' %}
+
+{% block content %}
+<div class="invoice-page">
+  <div class="invoice-card">
+    
+    <div class="invoice-top">
+      <h4>INVOICE</h4>
+    </div>
+
+   
+    <div class="invoice-shop">
+      <h2>Star Offset Printing</h2>
+      <p>1/116, Puthanchanthai Jn, Maruthancode Post</p>
+      <p>K.K District - 629163</p>
+      <p>Off: 04651-295058</p>
+      <p>Cell: 9488634058</p>
+    </div>
+
+    <div class="invoice-header">
+      <div>
+        <p><strong>Bill No:</strong> {{bill.bill_no}}</p>
+        <p><strong>Date:</strong> {{ bill.bill_date|date:"d-m-Y" }}</p>
+      </div>
+
+      <div>
+        <p><strong>Name:</strong> {{ bill.customer.name }}</p>
+        <p><strong>Phone:</strong> {{ bill.customer.phone }}</p>
+        {% comment %} <p><strong>Customer Type:</strong> {{ bill.customer.category }}</p> {% endcomment %}
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <table class="invoice-table">
+  <thead>
+    <tr>
+      <th>S.No</th>
+      <th>Service</th>
+      <th>Qty</th>
+      <th>Price</th>
+      <th>Discount</th>
+      <th>Surcharge</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>
+        {{ item.service_name }}
+
+        {% if item.extra_purpose %}
+          <br>
+          <small style="color:#555;">
+            Extra: {{ item.extra_purpose }}
+          </small>
+        {% endif %}
+      </td>
+      <td>{{ item.qty }}</td>
+      <td>{{ item.price }}</td>
+      <td>
+        {% if item.discount > 0 %}
+          {{ item.discount }}
+        {% else %}
+          —
+        {% endif %}
+      </td>
+      <td>
+        {% if item.extra_charge and item.extra_charge > 0 %}
+          {{ item.extra_charge }}
+        {% else %}
+          —
+        {% endif %}
+      </td>
+      <td>{{ item.total }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+    <!-- SUMMARY -->
+    <div class="summary-box">
+      
+      <div class="summary-row">
+        <span>Gross Total :</span>
+        <span>₹ {{ bill.total_amount }}</span>
+      </div>
+
+      {% if bill.discount > 0 %}
+      <div class="summary-row">
+        <span>Discount :</span>
+        <span>₹ {{ bill.discount }}</span>
+      </div>
+      {% endif %}
+      
+
+      {% comment %} {% if bill.points_used > 0 %}
+      <div class="summary-row">
+        <span>Points Used :</span>
+        <span>{{ bill.points_used }}</span>
+      </div>
+      {% endif %} {% endcomment %}
+
+      <div class="summary-row final">
+        <span>Final Amount :</span>
+        <span>₹ {{ bill.final_amount }}</span>
+      </div>
+
+      {% comment %} <div class="summary-row">
+        <span>Paid Amount :</span>
+        <span>₹ {{ bill.paid_amount|add:bill.old_due_paid }}</span>
+      </div> {% endcomment %}
+
+      {% if bill.due_amount > 0 %}
+      <div class="summary-row">
+        <span>Due Amount :</span>
+        <span>₹ {{ bill.due_amount }}</span>
+      </div>
+      {% endif %}
+
+      {% if bill.old_due_paid > 0 %}
+      <div class="summary-row">
+        <span>Old Due Paid :</span>
+        <span>₹ {{ bill.old_due_paid }}</span>
+      </div>
+
+      <div class="summary-row">
+        <span>Total Paid :</span>
+        <span>₹ {{ bill.paid_amount|add:bill.old_due_paid|floatformat:2 }}</span>
+      </div>
+      {% endif %}
+
+      <div class="summary-row">
+        <span>Status :</span>
+        <span class="{% if bill.payment_status == 'paid' %}paid-status{% else %}due-status{% endif %}">
+          {{ bill.payment_status|upper }}
+        </span>
+      </div>
+    </div>
+
+    <!-- SIGNATURE -->
+    <div class="signature-box">
+      <div class="sign-left">
+        <p>Customer Signature</p>
+      </div>
+
+      <div class="sign-right">
+        <p>For <strong>STAR OFFSET PRINTING</strong></p>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="bill-actions">
+      <a href="/billing/" class="back-btn">Back</a>
+      <button onclick="window.print()" class="print-btn">Print</button>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

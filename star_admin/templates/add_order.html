@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- JUST REPLACE YOUR TOP DIV -->
+<div class="addx-page">
+
+  <!-- HEADER -->
+  <div class="addx-header">
+    <h1>Add New Order</h1>
+    <p>Create customer work orders with deadline, payment, and tracking</p>
+
+    <a href="{% url 'orders_page' %}" class="addx-back-link">
+      ← Back to Orders
+    </a>
+  </div>
+
+  <!-- FORM CARD -->
+  <div class="order-form-card addx-form-card">
+    <form method="POST">
+      {% csrf_token %}
+
+      <div class="form-grid addx-form-grid">
+
+        <!-- CUSTOMER -->
+        <div class="form-group addx-form-group">
+          <label>Customer</label>
+          <select name="customer" required>
+            <option value="">Select Customer</option>
+            {% for customer in customers %}
+              <option value="{{ customer.id }}">
+                {{ customer.name }} - {{ customer.phone }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- WORK -->
+        <div class="form-group addx-form-group">
+          <label>Work Name</label>
+          <input type="text"
+                 name="work_name"
+                 placeholder="e.g. Visiting Card, Banner, Xerox"
+                 required>
+        </div>
+
+        <!-- ORDER DATE -->
+        <div class="form-group addx-form-group">
+          <label>Order Date</label>
+          <input type="date"
+                 name="order_date"
+                 value="{{ today|date:'Y-m-d' }}"
+                 required>
+        </div>
+
+        <!-- DELIVERY DATE -->
+        <div class="form-group addx-form-group">
+          <label>Delivery Date</label>
+          <input type="date"
+                 name="delivery_date"
+                 required>
+        </div>
+
+        <!-- TOTAL -->
+        <div class="form-group addx-form-group">
+          <label>Total Amount</label>
+          <input type="text"
+                inputmode="decimal"
+                name="total_amount"
+                id="totalAmount"
+                placeholder="0"
+                required
+                oninput="calculateDue()"
+                onwheel="this.blur()">
+        </div>
+
+        <!-- ADVANCE -->
+        <div class="form-group addx-form-group">
+          <label>Advance Paid</label>
+          <input type="text"
+                inputmode="decimal"
+                name="advance_paid"
+                id="advancePaid"
+                placeholder="0"
+                oninput="calculateDue()"
+                onwheel="this.blur()">
+        </div>
+
+        <!-- DUE -->
+        <div class="form-group addx-form-group">
+          <label>Due Amount</label>
+          <input type="text"
+                 id="dueAmount"
+                 readonly
+                 placeholder="₹0.00">
+        </div>
+
+        <!-- STATUS -->
+        <div class="form-group addx-form-group">
+          <label>Status</label>
+          <select name="status">
+            <option value="pending">Pending</option>
+            <option value="progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="delivered">Delivered</option>
+          </select>
+        </div>
+
+        <!-- NOTES -->
+        <div class="form-group addx-form-group addx-full">
+          <label>Description / Notes</label>
+          <textarea name="notes"
+                    placeholder="Paper type, design notes, size, urgent work, printing details..."></textarea>
+        </div>
+
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="addx-btn-row">
+        <button type="submit" class="addx-save-btn">
+          Save Order
+        </button>
+
+        <a href="{% url 'orders_page' %}" class="addx-cancel-btn">
+          Cancel
+        </a>
+      </div>
+
+    </form>
+  </div>
+
+</div>
+
+<script>
+function calculateDue() {
+    let total = parseFloat(document.getElementById("totalAmount").value) || 0;
+    let advance = parseFloat(document.getElementById("advancePaid").value) || 0;
+
+    if (advance > total) {
+        advance = total;
+        document.getElementById("advancePaid").value = total.toFixed(2);
+    }
+
+    let due = total - advance;
+
+    document.getElementById("dueAmount").value = "₹" + due.toFixed(2);
+}
+</script>
+<script>
+function calculateDue() {
+    let total = parseFloat(document.getElementById("totalAmount").value) || 0;
+    let advance = parseFloat(document.getElementById("advancePaid").value) || 0;
+
+    if (advance > total) {
+        advance = total;
+        document.getElementById("advancePaid").value = total.toFixed(2);
+    }
+
+    if (advance < 0) {
+        advance = 0;
+        document.getElementById("advancePaid").value = "0";
+    }
+
+    let due = total - advance;
+    document.getElementById("dueAmount").value = "₹" + due.toFixed(2);
+}
+
+/* BLOCK ARROW UP/DOWN VALUE CHANGE */
+document.addEventListener("keydown", function(e) {
+    if (
+        (e.target.id === "totalAmount" || e.target.id === "advancePaid") &&
+        (e.key === "ArrowUp" || e.key === "ArrowDown")
+    ) {
+        e.preventDefault();
+    }
+});
+</script>
+
+{% endblock %}

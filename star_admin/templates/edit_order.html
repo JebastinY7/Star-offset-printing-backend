@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="order-form-card">
+    <h2>Edit Order #{{ order.id }}</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="form-grid">
+
+            <div class="form-group">
+                <label>Customer</label>
+                <select name="customer_id" required>
+                    {% for customer in customers %}
+                    <option value="{{ customer.id }}"
+                        {% if customer.id == order.customer.id %}selected{% endif %}>
+                        {{ customer.name }} - {{ customer.phone }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Work Name</label>
+                <input type="text" name="work_name" value="{{ order.work_name }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Order Date</label>
+                <input type="date" name="order_date" value="{{ order.order_date|date:'Y-m-d' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Delivery Date</label>
+                <input type="date" name="delivery_date" value="{{ order.delivery_date|date:'Y-m-d' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Total Amount</label>
+                <input type="number" step="0.01" name="total_amount" id="totalAmount"
+                       value="{{ order.total_amount }}" oninput="calculateDue()" required>
+            </div>
+
+            <div class="form-group">
+                <label>Advance Paid</label>
+                <input type="number" step="0.01" name="advance_paid" id="advancePaid"
+                       value="{{ order.advance_paid }}" oninput="calculateDue()">
+            </div>
+
+            <div class="form-group">
+                <label>Due Amount</label>
+                <input type="text" id="dueAmount" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Status</label>
+                <select name="status">
+                    <option value="pending" {% if order.status == "pending" %}selected{% endif %}>Pending</option>
+                    <option value="progress" {% if order.status == "progress" %}selected{% endif %}>In Progress</option>
+                    <option value="completed" {% if order.status == "completed" %}selected{% endif %}>Completed</option>
+                    <option value="delivered" {% if order.status == "delivered" %}selected{% endif %}>Delivered</option>
+                </select>
+            </div>
+
+        </div>
+
+        {% comment %} <div class="form-group full-width">
+            <label>Notes</label>
+            <textarea name="notes" rows="4">{{ order.notes }}</textarea>
+        </div> {% endcomment %}
+
+        <button type="submit" class="save-order-btn">Update Order</button>
+        <a href="/orders/" class="cancel-order-btn">Back</a>
+    </form>
+</div>
+
+<script>
+function calculateDue() {
+    let total = parseFloat(document.getElementById("totalAmount").value) || 0;
+    let advance = parseFloat(document.getElementById("advancePaid").value) || 0;
+
+    if (advance > total) {
+        advance = total;
+        document.getElementById("advancePaid").value = total.toFixed(2);
+    }
+
+    let due = total - advance;
+    document.getElementById("dueAmount").value = "₹" + due.toFixed(2);
+}
+
+window.onload = calculateDue;
+</script>
+{% endblock %}

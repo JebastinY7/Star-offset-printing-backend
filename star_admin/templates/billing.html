@@ -1,0 +1,1093 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="bill-page">
+  
+  <h2>
+    {% if bill %}Edit Bill{% else %}Create Bill{% endif %}
+  </h2>
+
+  {% if messages %}
+  {% for message in messages %}
+    <div class="alert">{{ message }}</div>
+  {% endfor %}
+  {% endif %}
+
+
+  <form method="POST" action="{% url 'save_bill' %}">
+    {% csrf_token %}
+    <input type="hidden" name="bill_id" value="{{ bill.id }}">
+    <input type="hidden" name="items_data" id="itemsData">
+    <input type="hidden" name="customer_id" id="customerId">
+
+  <div class="bill-card">
+    <label>Search Customer: </label>
+    <input type="text" id="customerInput" placeholder="Enter a Mobile /  ID">
+
+    <div id="customerResult" class="bill-customer-result">
+      <!-- Dynamic -->
+    </div>
+  </div>
+
+  <!-- Items -->
+  <div class="bill-card">
+    <h3>Items</h3>
+
+    <div class="bill-item-input">
+      <select id="itemCategory">
+        <option value="">Select Category</option>
+        {% for category in categories %}
+          <option value="{{ category.id }}">
+            {{ category.name }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <select id="itemSize">
+        <option value="">Select Size</option>
+      </select>
+
+      <select id="itemVariant">
+        <option value="">Select Variant</option>
+      </select>
+
+      <input type="number" id="itemQty" placeholder="Qty">
+
+      <div class="auto-bill-box">
+        <input type="text" id="itemPrice" placeholder="Price per page" readonly>
+        <input type="text" id="itemDiscountValue" placeholder="Discount ₹" readonly>
+        <input type="text" id="itemTotalPreview" placeholder="Total" readonly/>
+      </div>
+      <input type="hidden" id="itemDiscount" value="0">
+
+
+      <div class="extra-charge-box">
+        <input type="text" id="extraPurpose" placeholder="Enter a Purpose of Extra Charge (Binding, Editing)">
+        <input type="number" id="itemExtraCharge" placeholder="Extra Charge ₹">
+      </div> 
+
+      <button type="button" class="bill-add-btn" onclick="addItem()">Add</button>
+    </div>
+
+    <table class="bill-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Qty</th>
+          <th>Price</th>
+          <th>Discount</th>
+          <th>Extra Charge</th>
+          <th>Total</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+
+      <tbody id="billItems"></tbody>
+    </table>
+  </div>
+
+  <!-- Summary -->
+  <div class="bill-card">
+
+    <div class="bill-summary-row">
+      <span>Total</span>
+      <strong id="totalAmount">₹0</strong>
+    </div>
+
+    <div class="bill-field">
+      <label>Extra Discount</label>
+      <input type="number" name="extraDiscount" id="extraDiscount" placeholder="0" oninput="calculateTotal()">
+    </div>
+
+    {% comment %} <div class="bill-field">
+      <label>Redeem Points</label>
+      <input type="number" name="points" id="points" placeholder="0" oninput="calculateTotal()">
+    </div> {% endcomment %}
+
+    <div class="bill-summary-row final">
+      <span>Final Amount</span>
+      <strong id="finalAmount">₹0</strong>
+    </div>
+
+    <div class="bill-summary-row">
+      <span>Previous Due</span>
+      <strong id="previousDueDisplay">₹0</strong>
+    </div>
+
+    <div class="bill-field">
+      <label>Pay Old Due Now</label>
+      <input type="number"
+            id="oldDuePayment"
+            name="old_due_payment"
+            min="0"
+            placeholder="0"
+            oninput="calculateTotal()">
+    </div>
+
+    <div class="bill-summary-row">
+      <span>Remaining Old Due</span>
+      <strong id="remainingOldDue">₹0</strong>
+    </div>
+    
+    <div class="bill-field">
+      <label>Pay Current Bill</label>
+      <input type="number" name="paid_amount" min="0" id="paidAmount" placeholder="0" oninput="calculateTotal()">
+    </div>
+
+    <div class="bill-summary-row">
+      <span>Total Due Amount</span>
+      <strong id="dueAmount">₹0</strong>
+    </div>
+
+    <div class="bill-summary-row">
+      <span>Payment Status</span>
+      <strong id="paymentStatus">PAID</strong>
+    </div>
+
+  </div>
+
+  <button type="submit" onclick="prepareData(event)" class="bill-submit-btn">
+    {% if bill %}Update Bill{% else %}Generate Bill{% endif %}
+  </button>
+</form>
+
+</div>
+
+<script>
+  let items = [];
+  
+  const input = document.getElementById("customerInput");
+  const resultBox = document.getElementById("customerResult");
+  
+  input.addEventListener("input", function () {
+    let query = this.value;
+    
+    if (query.length < 2) {
+      resultBox.innerHTML = "";
+      return;
+    }
+    
+    fetch(`/live-search-customers/?q=${query}`)
+    .then(res => res.json())
+    .then(data => {
+      
+      let customers = data.customers;
+      
+      if (customers.length === 0) {
+        resultBox.innerHTML = "<div class='not-found'>No customer found</div>";
+        return;
+      }
+      
+      let html = "";
+      
+      customers.forEach(c => {
+        
+        html += `
+        <div class="suggestion-item"
+          onclick='selectCustomer(${JSON.stringify(c)})'>
+          <strong>${c.name}</strong> - ${c.phone}
+        </div>
+        `;
+      });
+      
+      resultBox.innerHTML = html;
+    });
+  });
+
+function prepareData(event) {
+  if (!document.getElementById("customerId").value) {
+    showToast("Select customer first");
+    event.preventDefault();
+    return false;
+  }
+
+  if (items.length === 0) {
+    showToast("Add at least one item");
+    event.preventDefault();
+    return false;
+  }
+  document.getElementById("itemsData").value = JSON.stringify(items);
+}
+
+function selectCustomer(c){
+
+  document.getElementById("customerId").value = c.id;
+  window.selectedCustomer = c;
+
+  window.previousDue = parseFloat(c.due_amount || 0);
+
+  document.getElementById("oldDuePayment").value = 0;
+
+  document.getElementById("previousDueDisplay").innerText =
+    "₹" + window.previousDue.toFixed(2);
+
+  document.getElementById("remainingOldDue").innerText =
+    "₹" + window.previousDue.toFixed(2);
+
+  let today = new Date();
+  let expiry = c.expiry_date ? new Date(c.expiry_date) : null;
+
+  let diffDays = expiry
+    ? Math.ceil((expiry - today) / (1000 * 60 * 60 * 24)) : null;
+
+  // Billing Logic
+  if (c.category.toLowerCase() === "shop") {
+    window.selectedCustomerType = "Shop";
+  }
+  else if (c.is_member && c.expiry_date && diffDays >= 0) {
+    window.selectedCustomerType = "Member"
+  }
+  else {
+    window.selectedCustomerType = "Customer"
+  }
+  window.isMember =
+  c.is_member &&
+  c.expiry_date &&
+  diffDays >= 0;
+
+let memberStatus = "";
+let disablePoints = false;
+
+if (c.is_member && c.expiry_date && diffDays >= 0) {
+  memberStatus = `<p class="active">🟢 Active (${diffDays} days left)</p>`;
+} 
+else if (c.is_member && c.expiry_date && diffDays < 0) {
+  memberStatus = `<p class="expired">🔴 Expired (${Math.abs(diffDays)} days ago)</p>`;
+  disablePoints = true;
+} 
+else {
+  memberStatus = `<p class="non-member">⚪ Non Member</p>`;
+  disablePoints = true;
+}
+
+if (c.due_amount > 0) {
+  memberStatus += `<p class="expired">⚠ Due Pending: ₹${c.due_amount}</p>`;
+}
+
+document.getElementById("customerResult").innerHTML = `
+  <div class="cust-box">
+    <p><strong>Name:</strong> ${c.name}</p>
+    <p><strong>Phone:</strong> ${c.phone}</p>
+    <p><strong>Category:</strong> ${c.category}</p>
+    <p><strong>Due:</strong> ₹${c.due_amount || 0}</p>
+
+    ${c.is_member ? `
+      <p><strong>Member ID:</strong> ${c.member_id}</p>
+      <p><strong>Points:</strong> ${c.points}</p>
+      <p><strong>Expiry:</strong> ${c.expiry_date 
+      ? new Date(c.expiry_date).toLocaleDateString('en-GB').replace(/\//g, '-') :'-'}</p>
+    ` : ""}
+
+    ${memberStatus}
+  </div>
+`;
+
+// 🔴 Disable points if expired
+let pointsInput = document.getElementById("points");
+
+if (pointsInput) {
+  if (disablePoints || (c.due_amount > 0)) {
+    pointsInput.value = 0;
+    pointsInput.disabled = true;
+  } else {
+    pointsInput.disabled = false;
+  }
+}
+
+// Paid Amount Logic
+  if (c.due_amount > 0) {
+    document.getElementById("paidAmount").value = "";
+  } 
+  else {
+    calculateTotal();
+  }
+
+let categoryId = document.getElementById("itemCategory").value;
+
+if (categoryId && window.selectedCustomerType) {
+  fetch(`/get-discount/?category_id=${categoryId}&customer_type=${window.selectedCustomerType}`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("itemDiscount").value = data.discount;
+
+      // Refresh price + total preview
+      updatePrice();
+    });
+  }
+}
+
+
+
+/* Discount */
+function parseDiscount(total, discountInput){
+  if(!discountInput) return 0;
+
+  let value = parseFloat(discountInput);
+
+  if(isNaN(value)) return 0;
+
+  // Always treat as %
+  return total * (value / 100);
+}
+
+/* ADD ITEM */
+function addItem() {
+
+  let categoryDropdown = document.getElementById("itemCategory");
+  let sizeDropdown = document.getElementById("itemSize");
+
+  let categoryId = categoryDropdown.value;
+  let categoryName = categoryDropdown.options[categoryDropdown.selectedIndex].text;
+
+  let sizeId = sizeDropdown.value;
+  let sizeName = sizeDropdown.options[sizeDropdown.selectedIndex].text;
+
+  let qty = parseFloat(document.getElementById("itemQty").value);
+  let variantDropdown = document.getElementById("itemVariant");
+  let variantId = variantDropdown.value;
+  let variantName = variantDropdown.options[variantDropdown.selectedIndex].text;
+
+  let previewDiscount = parseFloat(document.getElementById("itemDiscountValue").value) || 0;
+  let previewTotal = parseFloat(document.getElementById("itemTotalPreview").value) || 0;
+
+  let extraPurpose = document.getElementById("extraPurpose").value.trim() || "";
+  let extraCharge = parseFloat(document.getElementById("itemExtraCharge").value) || 0;
+
+  if (!categoryId || !sizeId || !variantId || !qty) {
+    showToast("Select category, size, variant and qty");
+    return;
+  }
+
+  // Fetch correct price from backend
+  fetch(`/get-price/?category_id=${categoryId}&size_id=${sizeId}&variant_id=${variantId}&qty=${qty}`)
+    .then(response => response.json())
+    .then(data => {
+
+      let price = parseFloat(data.price);
+
+      if (!price) {
+        showToast("No pricing rule found");
+        return;
+      }
+
+      let totalPrice = qty * price;
+      
+      let discount = previewDiscount;
+      let total = previewTotal || totalPrice;
+
+
+      let itemName = `${categoryName} - ${sizeName} - ${variantName}`;
+
+      items.push({
+        name: itemName,
+        categoryId,
+        sizeId,
+        variantId,
+        qty,
+        price,
+        discount,
+        extraCharge,
+        extraPurpose,
+        total
+      });
+
+      renderItems();
+      calculateTotal();
+
+      // Clear inputs
+      document.getElementById("itemQty").value = "";
+      document.getElementById("itemDiscountValue").value = "";
+      document.getElementById("itemPrice").value = "";
+      document.getElementById("itemTotalPreview").value = "";
+      document.getElementById("itemExtraCharge").value = "";
+    });
+}
+
+
+
+/* RENDER TABLE */
+function renderItems() {
+  let tbody = document.getElementById("billItems");
+  tbody.innerHTML = "";
+
+  items.forEach((item, index) => {
+    let totalPrice = item.price*item.qty;
+
+    let percent = totalPrice? (item.discount / totalPrice) * 100 : 0;
+
+    tbody.innerHTML += `
+      <tr>
+        <td>
+          ${item.name}
+          ${
+            item.extraPurpose
+              ? `<br><small>Extra: ${item.extraPurpose}</small>`
+              : ""
+          }
+        </td>
+        <td>${item.qty}</td>
+        <td>₹${item.price.toFixed(2)}</td>
+        <td>₹${item.discount.toFixed(2)}</td>
+        <td>₹${item.extraCharge.toFixed(2)}</td>
+        <td>₹${item.total.toFixed(2)}</td>
+        <td>
+          <div class="action-btns">
+            <div class="tooltip">
+              <button type="button" class="a-edit" onclick="editItem(${index})">✏️</button>
+              <span class="tooltip-text">Edit</span>
+            </div>
+            <div class="tooltip">
+              <button type="button" class="a-close" onclick="removeItem(${index})">X</button>
+              <span class="tooltip-text">Remove</span>
+            </div>
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function editItem(index) {
+  let item = items[index];
+
+  // SAFETY CHECK FOR OLD ITEMS WITHOUT CATEGORY/SIZE
+  if (!item.categoryId || !item.sizeId) {
+    showToast("Old bill item has missing category/size mapping. Please select manually.");
+
+    document.getElementById("itemQty").value = item.qty || "";
+    document.getElementById("itemPrice").value = item.price || "";
+    document.getElementById("itemDiscountValue").value = item.discount || "";
+    document.getElementById("itemExtraCharge").value = item.extraCharge || "";
+    document.getElementById("extraPurpose").value = item.extraPurpose || "";
+    document.getElementById("itemTotalPreview").value = item.total || "";
+
+    // Remove from table for editing
+    items.splice(index, 1);
+    renderItems();
+    calculateTotal();
+    return;
+  }
+
+  // CATEGORY
+  let categoryDropdown = document.getElementById("itemCategory");
+  categoryDropdown.value = item.categoryId;
+
+  // LOAD SIZES
+  fetch(`/get-sizes/?category_id=${item.categoryId}`)
+    .then(res => res.json())
+    .then(sizeData => {
+
+      let sizeDropdown = document.getElementById("itemSize");
+      sizeDropdown.innerHTML = '<option value="">Select Size</option>';
+
+      sizeData.sizes.forEach(size => {
+        sizeDropdown.innerHTML += `
+          <option value="${size.id}">
+            ${size.name}
+          </option>
+        `;
+      });
+
+      sizeDropdown.value = item.sizeId;
+
+      // LOAD VARIANTS ONLY IF SIZE EXISTS
+      if (!item.sizeId) {
+        return Promise.resolve({ variants: [] });
+      }
+
+      return fetch(`/get-variants/?size_id=${item.sizeId}`)
+        .then(res => res.json());
+    })
+
+    .then(variantData => {
+
+      let variantDropdown = document.getElementById("itemVariant");
+      variantDropdown.innerHTML = '<option value="">Select Variant</option>';
+
+      if (variantData.variants) {
+        variantData.variants.forEach(variant => {
+          variantDropdown.innerHTML += `
+            <option value="${variant.id}">
+              ${variant.name}
+            </option>
+          `;
+        });
+      }
+
+      variantDropdown.value = item.variantId || "";
+
+      // PREFILL
+      document.getElementById("itemQty").value = item.qty || "";
+      document.getElementById("itemPrice").value = parseFloat(item.price || 0).toFixed(2);
+      document.getElementById("itemDiscountValue").value = parseFloat(item.discount || 0).toFixed(2);
+      document.getElementById("itemExtraCharge").value = parseFloat(item.extraCharge || 0).toFixed(2);
+      document.getElementById("extraPurpose").value = item.extraPurpose || "";
+      document.getElementById("itemTotalPreview").value = parseFloat(item.total || 0).toFixed(2);
+
+      // DISCOUNT %
+      let gross = (parseFloat(item.price || 0) * parseFloat(item.qty || 0));
+      let percent = gross ? ((parseFloat(item.discount || 0) / gross) * 100) : 0;
+
+      document.getElementById("itemDiscount").value = percent.toFixed(2);
+
+      updatePrice();
+    })
+
+    .catch(error => {
+      console.error("Edit Item Error:", error);
+      showToast("Error loading item details.");
+    });
+
+  // REMOVE ITEM FROM TABLE TEMPORARILY
+  items.splice(index, 1);
+
+  renderItems();
+  calculateTotal();
+}
+
+/* REMOVE */
+function removeItem(index) {
+  items.splice(index, 1);
+  renderItems();
+  calculateTotal();
+}
+
+
+function customRoundAmount(amount) {
+  let whole = Math.floor(amount);
+
+  let decimal = amount - whole;
+
+  if (decimal < 0.5) {
+    return whole;
+  }
+
+  return whole + 1;
+}
+
+/* TOTAL CALC */
+function calculateTotal() {
+  let total = items.reduce((sum, item) => sum + (parseFloat(item.total) || 0), 0);
+
+  let extra = parseFloat(document.getElementById("extraDiscount").value) || 0;
+
+  let pointsField = document.getElementById("points");
+  let points = pointsField ? (parseFloat(pointsField.value) || 0) : 0;
+
+  if (points > total - extra) {
+    points = Math.max(total - extra, 0);
+
+    if (pointsField) {
+      pointsField.value = points;
+    }
+  }
+
+  let rawFinal = Math.max(total - extra - points, 0);
+
+  let final = customRoundAmount(rawFinal);
+
+  document.getElementById("totalAmount").innerText = "₹" + total.toFixed(2);
+
+  document.getElementById("finalAmount").innerText = "₹" + final.toFixed(2);
+
+  let paidInput = document.getElementById("paidAmount").value.trim();
+
+  let paid = 0;
+
+  if (paidInput !== "") {
+    paid = parseFloat(paidInput);
+
+    if (isNaN(paid) || paid < 0) {
+      paid = 0;
+    }
+  }
+
+  let maxCurrentBillPay = final;
+  
+  if (paid > maxCurrentBillPay) {
+    paid = maxCurrentBillPay;
+    document.getElementById("paidAmount").value = maxCurrentBillPay.toFixed(2);
+  }
+
+
+  let previousDue = window.previousDue || 0;
+
+let oldDuePayment = parseFloat(
+  document.getElementById("oldDuePayment")?.value || 0
+);
+
+if (isNaN(oldDuePayment) || oldDuePayment < 0) {
+  oldDuePayment = 0;
+}
+
+if (oldDuePayment > previousDue) {
+  oldDuePayment = previousDue;
+  document.getElementById("oldDuePayment").value =
+    previousDue.toFixed(2);
+}
+
+let remainingOldDue = previousDue - oldDuePayment;
+
+document.getElementById("remainingOldDue").innerText =
+  "₹" + remainingOldDue.toFixed(2);
+
+let currentBillDue = Math.max(final - paid, 0);
+
+  let due = currentBillDue + remainingOldDue;
+
+  {% comment %} let status = "PAID";
+
+  if (due > 0 && paid > 0) {
+    status = "PARTIAL";
+  }
+  else if (paid == 0 && final > 0) {
+    status = "DUE"
+  } {% endcomment %}
+
+  let status = "PAID";
+
+let totalCurrentPaid = paid;
+
+if (due <= 0) {
+  status = "PAID";
+}
+else if (totalCurrentPaid > 0 || oldDuePayment > 0) {
+  status = "PARTIAL";
+}
+else {
+  status = "DUE";
+}
+
+  document.getElementById("totalAmount").innerText = "₹" + total.toFixed(2);
+  document.getElementById("finalAmount").innerText = "₹" + final.toFixed(2);
+  document.getElementById("dueAmount").innerText = "₹" + due.toFixed(2);
+
+  let statusEl = document.getElementById("paymentStatus");
+
+  statusEl.innerText = status;
+
+if (status === "PAID") {
+  statusEl.style.color = "green";
+}
+else if (status === "PARTIAL") {
+  statusEl.style.color = "orange";
+}
+else {
+  statusEl.style.color = "red";
+}
+}
+
+
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const categoryDropdown = document.getElementById("itemCategory");
+    const sizeDropdown = document.getElementById("itemSize");
+    const variantDropdown = document.getElementById("itemVariant");
+
+    categoryDropdown.addEventListener("change", function () {
+        let categoryId = this.value;
+
+        sizeDropdown.innerHTML = '<option value="">Select Size</option>';
+        variantDropdown.innerHTML = '<option value="">Select Variant</option>';
+
+        if (!categoryId) return;
+
+        fetch(`/get-sizes/?category_id=${categoryId}`)
+        .then(res => res.json())
+        .then(data => {
+            data.sizes.forEach(size => {
+                sizeDropdown.innerHTML += `
+                    <option value="${size.id}">
+                        ${size.name}
+                    </option>
+                `;
+            });
+        });
+
+        let customerType = window.selectedCustomerType;
+
+        if (customerType) {
+            fetch(`/get-discount/?category_id=${categoryId}&customer_type=${customerType}`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("itemDiscount").value = data.discount || 0;
+                updatePrice();
+            });
+        }
+    });
+
+    sizeDropdown.addEventListener("change", function () {
+        let sizeId = this.value;
+
+        variantDropdown.innerHTML = '<option value="">Select Variant</option>';
+
+        if (!sizeId) return;
+
+        fetch(`/get-variants/?size_id=${sizeId}`)
+        .then(res => res.json())
+        .then(data => {
+            data.variants.forEach(variant => {
+                variantDropdown.innerHTML += `
+                    <option value="${variant.id}">
+                        ${variant.name}
+                    </option>
+                `;
+            });
+        });
+
+        updatePrice();
+    });
+
+    variantDropdown.addEventListener("change", updatePrice);
+
+});
+</script>
+
+<script>
+window.addEventListener("pageshow", function(event) {
+    if (event.persisted) {
+        location.reload();
+    }
+});
+</script>
+
+<script>
+{% if bill %}
+document.addEventListener("DOMContentLoaded", function () {
+
+  // CUSTOMER PREFILL
+  selectCustomer({
+    id: "{{ bill.customer.id }}",
+    name: "{{ bill.customer.name|escapejs }}",
+    phone: "{{ bill.customer.phone|escapejs }}",
+    category: "{{ bill.customer.category|escapejs }}",
+    is_member: {{ bill.customer.is_member|yesno:"true,false" }},
+    member_id: "{{ bill.customer.member_id|default:''|escapejs }}",
+    points: {{ bill.customer.points|default:0 }},
+    due_amount: {{ bill.previous_due|default:0 }},
+    expiry_date: "{{ bill.customer.expiry_date|date:'Y-m-d' }}"
+  });
+
+  // PAYMENT PREFILL
+  document.getElementById("paidAmount").value = "{{ bill.paid_amount|default:0 }}";
+  document.getElementById("oldDuePayment").value = "{{ bill.old_due_paid|default:0 }}";
+  document.getElementById("extraDiscount").value = "{{ bill.extra_discount|default:0 }}";
+
+  // RESET ITEMS
+  items = [];
+
+  {% for i in items %}
+    items.push({
+      name: "{{ i.service_name|default:''|escapejs }}",
+      categoryId: "{{ i.category_id|default:'' }}",
+      sizeId: "{{ i.size_id|default:'' }}",
+      variantId: "{{ i.variant_id|default:'' }}",
+      qty: parseFloat("{{ i.qty|default:0 }}"),
+      price: parseFloat("{{ i.price|default:0 }}"),
+      discount: parseFloat("{{ i.discount|default:0 }}"),
+      extraCharge: parseFloat("{{ i.extra_charge|default:0 }}"),
+      extraPurpose: "{{ i.extra_purpose|default:''|escapejs }}",
+      total: parseFloat("{{ i.total|default:0 }}")
+    });
+  {% endfor %}
+
+  console.log("Loaded Bill Items:", items);
+
+  // FORCE SHOW TABLE
+  renderItems();
+  calculateTotal();
+});
+{% endif %}
+</script>
+
+<script>
+/* =========================================================
+FULL WORKING PRINT OUT + NORMAL PRICE SETUP
+PASTE INSIDE YOUR updatePrice() FUNCTION
+(Replace old function fully)
+========================================================= */
+
+function updatePrice() {
+
+    let categoryDropdown = document.getElementById("itemCategory");
+    let sizeDropdown = document.getElementById("itemSize");
+    let variantDropdown = document.getElementById("itemVariant");
+
+    let categoryId = categoryDropdown.value;
+    let sizeId = sizeDropdown.value;
+    let variantId = variantDropdown.value;
+
+    let qty = parseFloat(document.getElementById("itemQty").value) || 0;
+
+    let categoryText = categoryDropdown.selectedOptions[0]?.textContent.trim().toLowerCase() || "";
+    let sizeText = sizeDropdown.selectedOptions[0]?.textContent.trim().toLowerCase() || "";
+    let variantText = variantDropdown.selectedOptions[0]?.textContent.trim().toLowerCase() || "";
+
+    /* ==========================================
+       RESET IF EMPTY
+    ========================================== */
+    if (!categoryId || !sizeId || !variantId || qty <= 0) {
+        document.getElementById("itemPrice").value = "";
+        document.getElementById("itemDiscount").value = "";
+        document.getElementById("itemDiscountValue").value = "";
+        document.getElementById("itemTotalPreview").value = "";
+        return;
+    }
+
+    /* ==========================================
+       GET CUSTOMER TYPE ONLY IF CUSTOMER SELECTED
+    ========================================== */
+    let customerType = (window.selectedCustomerType || "").toLowerCase();
+    let isMember = window.isMember || false;
+
+    /* ==========================================
+       PRINT OUT SPECIAL CALCULATION
+    ========================================== */
+    if (categoryText === "print out") {
+
+        let total = 0;
+
+        /* -------------------------------
+           A4 / A4 BOND / LEGAL
+        ------------------------------- */
+        if (
+            sizeText === "a4" ||
+            sizeText === "a4 bond" ||
+            sizeText === "legal"
+        ) {
+
+            if (variantText === "black s") {
+                if (qty === 1) total = 10;
+                else if (qty === 2) total = 15;
+                else total = 15 + ((qty - 2) * 3);
+            }
+
+            else if (variantText === "black d") {
+                if (qty === 1) total = 10;
+                else if (qty === 2) total = 15;
+                else total = 15 + ((qty - 2) * 4);
+            }
+
+            else if (variantText === "color inkjet s") {
+                if (qty === 1) total = 20;
+                else total = 20 + ((qty - 1) * 10);
+            }
+
+            else if (variantText === "color inkjet d") {
+                if (qty === 1) total = 30;
+                else total = 30 + ((qty - 1) * 15);
+            }
+
+            else if (variantText === "color laser s") {
+                if (qty === 1) total = 25;
+                else total = 25 + ((qty - 1) * 10);
+            }
+
+            else if (variantText === "color laser d") {
+                if (qty === 1) total = 50;
+                else total = 50 + ((qty - 1) * 15);
+            }
+        }
+
+        /* -------------------------------
+           LEGAL GREEN BOND
+        ------------------------------- */
+        else if (sizeText === "legal green bond") {
+
+            if (variantText === "black s") total = 12 + ((qty - 1) * 3);
+            else if (variantText === "black d") total = 15 + ((qty - 1) * 4);
+            else if (variantText === "color inkjet s") total = 25 + ((qty - 1) * 10);
+            else if (variantText === "color inkjet d") total = 40 + ((qty - 1) * 15);
+            else if (variantText === "color laser s") total = 35 + ((qty - 1) * 10);
+            else if (variantText === "color laser d") total = 70 + ((qty - 1) * 15);
+        }
+
+        /* -------------------------------
+           A3 BOND
+        ------------------------------- */
+        else if (sizeText === "a3 bond") {
+
+            if (variantText === "black s") total = 15 + ((qty - 1) * 3);
+            else if (variantText === "black d") total = 20 + ((qty - 1) * 4);
+            else if (variantText === "color laser s") total = 35 + ((qty - 1) * 10);
+            else if (variantText === "color laser d") total = 70 + ((qty - 1) * 15);
+        }
+
+        /* -------------------------------
+           12x18
+        ------------------------------- */
+        else if (sizeText === "12x18") {
+
+            if (variantText === "black s") total = 35 + ((qty - 1) * 3);
+            else if (variantText === "black d") total = 35 + ((qty - 1) * 4);
+            else if (variantText === "color laser s") total = 35 + ((qty - 1) * 10);
+            else if (variantText === "color laser d") total = 70 + ((qty - 1) * 15);
+        }
+
+        /* -------------------------------
+           A4 STICKER
+        ------------------------------- */
+        else if (sizeText === "a4 sticker") {
+
+            if (variantText === "black s") {
+                if (qty === 1) total = 30;
+                else if (qty === 2) total = 45;
+                else total = 45 + ((qty - 2) * 3);
+            }
+
+            else if (variantText === "color inkjet s") {
+                total = 25 + ((qty - 1) * 10);
+            }
+
+            else if (variantText === "color laser s") {
+                total = 30 + ((qty - 1) * 10);
+            }
+        }
+
+        /* -------------------------------
+           A3 STICKER
+        ------------------------------- */
+        else if (sizeText === "a3 sticker") {
+
+            if (variantText === "black s") {
+                if (qty === 1) total = 60;
+                else if (qty === 2) total = 75;
+                else total = 75 + ((qty - 2) * 3);
+            }
+
+            else if (variantText === "color laser s") {
+                total = 60 + ((qty - 1) * 10);
+            }
+        }
+
+        /* ==========================================
+           CUSTOMER DISCOUNT (ONLY AFTER CUSTOMER)
+        ========================================== */
+        let discountPercent = 0;
+
+        if (parseFloat(window.selectedCustomer?.due_amount || 0) > 0) {
+    discountPercent = 0;
+}
+else {
+    if (customerType === "shop") {
+        discountPercent = 40;
+    } 
+    else if (customerType === "member") {
+        discountPercent = 25;
+    }
+    else {
+        discountPercent = 0;
+    }
+}
+
+        
+
+           
+        
+
+        let discount = total * (discountPercent / 100);
+        let finalTotal = total - discount;
+
+        let pricePerPage = qty > 0 ? total / qty : 0;
+
+        document.getElementById("itemPrice").value =
+            pricePerPage.toFixed(2);
+
+        document.getElementById("itemDiscount").value =
+            discountPercent.toFixed(2);
+
+        document.getElementById("itemDiscountValue").value =
+            discount.toFixed(2);
+
+        document.getElementById("itemTotalPreview").value =
+            finalTotal.toFixed(2);
+
+        return;
+    }
+
+    /* ==========================================
+       NORMAL AUTO PRICE PICKUP FROM DB
+    ========================================== */
+    fetch(`/get-price/?category_id=${categoryId}&size_id=${sizeId}&variant_id=${variantId}&qty=${qty}`)
+        .then(res => res.json())
+        .then(data => {
+
+            let price = parseFloat(data.price || 0);
+
+            if (price <= 0) {
+                document.getElementById("itemPrice").value = "";
+                document.getElementById("itemDiscount").value = "";
+                document.getElementById("itemDiscountValue").value = "";
+                document.getElementById("itemTotalPreview").value = "";
+                return;
+            }
+
+            let gross = qty * price;
+
+            let discountPercent = 0;
+
+            if (parseFloat(window.selectedCustomer?.due_amount || 0) > 0) {
+              console.log(selectedCustomer);
+              discountPercent = 0;
+            } else {
+              if (customerType.toLowerCase() === "shop") {
+                discountPercent = parseFloat(data.shop_discount || 0);
+              }
+              else if (
+                customerType.toLowerCase() === "member"
+              ) {
+                  discountPercent = parseFloat(data.cs_discount || 0);
+              }
+              else {
+                  discountPercent = 0;
+              }
+            }
+
+            
+            
+
+
+            let discount = gross * (discountPercent / 100);
+
+            let extraCharge =
+                parseFloat(document.getElementById("itemExtraCharge").value) || 0;
+
+            let finalTotal = gross - discount + extraCharge;
+
+            document.getElementById("itemPrice").value =
+                price.toFixed(2);
+
+            document.getElementById("itemDiscount").value =
+                discountPercent.toFixed(2);
+
+            document.getElementById("itemDiscountValue").value =
+                discount.toFixed(2);
+
+            document.getElementById("itemTotalPreview").value =
+                finalTotal.toFixed(2);
+        })
+
+        .catch(error => {
+            console.error("Price Fetch Error:", error);
+        });
+}
+
+document.getElementById("itemQty").addEventListener("input", updatePrice);
+document.getElementById("itemVariant").addEventListener("change", updatePrice);
+document.getElementById("itemSize").addEventListener("change", updatePrice);
+document.getElementById("itemCategory").addEventListener("change", updatePrice);
+document.getElementById("itemExtraCharge").addEventListener("input", updatePrice);
+
+document.querySelectorAll('input[type="number"]').forEach(input => {
+      input.addEventListener('wheel', function(e) {
+          e.preventDefault();
+          this.blur();
+      });
+  });
+</script>
+
+
+{% endblock %}

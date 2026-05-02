@@ -1,0 +1,107 @@
+{% extends 'form_base.html' %}
+{% block content %}
+<div class="add-customer-page">
+    
+    <div class="add-customer-top">
+        <h2>Add Customer</h2>
+        <a href="javascript:history.back()" class="back-btn">← Back</a>
+    </div>
+    
+    <div class="add-customer-card">
+        
+        
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="ac-group">
+                <label>Name</label>
+                <input type="text" name="name" placeholder="Enter name" required>
+            </div>
+            
+            <div class="ac-group">
+                <label>Phone</label>
+                <input type="text" name="phone" placeholder="Enter phone number" required>
+            </div>
+            
+            <div class="ac-group">
+                <label>Category</label>
+                <select name="category" required>
+                    <option value="">Select Category</option>
+                    <option value="Student">Student</option>
+                    <option value="Customer">Customer</option>
+                    <option value="Shop">Shop</option>
+                </select>
+            </div>
+            
+            <div class="ac-group checkbox-group">
+                <label>
+                    <input type="checkbox" name="is_member" id="hasCard"> Has Membership Card
+                </label>
+            </div>
+            
+            <div class="membership-fields" id="membershipFields">
+                <div class="ac-group">
+                    <label>Membership ID</label>
+                    <input type="text" name="member_id" placeholder="Enter ID">
+                </div>
+
+                <div class="ac-group">
+                    <label>Join Date</label>
+                    <input type="text" id="join_date" name="join_date" placeholder="Select Date">
+                </div>
+
+                <div class="ac-group">
+                    <label>Expiry Date</label>
+                    <input type="text" id="expiry_date" name="expiry_date" placeholder="Auto generated" readonly>
+                </div>
+            </div>
+            
+            <button type="submit" class="ac-submit-btn">Save Customer</button>
+        </form>
+    </div>
+</div>
+<script>
+  const checkbox = document.getElementById("hasCard");
+  const fields = document.getElementById("membershipFields");
+
+  checkbox.addEventListener("change", function () {
+    fields.style.display = this.checked ? "block" : "none";
+  });
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  flatpickr("#join_date", {
+    dateFormat: "d-m-Y",
+    onChange: function(selectedDates) {
+
+      if (!selectedDates.length) return;
+
+      let joinDate = selectedDates[0];
+
+      let expiry = new Date(joinDate);
+      expiry.setDate(expiry.getDate() + 364);
+
+      let day = String(expiry.getDate()).padStart(2, '0');
+      let month = String(expiry.getMonth() + 1).padStart(2, '0');
+      let year = expiry.getFullYear();
+
+      document.getElementById("expiry_date").value =
+        `${day}-${month}-${year}`;
+    }
+  });
+
+});
+</script>
+
+<script>
+setTimeout(() => {
+  document.querySelectorAll('.toast').forEach(el => {
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 300);
+  });
+}, 3000);
+</script>
+{% endblock %}

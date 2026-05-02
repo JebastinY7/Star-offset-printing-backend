@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Star Offset Admin</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  {% load static %}
+  <link rel="icon" href="{% static 'images/favicon.png' %}" type="image/png">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+  {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+  <div class="app">
+
+    {% include 'partials/sidebar.html' %}
+
+    <div class="toast-container">
+      {% if messages %}
+      {% for message in messages %}
+      <div class="toast {{ message.tags }}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+    <main class="main">
+      <button class="menu-toggle" onclick="toggleSidebar()">
+        ☰
+      </button>
+      {% block content %}
+      {% endblock %}
+    </main>
+  </div>
+
+
+
+<script>
+function showToast(message, type="error") {
+    const container = document.querySelector(".toast-container");
+
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    toast.innerText = message;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3500);
+}
+</script>
+
+<script>
+function toggleSidebar() {
+    const sidebar = document.querySelector(".sidebar");
+    const overlay = document.querySelector(".overlay");
+
+    sidebar.classList.toggle("active");
+    overlay.classList.toggle("show");
+}
+</script>
+<div class="overlay" onclick="toggleSidebar()"></div>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  {% load static %}
+<head>
+  
+  <title>Star Offset Admin</title>
+  <link rel="icon" href="{% static 'images/favicon.png' %}" type="image/png">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</head>
+
+<body>
+  <div class="toast-container">
+      {% if messages %}
+      {% for message in messages %}
+      <div class="toast {{ message.tags }}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+  <div class="form-layout">
+    
+    {% block content %}{% endblock %}
+  </div>
+<script>
+function showToast(message, type="error") {
+    const container = document.querySelector(".toast-container");
+
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    toast.innerText = message;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3500);
+}
+</script>
+</body>
+</html>

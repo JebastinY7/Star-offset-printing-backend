@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'pricing/pricing.css' %}">
+{% endblock %}
+
+{% block title %}Pricing Setup Dashboard{% endblock %}
+
+{% block content %}
+<div class="pricing-page">
+<div class="container">
+
+    <div class="page-header">
+        <h1>Pricing Setup Dashboard</h1>
+        <a href="{% url 'manage_pricing' %}" class="manage-btn">
+            Open Pricing Management
+        </a>
+    </div>
+
+    <!-- TOP GRID -->
+    <div class="dashboard-grid">
+
+        <!-- Add Category -->
+        <div class="section-card">
+            <h2>Add Category</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ category_form.as_p }}
+                <button type="submit" name="add_category">
+                    Add Category
+                </button>
+            </form>
+        </div>
+
+        <!-- Add Sizes -->
+        <div class="section-card">
+            <h2>Add Sizes</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ size_form.as_p }}
+                <button type="submit" name="add_sizes">
+                    Add Sizes
+                </button>
+            </form>
+        </div>
+
+        <div class="section-card">
+            <h2>Add Variants</h2>
+
+            <form method="post">
+                {% csrf_token %}
+                {{ variant_form.as_p }}
+
+                <button type="submit" name="add_variants">
+                    Add Variants
+                </button>
+            </form>
+        </div>
+
+    
+
+    <!-- FULL WIDTH PRICE RULE -->
+    <div class="section-card">
+        <h2>Add Price Rule</h2>
+        <form method="post" class="price-grid-form">
+            {% csrf_token %}
+            {{ price_form.category.label_tag }}
+            {{ price_form.category }}
+
+            {{ price_form.size.label_tag }}
+            {{ price_form.size }}
+
+            <label>Variant & Price:</label>
+
+            <div id="variant-price-container">
+
+                <div class="variant-row">
+                    <select name="variant[]">
+                        <option value="">Select Variant</option>
+                    </select>
+
+                    <input type="number"
+                        step="0.01"
+                        name="price[]"
+                        placeholder="Enter Price">
+                </div>
+
+            </div>
+
+            <button type="button" id="add-variant-btn">
+                + Add Variant
+            </button>
+
+            {{ price_form.min_qty.label_tag }}
+            {{ price_form.min_qty }}
+
+            {{ price_form.max_qty.label_tag }}
+            {{ price_form.max_qty }}
+
+            {{ price_form.shop_discount.label_tag }}
+            {{ price_form.shop_discount }}
+
+            {{ price_form.cs_discount.label_tag }}
+            {{ price_form.cs_discount }}
+            <button type="submit" name="add_price_rule">
+                Add Price Rule
+            </button>
+        </form>
+    </div>
+</div>
+</div>
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    // =========================
+    // ADD VARIANT FORM
+    // =========================
+    const variantCategoryField = document.getElementById("id_variant-category");
+    const variantSizeField = document.getElementById("id_variant-size");
+
+    function loadVariantSizes(categoryId) {
+
+        if (!variantSizeField) return;
+
+        variantSizeField.innerHTML = '<option value="">Select Size</option>';
+
+        if (!categoryId) return;
+
+        fetch(`/get-sizes/?category_id=${categoryId}`)
+            .then(response => response.json())
+            .then(data => {
+
+                data.sizes.forEach(size => {
+
+                    let option = document.createElement("option");
+
+                    option.value = size.id;
+                    option.textContent = size.name;
+
+                    variantSizeField.appendChild(option);
+
+                });
+
+            })
+            .catch(error => console.error("Variant size load error:", error));
+    }
+
+    if (variantCategoryField) {
+
+        variantCategoryField.addEventListener("change", function () {
+            loadVariantSizes(this.value);
+        });
+
+        if (variantCategoryField.value) {
+            loadVariantSizes(variantCategoryField.value);
+        }
+    }
+
+
+    // =========================
+    // PRICE RULE FORM
+    // =========================
+    const priceCategoryField = document.getElementById("id_price-category");
+    const priceSizeField = document.getElementById("id_price-size");
+
+    // Dynamic multi-variant elements
+    const addVariantBtn = document.getElementById("add-variant-btn");
+    const variantContainer = document.getElementById("variant-price-container");
+
+
+    // -------------------------
+    // LOAD SIZES FOR PRICE RULE
+    // -------------------------
+    function loadPriceSizes(categoryId) {
+
+        if (!priceSizeField) return;
+
+        priceSizeField.innerHTML = '<option value="">Select Size</option>';
+
+        // Clear all variant rows
+        document.querySelectorAll('select[name="variant[]"]').forEach(dropdown => {
+            dropdown.innerHTML = '<option value="">Select Variant</option>';
+        });
+
+        if (!categoryId) return;
+
+        fetch(`/get-sizes/?category_id=${categoryId}`)
+            .then(response => response.json())
+            .then(data => {
+
+                data.sizes.forEach(size => {
+
+                    let option = document.createElement("option");
+
+                    option.value = size.id;
+                    option.textContent = size.name;
+
+                    priceSizeField.appendChild(option);
+
+                });
+
+            })
+            .catch(error => console.error("Price size load error:", error));
+    }
+
+
+    // -------------------------
+    // LOAD VARIANTS FOR ANY ROW
+    // -------------------------
+    function loadVariantsForDropdown(sizeId, dropdown) {
+
+        if (!dropdown) return;
+
+        dropdown.innerHTML = '<option value="">Select Variant</option>';
+
+        if (!sizeId) return;
+
+        fetch(`/get-variants/?size_id=${sizeId}`)
+            .then(response => response.json())
+            .then(data => {
+
+                data.variants.forEach(variant => {
+
+                    let option = document.createElement("option");
+
+                    option.value = variant.id;
+                    option.textContent = variant.name;
+
+                    dropdown.appendChild(option);
+
+                });
+
+            })
+            .catch(error => console.error("Price variant load error:", error));
+    }
+
+
+    // -------------------------
+    // CATEGORY CHANGE
+    // -------------------------
+    if (priceCategoryField) {
+
+        priceCategoryField.addEventListener("change", function () {
+            loadPriceSizes(this.value);
+        });
+
+        if (priceCategoryField.value) {
+            loadPriceSizes(priceCategoryField.value);
+        }
+    }
+
+
+    // -------------------------
+    // SIZE CHANGE
+    // -------------------------
+    if (priceSizeField) {
+
+        priceSizeField.addEventListener("change", function () {
+
+            document.querySelectorAll('select[name="variant[]"]').forEach(dropdown => {
+                loadVariantsForDropdown(this.value, dropdown);
+            });
+
+        });
+    }
+
+
+    // -------------------------
+    // ADD NEW VARIANT ROW
+    // -------------------------
+    if (addVariantBtn && variantContainer) {
+
+        addVariantBtn.addEventListener("click", function () {
+
+            const firstRow = variantContainer.querySelector(".variant-row");
+
+            if (!firstRow) return;
+
+            const newRow = firstRow.cloneNode(true);
+
+            // Reset values
+            newRow.querySelector('select').innerHTML =
+                '<option value="">Select Variant</option>';
+
+            newRow.querySelector('input').value = "";
+
+            // Add remove button if not exists
+            if (!newRow.querySelector(".remove-variant-btn")) {
+
+                const removeBtn = document.createElement("button");
+
+                removeBtn.type = "button";
+                removeBtn.className = "remove-variant-btn";
+                removeBtn.textContent = "Remove";
+
+                removeBtn.addEventListener("click", function () {
+                    newRow.remove();
+                });
+
+                newRow.appendChild(removeBtn);
+            }
+
+            variantContainer.appendChild(newRow);
+
+            // Load variants into new dropdown
+            if (priceSizeField.value) {
+                loadVariantsForDropdown(
+                    priceSizeField.value,
+                    newRow.querySelector('select')
+                );
+            }
+
+        });
+
+    }
+
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    document.querySelectorAll('input[type="number"]').forEach(input => {
+
+        // Prevent mouse wheel changing values
+        input.addEventListener("wheel", function (e) {
+            e.preventDefault();
+        });
+
+    });
+
+});
+</script>
+{% endblock %}
+
+
+
+
+
+

@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="reports-page">
+
+  <!-- Header -->
+  <div class="reports-header">
+    <h2>Reports</h2>
+
+    <div class="reports-actions">
+      <a href="{% url 'download_report' %}?{{ request.GET.urlencode }}" class="btn-download">Download Report ⬇</a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <form method="GET" class="reports-filter-new">
+
+    <div class="filter-group select-wrapper">
+      <select name="category">
+        <option value="all" {% if request.GET.category == "all" %}selected{% endif %}>👥 All Customers</option>
+        <option value="Student" {% if request.GET.category == "Student" %}selected{% endif %}>🎓 Students</option>
+        <option value="Customer" {% if request.GET.category == "Customer" %}selected{% endif %}>💼 Customers</option>
+        <option value="Shop" {% if request.GET.category == "Shop" %}selected{% endif %}>🏪 Shops</option>
+      </select>
+    </div>
+
+    <div class="filter-group select-wrapper">
+      <select name="member_type">
+        <option value="all" {% if request.GET.member_type == "all" %}selected{% endif %}>👥 All Users</option>
+        <option value="member" {% if request.GET.member_type == "member" %}selected{% endif %}>Members</option>
+        <option value="non_member" {% if request.GET.member_type == "non_member" %}selected{% endif %}>Non Members</option>
+      </select>
+    </div>
+    
+    <input type="text" name="date_range"
+       value="{{ request.GET.date_range|default:'' }}"
+       class="filter-input datepicker"
+       placeholder="Select date range">
+
+    <button type="submit" class="btn-apply">Apply</button>
+    <button type="button" class="btn-clear" onclick="clearFilters()">Clear</button>
+  </form>
+
+
+  <!-- Summary Cards -->
+  <div class="reports-summary">
+
+    <div class="summary-card">
+      <p>💰 Total Sales</p>
+      <h3>₹ {{ total_sales }}</h3>
+    </div>
+
+    <div class="summary-card">
+      <p>🧾 Total Bills</p>
+      <h3>{{ total_bills }}</h3>
+    </div>
+
+    <div class="summary-card">
+      <p>👥 Total Customers</p>
+      <h3>{{ total_customers }}</h3>
+    </div>
+
+    <div class="summary-card">
+      <p>💳 Total Due</p>
+      <h3>₹ {{ total_due }}</h3>
+    </div>
+  </div>
+  
+  <div class="reports-analytics">
+
+    <!-- LEFT: Chart -->
+    <div class="analytics-chart">
+      <canvas id="salesChart"></canvas>
+    </div>
+    
+    <div class="analytics-info">
+
+      <div class="info-card">
+        <p>🏆 Top Customer</P>
+        <h4>
+          {% if top_customer %}
+            {{ top_customer.customer__name }}
+          {% else %}
+            -
+          {% endif %}
+        <h4>
+        <span>
+          ₹ {% if top_customer %}{{ top_customer.total }}{% else %}0{% endif %}
+        </span>
+      </div>
+      
+      <div class="info-card">
+        <p>🔥 Highest Sales Day</p>
+        <h4>
+          {% if highest_day %}
+            {{ highest_day.bill_date|date:'d M' }}
+          {% else %}
+            -
+          {% endif %}
+        </h4>
+        <span>₹ {% if highest_day %}{{ highest_day.total }}{% else %}0{% endif %}</span>
+      </div>
+
+      <div class="info-card">
+        <p>📉 Lowest Sales</p>
+        <h4>
+          {% if lowest_day %}
+            {{ lowest_day.bill_date|date:'d M'}}
+          {% else %}
+          -
+          {% endif %}
+        </h4>
+        <span>₹ {% if lowest_day %}{{ lowest_day.total }}{% else %}0{% endif %}</span>
+      </div>
+
+
+      <div class="info-card">
+        <p>🎯 Total Discount</p>
+        <h4>₹ {{ total_discount}}</h4>
+      </div>
+    </div>
+  </div>
+
+  <div id="table-container">
+    {% include 'partials/report_table.html' %}
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const ctx = document.getElementById('salesChart');
+
+  if (!ctx) return;
+
+  const labels = {{ chart_labels|safe }};
+  const data = {{ chart_data|safe }};
+
+ if (data.length === 1) {
+  labels.push(labels[0]);
+  data.push(data[0]);
+ }
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,   // 🔥 dynamic
+      datasets: [{
+        label: "Sales ₹",
+        data: data,     // 🔥 dynamic
+        borderColor: "#007bff",
+        backgroundColor: "rgba(0, 123, 255, 0.1)",
+        fill: true,
+        tension: 0.4,
+        pointRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+    }
+  });
+});
+</script>
+
+<script>
+  function clearFilters() {
+    window.location.href = "/reports/";
+  }
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    flatpickr(".datepicker", {
+        mode: "range",
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d M Y",
+        allowInput: false,
+        defaultDate: null
+    });
+});
+</script>
+
+<script>
+document.addEventListener("click", function(e) {
+    const link = e.target.closest(".page-link");
+
+    if (link) {
+        e.preventDefault();
+
+        const page = link.dataset.page;
+
+        // 🔥 ALWAYS take current filters from URL
+        const params = new URLSearchParams(window.location.search);
+
+        params.set("page", page);
+
+        fetch(`/reports/?${params.toString()}`, {
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(res => res.text())
+        .then(html => {
+    document.querySelector("#table-container").innerHTML = html;
+
+    // ✅ scroll to table after update
+    const table = document.querySelector("#table-container");
+    if (table) {
+        table.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    }
+
+    // update URL
+    window.history.pushState({}, "", `/reports/?${params.toString()}`);
+});
+    }
+});
+</script>
+
+{% endblock %}

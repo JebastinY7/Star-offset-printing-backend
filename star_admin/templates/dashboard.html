@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="dash-container">
+
+  <!-- Top Bar -->
+  <div class="dash-header">
+    <h2>Dashboard</h2>
+
+    <div class="dash-actions">
+      <a href="/add-customer/" class="btn-primary">
+        <i class="fas fa-plus"></i> Add Customer
+      </a>
+      <a href="{% url 'pricing_setup' %}" class="btn-dark">
+        ⚙ Price Setup
+      </a>
+      <a href="/billing/" class="btn-secondary">
+        <i class="fas fa-plus"></i> Create Bill
+      </a>
+    </div>
+  </div>
+
+  <!-- Customer Overview -->
+  <div class="dash-grid">
+
+    <div class="dash-card blue">
+      <p>Total Customers</p>
+      <h3>{{ total_customers}}</h3>
+    </div>
+
+    <div class="dash-card purple">
+      <p>Students</p>
+      <h3>{{ students }}</h3>
+    </div>
+
+    <div class="dash-card orange">
+      <p>Customers</p>
+      <h3>{{ customers }}</h3>
+    </div>
+
+    <div class="dash-card green">
+      <p>Shops</p>
+      <h3>{{ shops }}</h3>
+    </div>
+
+  </div>
+
+  <!-- Card Status -->
+  <div class="dash-grid">
+
+    <div class="dash-card green">
+      <p>Active Cards</p>
+      <h3>{{ active_cards }}</h3>
+    </div>
+
+    <div class="dash-card red">
+      <p>Expired Cards</p>
+      <h3>{{ expired_cards }}</h3>
+    </div>
+
+    <div class="dash-card gray">
+      <p>No Card Users</p>
+      <h3>{{ no_card }}</h3>
+    </div>
+
+  </div>
+
+  <!-- Sales -->
+  <div class="dash-grid">
+
+    <div class="dash-card orange">
+      <p>Today Sales</p>
+      <h3>₹ {{ today_sales }}</h3>
+    </div>
+
+    <div class="dash-card blue">
+      <p>Today Bills</p>
+      <h3>{{ today_bill_count }}</h3>
+    </div>
+
+    <div class="dash-card red">
+      <p>Today Discount</p>
+      <h3>₹ {{ today_discount }}</h3>
+    </div>
+
+    <div class="dash-card green">
+      <p>Today Due by Customers</p>
+      <h3>₹ {{ today_due }}</h3>
+    </div>
+  </div>
+  
+  <div class="dash-grid">
+
+    <div class="dash-card orange">
+      <p>Pending Orders</p>
+      <h3>{{ pending_count|default:0 }}</h3>
+    </div>
+
+    <div class="dash-card blue">
+      <p>In Progress Orders</p>
+      <h3>{{ progress_count|default:0 }}</h3>
+    </div>
+
+    <div class="dash-card purple">
+      <p>Completed Orders</p>
+      <h3>{{ completed_count|default:0 }}</h3>
+    </div>
+
+    <div class="dash-card red">
+      <p>Overdue Orders</p>
+      <h3>{{ overdue_count|default:0 }}</h3>
+    </div>
+
+  </div>
+
+  <!-- Bottom Section -->
+  <div class="dash-bottom">
+
+    <!-- Recent Bills -->
+    <div class="dash-box">
+      <h3>Recent Bills</h3>
+
+      <ul>
+        {% for bill in recent_bills %}
+        <li class="list-item bill-item">
+          <div class="bill-icon">₹</div>
+          <div class="info">
+            <strong>#{{ bill.bill_no }} - {{ bill.customer.name }}</strong>
+            <span>₹ {{ bill.final_amount }} • {{ bill.bill_date|date:"d M" }}</span>
+          </div>
+        </li>
+        {% empty %}
+        <li>No bills</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="dash-box">
+      <h3>Recent Due Customers</h3>
+
+      <ul>
+        {% for c in recent_due_customers %}
+        <li class="list-item expire-item">
+
+          <div class="expire-icon">₹</div>
+
+          <div class="info">
+            <strong>{{ c.name }}</strong>
+            <span>Due: ₹ {{ c.due_amount }}</span>
+          </div>
+
+        </li>
+        {% empty %}
+        <li>No due customers</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="dash-box">
+      <h3>Recent Customers</h3>
+      <ul>
+        {% for c in recent_customers %}
+        <li class="list-item">
+          <div class="avatar">{{ c.name|slice:":1" }}</div>
+          <div class="info">
+            <strong>{{ c.name }}</strong>
+            <span>{{ c.phone }}</span>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Expiring -->
+    <div class="dash-box">
+      <h3>Expiring Soon</h3>
+      <ul>
+        {% for c in expiring_customers %}
+        <li class="list-item expire-item">
+
+          <div class="expire-icon">⏳</div>
+
+          <div class="info">
+            <strong>{{ c.name }}</strong>
+
+            {% if c.days_left <= 2 %}
+              <span class="expire-danger">Expiring soon!</span>
+            {% else %}
+              <span class="expire-warning">{{ c.expiry_date|timeuntil }} left</span>
+            {% endif %}
+          </div>
+
+        </li>
+        {% empty %}
+        <li>No expiring members</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

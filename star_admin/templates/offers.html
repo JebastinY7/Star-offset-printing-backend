@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="offers-container">
+
+  <div class="offers-card">
+
+    <h2 class="offers-title">Send Offer</h2>
+
+    <form method="POST">
+      {% csrf_token %}
+      <div class="offers-group">
+        <label class="offers-label">Offer Title</label>
+        <input type="text" name="title" class="offers-input" placeholder="Ex: Festival Offer">
+      </div>
+
+      <div class="offers-group">
+        <label class="offers-label">Message</label>
+        <textarea name="message" class="offers-textarea" placeholder="Offer Content (will be sent via WhatsApp template)"></textarea>
+      </div>
+
+      <div class="offers-group">
+        <label class="offers-label">Shop Contact Number</label>
+        <input type="text" name="shop_number" class="offers-input" placeholder="9488634058">
+      </div>
+
+      <div class="offers-group">
+        <label class="offers-label">Send To</label>
+
+        <select name="group" class="offers-select">
+          <option value="all">All Customers</option>
+          <option value="members">Members Only</option>
+          <option value="non_members">Non Members</option>
+        </select>
+
+        <select name="category" class="offers-select">
+          <option value="all">All Categories</option>
+          <option value="student">Students</option>
+          <option value="customer">Customer</option>
+          <option value="shop">Shop</option>
+          
+        </select>
+      </div>
+      
+      <button type="submit" class="offers-btn">Send Message</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

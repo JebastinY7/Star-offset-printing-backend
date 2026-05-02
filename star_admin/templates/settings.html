@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="settings-container">
+
+  <h2 class="settings-title">Settings</h2>
+
+  {% if messages %}
+    {% for message in messages %}
+      <p>{{ message }}</p>
+    {% endfor %}
+  {% endif %}
+  
+
+ 
+  {% comment %} <div class="settings-card">
+      
+      <h3>⚙ Points System</h3>
+
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="points">
+        
+        <div class="settings-grid">
+          <div>
+            <label>Points per ₹1</label>
+            <input type="number" name="points_per_rupee" value="{{setting.points_per_ruppee}}">
+          </div>
+
+          <div>
+            <label>Max Redeem %</label>
+            <input type="number" name="max_redeem_percent" value="{{ setting.max_redeem_percent }}">
+          </div>
+        </div>
+        <button type="submit" class="btn-save">Save Points</button>
+      </form>
+  </div> {% endcomment %}
+
+  <!-- Membership -->
+  <div class="settings-card">
+    <h3>💳 Membership</h3>
+
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="form_type" value="membership">
+
+      <div class="settings-grid">
+        <div>
+          <label>Validity (Days)</label>
+          <input type="number" name="membership_validity_days" value="{{ setting.membership_validity_days }}">
+        </div>
+
+        <div>
+          <label>Renewal Fee (₹)</label>
+          <input type="number" name="renewal_fee" value="{{ setting.renewal_fee }}">
+        </div>
+
+        <div>
+          <label>Shop Renewal Fee (₹)</label>
+          <input type="number" name="shop_renewal_fee" value="{{ setting.shop_renewal_fee }}">
+        </div>
+      </div>
+      <button type="submit" class="btn-save">Save Membership</button>
+    </form>
+  </div>
+
+  <!-- Admin Security -->
+  <div class="settings-card">
+    <h3>🔒 Admin Security</h3>
+
+    <form method="POST" action="{% url 'update_password' %}">
+      {% csrf_token %}
+      <div class="settings-grid">
+        <div class="input-group">
+          <label>Current Password</label>
+          <div class="password-field">
+            <input type="password" name="current_password" id="currentPassword">
+            <span onclick="togglePassword('currentPassword', this)">👁</span>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>New Password</label>
+          <div class="password-field">
+            <input type="password" name="new_password" id="newPassword">
+            <span onclick="togglePassword('newPassword', this)">👁</span>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Confirm Password</label>
+          <div class="password-field">
+            <input type="password" name="confirm_password" id="confirmPassword">
+            <span onclick="togglePassword('confirmPassword', this)">👁</span>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-save">Update Password</button>
+    <form>
+  </div>
+
+</div>
+
+<script>
+function togglePassword(fieldId, icon) {
+  const input = document.getElementById(fieldId);
+
+  if (input.type === "password") {
+    input.type = "text";
+    icon.textContent = "🙈";
+  } else {
+    input.type = "password";
+    icon.textContent = "👁";
+  }
+}
+</script>
+
+{% endblock %}

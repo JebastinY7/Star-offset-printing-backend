@@ -1,0 +1,162 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing Table Management</title>
+
+    <link rel="stylesheet" href="{% static 'pricing/manage.css' %}">
+</head>
+<body>
+
+<div class="manage-page">
+
+    <!-- Header -->
+    <!-- REPLACE YOUR HEADER SEARCH SECTION WITH THIS -->
+<div class="manage-header-card">
+
+    <h1 class="manage-title">Pricing Table Management</h1>
+
+    <form method="get" class="manage-toolbar">
+
+        <!-- Search -->
+        <input type="text"
+               name="search"
+               value="{{ search_query }}"
+               placeholder="Search category..."
+               class="manage-search-input">
+
+        <!-- Category Filter Dropdown -->
+        <select name="category" class="manage-category-filter">
+            <option value="">All Categories</option>
+
+            {% for category in categories %}
+                <option value="{{ category.id }}"
+                    {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <!-- Search Button -->
+        <button type="submit" class="manage-search-btn">
+            Search
+        </button>
+
+        <!-- Reset -->
+        <a href="{% url 'manage_pricing' %}" class="manage-reset-btn">
+            Reset
+        </a>
+
+        <!-- Back -->
+        <a href="{% url 'pricing_setup' %}" class="manage-back-btn">
+            Back
+        </a>
+
+    </form>
+
+</div>
+
+
+
+<div class="manage-category-card">
+
+    <div class="manage-category-top">
+        <h2 class="manage-category-title">
+            {% if selected_category %}
+                {{ page_obj.object_list.0.category.name }} Rules
+            {% else %}
+                All Pricing Rules
+            {% endif %}
+        </h2>
+
+        {% if selected_category %}
+        <a href="{% url 'delete_category' selected_category %}"
+           class="manage-delete-table-btn"
+           onclick="return confirm('Delete full category?')">
+           Delete Full Table
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="manage-table-wrap">
+        <table class="manage-table">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Size</th>
+                    <th>Variant</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Shop</th>
+                    <th>CS</th>
+                    <th>Notes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for rule in page_obj %}
+                <tr>
+                    <td>{{ rule.category.name }}</td>
+                    <td>{{ rule.size.name }}</td>
+                    <td>{{ rule.variant.name }}</td>
+                    <td>{{ rule.min_qty }} - {{ rule.max_qty }}</td>
+                    <td>₹{{ rule.price }}</td>
+                    <td>{{ rule.shop_discount }}%</td>
+                    <td>{{ rule.cs_discount }}%</td>
+                    <td>{{ rule.notes|default:"-" }}</td>
+                    <td>
+                        <div class="manage-action-group">
+                            <a href="{% url 'edit_price_rule' rule.id %}" class="manage-edit-btn">Edit</a>
+                            <a href="{% url 'delete_price_rule' rule.id %}"
+                               class="manage-delete-btn"
+                               onclick="return confirm('Delete this rule?')">
+                               Delete
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="manage-empty">No price rules found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+
+
+
+<!-- PAGINATION -->
+<div class="manage-pagination">
+
+    {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}&category={{ selected_category }}"
+           class="manage-page-btn">
+           Previous
+        </a>
+    {% endif %}
+
+    <span class="manage-page-info">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&search={{ search_query }}&category={{ selected_category }}"
+           class="manage-page-btn">
+           Next
+        </a>
+    {% endif %}
+
+</div>
+
+</div>
+
+
+</body>
+</html>

@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="history-page page-wrapper">
+
+  <div class="content">
+
+    <!-- Header -->
+    <div class="history-header">
+      <h2>Offers History</h2>
+
+      <form method="GET" class="history-search">
+        <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search by title">
+        <button type="submit">Search</button>
+      </form>
+    </div>
+
+    <!-- Table -->
+    <div class="offer-history-card">
+      <table class="offer-history-table">
+
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Title</th>
+            <th>Message</th>
+            <th>Group</th>
+            <th>Category</th>
+            <th>Sent</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for offer in page_obj %}
+          <tr>
+            <td>{{ offer.created_at|date:'d-m-Y H:i' }}</td>
+            <td>{{ offer.title }}</td>
+            <td class="message-cell" 
+                onclick="openMessagePopup('{{ offer.title|escapejs }}', '{{ offer.message|escapejs }}')">
+                {{ offer.message|truncatechars:40 }}
+            </td>
+            <td>{{ offer.group }}</td>
+            <td>{{ offer.category }}</td>
+            <td>{{ offer.total_sent }}</td>
+            <td class="action-icons">
+              <div class="tooltip">
+                <button class="icon delete" onclick="openDeleteModal('{{ offer.id }}')">🗑</button>
+                <span class="tooltip-text">Delete</span>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8">No offers announced</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?{{ query_string }}&page={{ page_obj.previous_page_number }}" class="nav-btn prev">‹ Prev</a>
+        {% else %}
+            <span class="nav-btn disabled">‹ Prev</span>
+        {% endif %}
+
+        <span class="page-info">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?{{ query_string }}&page={{ page_obj.next_page_number }}" class="nav-btn next">Next ›</a>
+        {% else %}
+            <span class="nav-btn disabled">Next ›</span>
+        {% endif %}
+
+    </div>
+  {% endif %} 
+</div>
+
+<div id="messagePopup" class="popup">
+  <div class="popup-content">
+    <h3 id="popupTitle"></h3>
+    <p id="popupMessage"></p>
+    <button onclick="closeMessagePopup()" class="cancel-btn">Close</button>
+  </div>
+</div>
+
+<div id="deleteModal" class="modal">
+  <div class="modal-content">
+    <h3>Delete Message</h3>
+    <p>Are you sure you want to delete this message?</p>
+
+    <form id="deleteForm" method="POST">
+      {% csrf_token %}
+      <button type="submit" class="confirm-btn">Yes, Delete</button>
+      <button type="button" class="cancel-btn" onclick="closeDeleteModal()">Cancel</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const modal = document.getElementById("deleteModal");  // ✅ ADD THIS
+
+  function openDeleteModal(id) {
+    const form = document.getElementById("deleteForm");
+
+    form.action = `/delete-offer/${id}/`;
+
+    modal.classList.add("show");
+  }
+
+  function closeDeleteModal() {
+    modal.classList.remove("show");
+  }
+</script>
+
+<script>
+function openMessagePopup(title, message) {
+  document.getElementById("popupTitle").innerText = title;
+  document.getElementById("popupMessage").innerText = message;
+  document.getElementById("messagePopup").classList.add("show");
+}
+
+function closeMessagePopup() {
+  document.getElementById("messagePopup").classList.remove("show");
+}
+</script>
+{% endblock %}

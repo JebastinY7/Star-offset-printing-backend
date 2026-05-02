@@ -1,0 +1,128 @@
+{% extends 'form_base.html' %}
+{% block content %}
+<div class="add-customer-page">
+    
+    <div class="add-customer-top">
+        <h2>Edit Customer</h2>
+        <a href="javascript:history.back()" class="back-btn">← Back</a>
+    </div>
+    
+    <div class="add-customer-card">
+        
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="ac-group">
+                <label>Name</label>
+                <input type="text" name="name" value="{{ customer.name }}" required>
+            </div>
+            
+            <div class="ac-group">
+                <label>Phone</label>
+                <input type="text" name="phone" value="{{ customer.phone }}" required>
+            </div>
+            
+            <div class="ac-group">
+                <label>Category</label>
+                <select name="category">
+                    <option value="Student" {% if customer.category == "Student" %}selected{% endif %}>Student</option>
+                    <option value="Customer" {% if customer.category == "Customer" %}selected{% endif %}>Customer</option>
+                    <option value="Shop" {% if customer.category == "Shop" %}selected{% endif %}>Shop</option>
+                </select>
+            </div>
+            
+            <div class="ac-group checkbox-group">
+                <label>
+                    <input type="checkbox" id="hasCard" name="is_member" {% if customer.is_member %}checked{% endif %}> Has Membership Card
+                </label>
+            </div>
+            
+            <div class="membership-fields" id="membershipFields" style="display: none;">
+                <div class="ac-group">
+                    <label>Membership ID</label>
+                    <input type="text" name="member_id" value="{{ customer.member_id|default_if_none:'' }}" placeholder="Member ID">
+                </div>
+
+                <div class="ac-group">
+                    <label>Join Date</label>
+                    <input type="text" id="join_date" name="join_date" value="{{ customer.join_date|date:'d-m-Y' }}"
+                    placeholder="Select Date">
+                </div>
+
+                <div class="ac-group">
+                    <label>Expiry Date</label>
+                    <input type="text" id="expiry_date" name="expiry_date" value="{{ customer.expiry_date|date:'d-m-Y' }}" 
+                    placeholder="Auto generated" readonly>
+                </div>
+            </div>
+            
+            <button type="submit" class="ac-submit-btn">Update</button>
+        </form>
+    </div>
+</div>
+
+<script>
+  const checkbox = document.getElementById("hasCard");
+  const fields = document.getElementById("membershipFields");
+
+  function toggleFields() {
+    if (checkbox.checked) {
+      fields.style.display = "block";
+    } else {
+      fields.style.display = "none";
+    }
+  }
+
+  // Run on page load
+  toggleFields();
+
+  // Run on change
+  checkbox.addEventListener("change", toggleFields);
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const checkbox = document.getElementById("hasCard");
+  const fields = document.getElementById("membershipFields");
+
+  function toggleFields() {
+    fields.style.display = checkbox.checked ? "block" : "none";
+  }
+
+  toggleFields();
+  checkbox.addEventListener("change", toggleFields);
+
+  flatpickr("#join_date", {
+    dateFormat: "d-m-Y",
+    defaultDate: "{{ customer.join_date|date:'d-m-Y' }}",
+    onChange: function(selectedDates) {
+
+      if (!selectedDates.length) return;
+
+      let joinDate = selectedDates[0];
+
+      let expiry = new Date(joinDate);
+      expiry.setDate(expiry.getDate() + 365);
+
+      let day = String(expiry.getDate()).padStart(2, '0');
+      let month = String(expiry.getMonth() + 1).padStart(2, '0');
+      let year = expiry.getFullYear();
+
+      document.getElementById("expiry_date").value =
+        `${day}-${month}-${year}`;
+    }
+  });
+
+});
+</script>
+
+<script>
+setTimeout(() => {
+  document.querySelectorAll('.toast').forEach(el => {
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 300);
+  });
+}, 3000);
+</script>
+{% endblock %}

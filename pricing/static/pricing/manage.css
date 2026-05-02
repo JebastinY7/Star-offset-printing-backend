@@ -1,0 +1,330 @@
+/* =========================
+   PRICING TABLE MANAGEMENT
+   CLEAN / COMPACT / MODERN
+========================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "DM Sans", Arial, sans-serif;
+}
+
+body {
+    background: #f3f4f6;
+    color: #111827;
+    padding: 24px;
+}
+
+/* PAGE */
+.manage-page {
+    max-width: 1650px;
+    margin: auto;
+}
+
+/* CARDS */
+.manage-header-card,
+.manage-category-card,
+.manage-no-results-card {
+    background: #ffffff;
+    padding: 22px;
+    border-radius: 18px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+    border: 1px solid #eef2f7;
+}
+
+/* TITLE */
+.manage-title {
+    font-size: 34px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 18px;
+    letter-spacing: -0.5px;
+}
+
+/* =========================
+   TOOLBAR
+========================= */
+.manage-toolbar {
+    display: grid;
+    grid-template-columns: 2fr 1.2fr auto auto auto;
+    gap: 12px;
+    align-items: center;
+}
+
+/* INPUT + SELECT */
+.manage-search-input,
+.manage-category-filter {
+    width: 100%;
+    height: 52px;
+    padding: 0 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    font-size: 15px;
+    background: #ffffff;
+    transition: 0.25s ease;
+}
+
+.manage-search-input:focus,
+.manage-category-filter:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
+}
+
+/* BUTTONS */
+.manage-search-btn,
+.manage-back-btn,
+.manage-page-btn,
+.manage-reset-btn {
+    height: 52px;
+    padding: 0 20px;
+    border: none;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+
+/* PRIMARY */
+.manage-search-btn,
+.manage-back-btn,
+.manage-page-btn {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+}
+
+.manage-search-btn:hover,
+.manage-back-btn:hover,
+.manage-page-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(37,99,235,0.22);
+}
+
+/* RESET */
+.manage-reset-btn {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.manage-reset-btn:hover {
+    background: #e5e7eb;
+}
+
+/* =========================
+   CATEGORY HEADER
+========================= */
+.manage-category-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.manage-category-title {
+    font-size: 30px;
+    font-weight: 800;
+    color: #2563eb;
+    margin-bottom: 4px;
+}
+
+.manage-rule-count {
+    font-size: 15px;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+/* DELETE FULL BUTTON */
+.manage-delete-table-btn {
+    background: #dc2626;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 700;
+    transition: 0.25s ease;
+}
+
+.manage-delete-table-btn:hover {
+    background: #b91c1c;
+    transform: translateY(-2px);
+}
+
+/* =========================
+   TABLE
+========================= */
+.manage-table-wrap {
+    overflow-x: auto;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+}
+
+/* Optional scroll */
+.manage-table-wrap::-webkit-scrollbar {
+    height: 8px;
+}
+
+.manage-table-wrap::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.manage-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1100px;
+}
+
+/* HEADER */
+.manage-table thead th {
+    position: sticky;
+    top: 0;
+    background: #eff6ff;
+    color: #1e3a8a;
+    font-size: 15px;
+    font-weight: 800;
+    z-index: 2;
+}
+
+/* CELLS */
+.manage-table th,
+.manage-table td {
+    padding: 16px 14px;
+    text-align: center;
+    border-bottom: 1px solid #e5e7eb;
+    border-right: 1px solid #f1f5f9;
+}
+
+/* LEFT ALIGN */
+.manage-table td:first-child,
+.manage-table th:first-child {
+    text-align: left;
+    padding-left: 18px;
+}
+
+/* ROW COLORS */
+.manage-table tbody tr:nth-child(even) {
+    background: #f9fafb;
+}
+
+.manage-table tbody tr:hover {
+    background: #f3f8ff;
+}
+
+/* EMPTY */
+.manage-empty {
+    color: #6b7280;
+    font-style: italic;
+    padding: 20px;
+}
+
+/* =========================
+   ACTION BUTTONS
+========================= */
+.manage-action-group {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.manage-edit-btn,
+.manage-delete-btn {
+    padding: 9px 14px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    transition: 0.25s ease;
+}
+
+.manage-edit-btn {
+    background: #2563eb;
+}
+
+.manage-edit-btn:hover {
+    background: #1d4ed8;
+}
+
+.manage-delete-btn {
+    background: #ef4444;
+}
+
+.manage-delete-btn:hover {
+    background: #dc2626;
+}
+
+/* =========================
+   PAGINATION
+========================= */
+.manage-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+}
+
+.manage-page-info {
+    font-size: 16px;
+    font-weight: 700;
+    color: #374151;
+}
+
+/* =========================
+   NO RESULTS
+========================= */
+.manage-no-results-card {
+    text-align: center;
+    padding: 40px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+/* =========================
+   MOBILE
+========================= */
+@media (max-width: 992px) {
+    .manage-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .manage-search-btn,
+    .manage-back-btn,
+    .manage-reset-btn {
+        width: 100%;
+    }
+
+    .manage-title {
+        font-size: 28px;
+    }
+
+    .manage-category-title {
+        font-size: 24px;
+    }
+
+    body {
+        padding: 14px;
+    }
+
+    .manage-header-card,
+    .manage-category-card {
+        padding: 16px;
+    }
+}

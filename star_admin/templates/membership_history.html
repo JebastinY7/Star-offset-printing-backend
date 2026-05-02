@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="history-page page-wrapper">
+  <div class="content">
+
+    <!-- TOP BAR -->
+    <div class="history-header">
+      <h2>Membership History</h2>
+
+      <form method="GET" class="history-filter">
+        <input type="text" id="start-date" name="start" value="{{ start }}" placeholder="Start Date">
+        <input type="text" id="end-date" name="end" value="{{ end }}" placeholder="End Date">
+        <button type="submit">Filter</button>
+      </form>
+
+      <div class="history-total">
+        ₹ {{ total }}
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="history-card">
+      <table class="history-table">
+
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Payment</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for t in page_obj %}
+          <tr>
+            <td class="name">{{ t.customer.name }}</td>
+
+            <td>{{ t.created_at|date:"d-m-Y H:i" }}</td>
+
+            <td>
+              <span class="type-tag">{{ t.type|title }}</span>
+            </td>
+
+            <td class="amount">₹ {{ t.amount }}</td>
+
+            <td>
+              <span class="pay {{ t.payment_method }}">
+                {{ t.payment_method|title }}
+              </span>
+            </td>
+
+            <td>{{ t.start_date|date:"d-m-Y" }}</td>
+            <td>{{ t.end_date|date:"d-m-Y" }}</td>
+            <td class="action-icons">
+              <button class="icon delete" onclick="openDeleteModal('{{ t.id }}')">🗑</button>
+            </td>
+          </tr>
+
+          {% empty %}
+          <tr>
+            <td colspan="7" class="empty">No records found</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+
+      </table>
+    </div>
+  </div>
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="pagination">
+    
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}" class="nav-btn prev">‹ Prev</a>
+    {% else %}
+      <span class="nav-btn disabled">‹ Prev</span>
+    {% endif %}
+
+    <span class="page-info">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}" class="nav-btn next">Next ›</a>
+    {% else %}
+      <span class="nav-btn disabled">Next ›</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div id="deleteModal" class="modal">
+  <div class="modal-content">
+    <h3>Delete Membership</h3>
+    <p>Are you sure you want to delete this membership record?</p>
+
+    <form id="deleteForm" method="POST">
+      {% csrf_token %}
+      <button type="submit" class="confirm-btn">Yes, Delete</button>
+      <button type="button" class="cancel-btn" onclick="closeDeleteModal()">Cancel</button>
+    </form>
+  </div>
+</div>
+</div>
+
+<script>
+flatpickr("#start-date", {
+    dateFormat: "Y-m-d",
+    altInput: true,
+    altFormat: "d-m-Y",
+    theme: "material_blue"
+});
+
+flatpickr("#end-date", {
+    dateFormat: "Y-m-d",
+    altInput: true,
+    altFormat: "d-m-Y",
+    theme: "material_blue"
+});
+</script>
+
+<script>
+const modal = document.getElementById("deleteModal");
+
+function openDeleteModal(id) {
+    const form = document.getElementById("deleteForm");
+    form.action = `/delete-membership/${id}/`;
+    modal.classList.add("show");
+}
+
+function closeDeleteModal() {
+    modal.classList.remove("show");
+}
+</script>
+
+{% endblock %}
