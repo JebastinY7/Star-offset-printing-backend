@@ -77,8 +77,8 @@ class PointTransaction(models.Model):
 
 # Settings Table
 class Setting(models.Model):
-    points_per_rupee = models.IntegerField()
-    max_redeem_percent = models.IntegerField()
+    points_per_rupee = models.IntegerField(null=True, blank=True)
+    max_redeem_percent = models.IntegerField(null=True, blank=True)
     membership_validity_days = models.IntegerField()
     renewal_fee = models.DecimalField(max_digits=10, decimal_places=2)
     shop_renewal_fee = models.DecimalField(max_digits=10, decimal_places=2)
