@@ -926,7 +926,7 @@ def settings(request):
             # points_per_rupee = 1,
             # max_redeem_percent = 50,
             membership_validity_days = 365,
-            member_renewal_fee = 0,
+            renewal_fee = 0,
             shop_renewal_fee = 0
         )
 
