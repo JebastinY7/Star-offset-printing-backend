@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", function () {
       let joinDate = selectedDates[0];
 
       let expiry = new Date(joinDate);
-      expiry.setDate(expiry.getDate() + 365);
+      expiry.setDate(expiry.getDate() + 364);
 
       let day = String(expiry.getDate()).padStart(2, '0');
       let month = String(expiry.getMonth() + 1).padStart(2, '0');

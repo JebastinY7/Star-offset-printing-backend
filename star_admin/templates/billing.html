@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="bill-page">
+<div class="bill-page page-wrapper">
   
   <h2>
     {% if bill %}Edit Bill{% else %}Create Bill{% endif %}
@@ -86,28 +86,13 @@
     </table>
   </div>
 
-  <!-- Summary -->
-  <div class="bill-card">
+  <div class="bill-card summary-grid">
 
-    <div class="bill-summary-row">
-      <span>Total</span>
-      <strong id="totalAmount">₹0</strong>
-    </div>
+  
 
-    <div class="bill-field">
-      <label>Extra Discount</label>
-      <input type="number" name="extraDiscount" id="extraDiscount" placeholder="0" oninput="calculateTotal()">
-    </div>
 
-    {% comment %} <div class="bill-field">
-      <label>Redeem Points</label>
-      <input type="number" name="points" id="points" placeholder="0" oninput="calculateTotal()">
-    </div> {% endcomment %}
-
-    <div class="bill-summary-row final">
-      <span>Final Amount</span>
-      <strong id="finalAmount">₹0</strong>
-    </div>
+  <div class="bill-section">
+    <h4>Previous Due</h4>
 
     <div class="bill-summary-row">
       <span>Previous Due</span>
@@ -115,36 +100,69 @@
     </div>
 
     <div class="bill-field">
-      <label>Pay Old Due Now</label>
-      <input type="number"
-            id="oldDuePayment"
-            name="old_due_payment"
-            min="0"
-            placeholder="0"
-            oninput="calculateTotal()">
+      <label>Pay Old Due</label>
+      <input type="number" id="oldDuePayment" name="old_due_payment" oninput="calculateTotal()">
     </div>
 
     <div class="bill-summary-row">
-      <span>Remaining Old Due</span>
+      <span>Remaining Due</span>
       <strong id="remainingOldDue">₹0</strong>
     </div>
-    
+  </div>
+
+
+  <div class="bill-section">
+    <h4>Payment</h4>
+
     <div class="bill-field">
       <label>Pay Current Bill</label>
-      <input type="number" name="paid_amount" min="0" id="paidAmount" placeholder="0" oninput="calculateTotal()">
+      <input type="number" id="paidAmount" name="paid_amount" oninput="calculateTotal()">
     </div>
 
     <div class="bill-summary-row">
-      <span>Total Due Amount</span>
+      <span>Total Due</span>
       <strong id="dueAmount">₹0</strong>
     </div>
 
     <div class="bill-summary-row">
-      <span>Payment Status</span>
+      <span>Status</span>
       <strong id="paymentStatus">PAID</strong>
     </div>
-
   </div>
+
+  <div class="bill-section">
+    <h4>Summary</h4>
+
+    <div class="bill-summary-row">
+      <span>Gross Total:</span>
+      <strong id="grossAmount">₹0</strong>
+    </div>
+
+    <div class="bill-field">
+      <label>Extra Discount</label>
+      <input type="number" id="extraDiscount" oninput="calculateTotal()">
+    </div>
+
+    <div class="bill-summary-row">
+      <span>Discount:</span>
+      <strong id="discountAmount">₹0</strong>
+    </div>
+
+    <div class="bill-summary-row">
+      <span>Net Total</span>
+      <strong id="netAmount">₹0</strong>
+    </div>
+
+    <div class="bill-summary-row final">
+      <span>Final Amount</span>
+      <strong id="finalAmount">₹0</strong>
+    </div>
+  </div>
+
+</div>
+
+  
+  
 
   <button type="submit" onclick="prepareData(event)" class="bill-submit-btn">
     {% if bill %}Update Bill{% else %}Generate Bill{% endif %}
@@ -567,30 +585,63 @@ function customRoundAmount(amount) {
 
 /* TOTAL CALC */
 function calculateTotal() {
-  let total = items.reduce((sum, item) => sum + (parseFloat(item.total) || 0), 0);
+  {% comment %} let gross = items.reduce((sum, item) => {
+    let price = parseFloat(item.price) || 0;
+    let qty = parseFloat(item.qty) || 0;
+    let extra = parseFloat(item.extraCharge) || 0;
+
+    return sum + (price * qty) + extra;
+  }, 0); {% endcomment %}
+
+  let gross = items.reduce((sum, item) => {
+    let total = parseFloat(item.total) || 0;
+    return sum + total;
+}, 0);
+
+  let itemDiscount = items.reduce((sum, item) => {
+  return sum + (parseFloat(item.discount) || 0);
+}, 0);
+
+let extraDiscount = parseFloat(document.getElementById("extraDiscount").value) || 0;
+
+let totalDiscount = itemDiscount + extraDiscount;
 
   let extra = parseFloat(document.getElementById("extraDiscount").value) || 0;
 
   let pointsField = document.getElementById("points");
   let points = pointsField ? (parseFloat(pointsField.value) || 0) : 0;
 
-  if (points > total - extra) {
-    points = Math.max(total - extra, 0);
+  if (points > gross - totalDiscount) {
+    points = Math.max(gross - totalDiscount, 0);
 
     if (pointsField) {
       pointsField.value = points;
     }
   }
 
-  let rawFinal = Math.max(total - extra - points, 0);
+  let netTotal = Math.max(gross - totalDiscount, 0);
+
+  let rawFinal = Math.max(gross - totalDiscount - points, 0);
 
   let final = customRoundAmount(rawFinal);
 
-  document.getElementById("totalAmount").innerText = "₹" + total.toFixed(2);
+  document.getElementById("grossAmount").innerText = "₹" + gross.toFixed(2);
+document.getElementById("discountAmount").innerText = "- ₹" + totalDiscount.toFixed(2);
+document.getElementById("netAmount").innerText = "₹" + netTotal.toFixed(2);
 
   document.getElementById("finalAmount").innerText = "₹" + final.toFixed(2);
 
-  let paidInput = document.getElementById("paidAmount").value.trim();
+  let paidField = document.getElementById("paidAmount");
+
+  paidField.addEventListener("input", function () {
+  this.dataset.manual = "true";
+});
+
+  if (!paidField.dataset.manual) {
+  paidField.value = final.toFixed(2);
+}
+
+  let paidInput = paidField.value.trim();
 
   let paid = 0;
 
@@ -601,6 +652,7 @@ function calculateTotal() {
       paid = 0;
     }
   }
+
 
   let maxCurrentBillPay = final;
   
@@ -648,17 +700,17 @@ let currentBillDue = Math.max(final - paid, 0);
 
 let totalCurrentPaid = paid;
 
-if (due <= 0) {
+if (paid >= final) {
   status = "PAID";
 }
-else if (totalCurrentPaid > 0 || oldDuePayment > 0) {
+else if (paid > 0) {
   status = "PARTIAL";
 }
 else {
   status = "DUE";
 }
 
-  document.getElementById("totalAmount").innerText = "₹" + total.toFixed(2);
+  {% comment %} document.getElementById("grossAmount").innerText = "₹" + gross.toFixed(2); {% endcomment %}
   document.getElementById("finalAmount").innerText = "₹" + final.toFixed(2);
   document.getElementById("dueAmount").innerText = "₹" + due.toFixed(2);
 
@@ -842,171 +894,7 @@ function updatePrice() {
     ========================================== */
     let customerType = (window.selectedCustomerType || "").toLowerCase();
     let isMember = window.isMember || false;
-
-    /* ==========================================
-       PRINT OUT SPECIAL CALCULATION
-    ========================================== */
-    if (categoryText === "print out") {
-
-        let total = 0;
-
-        /* -------------------------------
-           A4 / A4 BOND / LEGAL
-        ------------------------------- */
-        if (
-            sizeText === "a4" ||
-            sizeText === "a4 bond" ||
-            sizeText === "legal"
-        ) {
-
-            if (variantText === "black s") {
-                if (qty === 1) total = 10;
-                else if (qty === 2) total = 15;
-                else total = 15 + ((qty - 2) * 3);
-            }
-
-            else if (variantText === "black d") {
-                if (qty === 1) total = 10;
-                else if (qty === 2) total = 15;
-                else total = 15 + ((qty - 2) * 4);
-            }
-
-            else if (variantText === "color inkjet s") {
-                if (qty === 1) total = 20;
-                else total = 20 + ((qty - 1) * 10);
-            }
-
-            else if (variantText === "color inkjet d") {
-                if (qty === 1) total = 30;
-                else total = 30 + ((qty - 1) * 15);
-            }
-
-            else if (variantText === "color laser s") {
-                if (qty === 1) total = 25;
-                else total = 25 + ((qty - 1) * 10);
-            }
-
-            else if (variantText === "color laser d") {
-                if (qty === 1) total = 50;
-                else total = 50 + ((qty - 1) * 15);
-            }
-        }
-
-        /* -------------------------------
-           LEGAL GREEN BOND
-        ------------------------------- */
-        else if (sizeText === "legal green bond") {
-
-            if (variantText === "black s") total = 12 + ((qty - 1) * 3);
-            else if (variantText === "black d") total = 15 + ((qty - 1) * 4);
-            else if (variantText === "color inkjet s") total = 25 + ((qty - 1) * 10);
-            else if (variantText === "color inkjet d") total = 40 + ((qty - 1) * 15);
-            else if (variantText === "color laser s") total = 35 + ((qty - 1) * 10);
-            else if (variantText === "color laser d") total = 70 + ((qty - 1) * 15);
-        }
-
-        /* -------------------------------
-           A3 BOND
-        ------------------------------- */
-        else if (sizeText === "a3 bond") {
-
-            if (variantText === "black s") total = 15 + ((qty - 1) * 3);
-            else if (variantText === "black d") total = 20 + ((qty - 1) * 4);
-            else if (variantText === "color laser s") total = 35 + ((qty - 1) * 10);
-            else if (variantText === "color laser d") total = 70 + ((qty - 1) * 15);
-        }
-
-        /* -------------------------------
-           12x18
-        ------------------------------- */
-        else if (sizeText === "12x18") {
-
-            if (variantText === "black s") total = 35 + ((qty - 1) * 3);
-            else if (variantText === "black d") total = 35 + ((qty - 1) * 4);
-            else if (variantText === "color laser s") total = 35 + ((qty - 1) * 10);
-            else if (variantText === "color laser d") total = 70 + ((qty - 1) * 15);
-        }
-
-        /* -------------------------------
-           A4 STICKER
-        ------------------------------- */
-        else if (sizeText === "a4 sticker") {
-
-            if (variantText === "black s") {
-                if (qty === 1) total = 30;
-                else if (qty === 2) total = 45;
-                else total = 45 + ((qty - 2) * 3);
-            }
-
-            else if (variantText === "color inkjet s") {
-                total = 25 + ((qty - 1) * 10);
-            }
-
-            else if (variantText === "color laser s") {
-                total = 30 + ((qty - 1) * 10);
-            }
-        }
-
-        /* -------------------------------
-           A3 STICKER
-        ------------------------------- */
-        else if (sizeText === "a3 sticker") {
-
-            if (variantText === "black s") {
-                if (qty === 1) total = 60;
-                else if (qty === 2) total = 75;
-                else total = 75 + ((qty - 2) * 3);
-            }
-
-            else if (variantText === "color laser s") {
-                total = 60 + ((qty - 1) * 10);
-            }
-        }
-
-        /* ==========================================
-           CUSTOMER DISCOUNT (ONLY AFTER CUSTOMER)
-        ========================================== */
-        let discountPercent = 0;
-
-        if (parseFloat(window.selectedCustomer?.due_amount || 0) > 0) {
-    discountPercent = 0;
-}
-else {
-    if (customerType === "shop") {
-        discountPercent = 40;
-    } 
-    else if (customerType === "member") {
-        discountPercent = 25;
-    }
-    else {
-        discountPercent = 0;
-    }
-}
-
-        
-
-           
-        
-
-        let discount = total * (discountPercent / 100);
-        let finalTotal = total - discount;
-
-        let pricePerPage = qty > 0 ? total / qty : 0;
-
-        document.getElementById("itemPrice").value =
-            pricePerPage.toFixed(2);
-
-        document.getElementById("itemDiscount").value =
-            discountPercent.toFixed(2);
-
-        document.getElementById("itemDiscountValue").value =
-            discount.toFixed(2);
-
-        document.getElementById("itemTotalPreview").value =
-            finalTotal.toFixed(2);
-
-        return;
-    }
+    
 
     /* ==========================================
        NORMAL AUTO PRICE PICKUP FROM DB
@@ -1025,7 +913,30 @@ else {
                 return;
             }
 
-            let gross = qty * price;
+            let gross = 0;
+
+            if (
+              categoryText.includes("notice") ||
+              categoryText.includes("banner") ||
+              categoryText.includes("bill book") ||
+              categoryText.includes("poster")
+            ) {
+              gross = price;
+            }
+            else if (categoryText.includes("train ticket")) {
+              if (sizeText.includes("minimum")) {
+                gross = 50 + ((qty-1) * 20);
+              }
+              else if (sizeText.includes("thakkal")) {
+                gross = 75 + ((qty - 1) * 20);
+              }
+              else if (sizeText.includes("premium")) {
+                gross = 100 + ((qty - 1) * 20);
+              }
+            }
+            else {
+              gross = qty * price;
+            }
 
             let discountPercent = 0;
 

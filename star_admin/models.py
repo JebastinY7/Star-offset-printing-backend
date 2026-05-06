@@ -27,12 +27,15 @@ class Bill(models.Model):
     bill_no = models.CharField(max_length=20)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    gross_total = models.DecimalField(max_digits=10, decimal_places=2)
     discount = models.DecimalField(max_digits=10, decimal_places=2)
     points_used = models.DecimalField(max_digits=10, decimal_places=2)
     paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     due_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    current_due = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     old_due_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     previous_due = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    extra_charge_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     payment_status = models.CharField(
         max_length=20,
         choices=[('paid', 'Paid'), ('partial', 'Partial'), ('due', 'Due')],
@@ -134,11 +137,12 @@ class Order(models.Model):
     work_name = models.CharField(max_length=255)
     notes = models.TextField(blank=True, null=True)
 
-    order_date = models.DateField(auto_now_add=True)
+    order_date = models.DateField()
     delivery_date = models.DateField()
 
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     advance_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    due_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     status = models.CharField(
         max_length=20,
@@ -153,10 +157,6 @@ class Order(models.Model):
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
-
-    @property
-    def due_amount(self):
-        return self.total_amount - self.advance_paid
 
     def __str__(self):
         return f"{self.customer.name} - {self.work_name}"

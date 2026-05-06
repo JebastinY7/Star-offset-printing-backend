@@ -106,7 +106,7 @@ def forgot_password(request):
         send_mail (
             'Your OTP Code',
             f'Your OTP is {otp}',
-            'shijujs1212@gmail.com',
+            'staroffsets@gmail.com',
             [email],
             fail_silently=False
         )
@@ -557,7 +557,7 @@ def invoice(request, bill_id):
 
     return render(request, 'invoice.html', {
         'bill': bill,
-        'items': items
+        'items': items,
     })
 
 def billing_system(request):
@@ -1018,7 +1018,9 @@ def save_bill(request):
         else:
             points = 0
 
-        raw_final = max(gross_total - total_discount - Decimal(points), Decimal('0'))
+        total_extra_charge = sum(Decimal(str(item.get("extraCharge", 0))) for item in items)
+
+        raw_final = max(gross_total - total_discount + total_extra_charge - Decimal(points), Decimal('0'))
 
         final = Decimal(custom_round_amount(raw_final))
 
@@ -1032,14 +1034,25 @@ def save_bill(request):
         old_due_payment = Decimal(request.POST.get("old_due_payment") or 0)
         old_due_payment = min(old_due_payment, customer.due_amount)
 
-        due_amount = max(final - paid_amount, Decimal('0'))
+        previous_due = customer.due_amount
 
-        if due_amount == 0:
+        current_due = max(final - paid_amount, Decimal('0'))
+
+        # current_bill_due = max(final - paid_amount, Decimal('0'))
+
+        remaining_old_due = max(previous_due - old_due_payment, Decimal('0'))
+
+        due_amount = current_due + remaining_old_due
+
+        customer.due_amount = due_amount
+        customer.save()
+
+        if paid_amount >= final:
             payment_status = "paid"
-        elif paid_amount == 0:
-            payment_status = "due"
-        else:
+        elif paid_amount > 0:
             payment_status = "partial"
+        else:
+            payment_status = "due"
 
         if bill_id:
             bill = get_object_or_404(Bill, id=int(bill_id))
@@ -1058,7 +1071,9 @@ def save_bill(request):
 
 
             bill.customer = customer
-            bill.total_amount = gross_total
+            bill.gross_total = gross_total
+            bill.extra_charge_total=total_extra_charge
+            bill.total_amount = gross_total - total_discount + total_extra_charge
             bill.discount = total_discount
             bill.points_used = points
             bill.final_amount = final
@@ -1078,26 +1093,33 @@ def save_bill(request):
         else:
             last_bill = Bill.objects.order_by('-id').first()
             next_id = last_bill.id + 1 if last_bill else 1
+        
+            
 
 
             bill = Bill.objects.create(
                 bill_no=f"B{next_id}",
                 customer=customer,
-                total_amount=gross_total,
+                gross_total=gross_total,
+                extra_charge_total=total_extra_charge,
+                total_amount=gross_total - total_discount + total_extra_charge,
                 discount=total_discount,
                 points_used=points,
                 paid_amount = paid_amount,
                 due_amount = due_amount,
-                previous_due=customer.due_amount,
+                previous_due=previous_due,
+                current_due=current_due,
                 payment_status = payment_status,
                 final_amount=final,
                 old_due_paid=old_due_payment,
                 bill_date=timezone.now()
             )
 
-        customer.due_amount += due_amount
+        # due_amount = remaining_old_due + current_due
 
-        customer.due_amount = max(customer.due_amount - old_due_payment, Decimal('0'))
+        
+
+        # customer.due_amount = max(customer.due_amount - old_due_payment, Decimal('0'))
 
         for item in items:
             BillItem.objects.create(
@@ -1111,7 +1133,7 @@ def save_bill(request):
                 discount=item['discount'],
                 extra_charge=item.get("extraCharge", 0),
                 extra_purpose=item.get("extraPurpose", ""),
-                total=item['total']
+                total=item['total'],
             )
 
         # customer.points = max(customer.points - points, 0)
@@ -1605,7 +1627,6 @@ def add_order(request):
             return render(request, "add_order.html", {
                 "customers": customers
             })
-        print("POST DATA:", request.POST)
         
         work_name = request.POST.get("work_name")
         notes = request.POST.get("notes")
@@ -1618,6 +1639,17 @@ def add_order(request):
 
         customer = get_object_or_404(Customer, id=customer_id)
 
+        if total_amount > 0:
+            due_amount = max(total_amount - advance_paid, 0)
+        else:
+            due_amount = Decimal(0)
+
+        if advance_paid < 0:
+            advance_paid = Decimal(0)
+        
+        if advance_paid > total_amount and total_amount > 0:
+            advance_paid = total_amount
+
         Order.objects.create(
             customer=customer,
             work_name=work_name,
@@ -1626,6 +1658,7 @@ def add_order(request):
             delivery_date=delivery_date,
             total_amount=total_amount,
             advance_paid=advance_paid,
+            due_amount=due_amount,
             status="pending"
         )
 
@@ -1634,7 +1667,8 @@ def add_order(request):
 
     else:
         return render(request,"add_order.html",
-            {"customers": customers}
+            {"customers": customers,
+             "today": date.today()}
         )
 
 # Delete Order

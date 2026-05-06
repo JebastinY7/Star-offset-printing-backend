@@ -13,8 +13,7 @@
       <h2>Star Offset Printing</h2>
       <p>1/116, Puthanchanthai Jn, Maruthancode Post</p>
       <p>K.K District - 629163</p>
-      <p>Off: 04651-295058</p>
-      <p>Cell: 9488634058</p>
+      <p>Mobile: +91 9488634058</p>
     </div>
 
     <div class="invoice-header">
@@ -39,7 +38,7 @@
       <th>Qty</th>
       <th>Price</th>
       <th>Discount</th>
-      <th>Surcharge</th>
+      <th>Extra Charge</th>
       <th>Total</th>
     </tr>
   </thead>
@@ -64,14 +63,14 @@
         {% if item.discount > 0 %}
           {{ item.discount }}
         {% else %}
-          —
+          -
         {% endif %}
       </td>
       <td>
         {% if item.extra_charge and item.extra_charge > 0 %}
           {{ item.extra_charge }}
         {% else %}
-          —
+          -
         {% endif %}
       </td>
       <td>{{ item.total }}</td>
@@ -83,15 +82,24 @@
     <!-- SUMMARY -->
     <div class="summary-box">
       
+      {% if bill.discount > 0 or bill.extra_charge_total > 0 %}
       <div class="summary-row">
         <span>Gross Total :</span>
-        <span>₹ {{ bill.total_amount }}</span>
+        <span>₹ {{ bill.gross_total }}</span>
       </div>
+      {% endif %}
 
       {% if bill.discount > 0 %}
       <div class="summary-row">
         <span>Discount :</span>
         <span>₹ {{ bill.discount }}</span>
+      </div>
+      {% endif %}
+
+      {% if bill.extra_charge_total > 0 %}
+      <div class="summary-row">
+        <span>Extra Charge :</span>
+        <span>₹ {{ bill.extra_charge_total }}</span>
       </div>
       {% endif %}
       
@@ -103,6 +111,11 @@
       </div>
       {% endif %} {% endcomment %}
 
+      <div class="summary-row">
+        <span>Net Total :</span>
+        <span>₹ {{ bill.total_amount }}</span>
+      </div>
+
       <div class="summary-row final">
         <span>Final Amount :</span>
         <span>₹ {{ bill.final_amount }}</span>
@@ -113,10 +126,10 @@
         <span>₹ {{ bill.paid_amount|add:bill.old_due_paid }}</span>
       </div> {% endcomment %}
 
-      {% if bill.due_amount > 0 %}
+      {% if bill.current_due > 0 %}
       <div class="summary-row">
         <span>Due Amount :</span>
-        <span>₹ {{ bill.due_amount }}</span>
+        <span>₹ {{ bill.current_due }}</span>
       </div>
       {% endif %}
 

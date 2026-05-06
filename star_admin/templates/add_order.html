@@ -57,7 +57,7 @@
           <label>Delivery Date</label>
           <input type="date"
                  name="delivery_date"
-                 required>
+                 >
         </div>
 
         <!-- TOTAL -->
@@ -68,7 +68,6 @@
                 name="total_amount"
                 id="totalAmount"
                 placeholder="0"
-                required
                 oninput="calculateDue()"
                 onwheel="this.blur()">
         </div>
@@ -130,7 +129,7 @@
 
 </div>
 
-<script>
+{% comment %} <script>
 function calculateDue() {
     let total = parseFloat(document.getElementById("totalAmount").value) || 0;
     let advance = parseFloat(document.getElementById("advancePaid").value) || 0;
@@ -144,9 +143,9 @@ function calculateDue() {
 
     document.getElementById("dueAmount").value = "₹" + due.toFixed(2);
 }
-</script>
+</script> {% endcomment %}
 <script>
-function calculateDue() {
+/* function calculateDue() {
     let total = parseFloat(document.getElementById("totalAmount").value) || 0;
     let advance = parseFloat(document.getElementById("advancePaid").value) || 0;
 
@@ -162,6 +161,29 @@ function calculateDue() {
 
     let due = total - advance;
     document.getElementById("dueAmount").value = "₹" + due.toFixed(2);
+} */
+
+function calculateDue() {
+  let totalInput = document.getElementById("totalAmount").value.trim();
+  let advanceInput = document.getElementById("advancePaid").value.trim();
+
+  let total = totalInput === "" ? null : parseFloat(totalInput);
+  let advance = parseFloat(advanceInput) || 0;
+
+  if ( advance < 0) advance = 0;
+
+  let due = 0;
+
+  if (total !== null && total > 0) {
+    if (advance > total) {
+      advance = total;
+      document.getElementById("advancePaid").value = total.toFixed(2);
+    }
+    due = total - advance;
+  } else {
+    due = 0;
+  }
+  document.getElementById("dueAmount").value = "₹" + due.toFixed(2);
 }
 
 /* BLOCK ARROW UP/DOWN VALUE CHANGE */

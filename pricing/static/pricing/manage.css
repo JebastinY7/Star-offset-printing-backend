@@ -10,6 +10,24 @@
     font-family: "DM Sans", Arial, sans-serif;
 }
 
+:root {
+    /* CORE THEME */
+    --gold: #D4AF37;
+    --gold-soft: #F5E6A7;
+    --black: #1E1E1E;
+    --dark: #2C2C2C;
+    --green: #16A34A;
+    --green-soft: #DCFCE7;
+    --bg-page: #f4f5f7;
+    --bg-card: #ffffff;
+    --text: #1a1d21;
+    --text-muted: #6b7280;
+    --border: #e8eaed;
+    --shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    --radius: 16px;
+    --radius-sm: 12px;
+}
+
 body {
     background: #f3f4f6;
     color: #111827;
@@ -69,8 +87,8 @@ body {
 .manage-search-input:focus,
 .manage-category-filter:focus {
     outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
+    border-color: var(--gold);
+    box-shadow: 0 10px 18px rgba(212, 175, 55, 0.3)
 }
 
 /* BUTTONS */
@@ -95,9 +113,13 @@ body {
 
 /* PRIMARY */
 .manage-search-btn,
-.manage-back-btn,
 .manage-page-btn {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    background: linear-gradient(135deg, var(--gold), #dfb362);
+    color: black;
+}
+
+.manage-back-btn {
+    background: black;
     color: white;
 }
 
@@ -105,7 +127,7 @@ body {
 .manage-back-btn:hover,
 .manage-page-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 18px rgba(37,99,235,0.22);
+    box-shadow: 0 10px 18px rgba(212, 175, 55, 0.3)
 }
 
 /* RESET */
@@ -136,7 +158,7 @@ body {
 .manage-category-title {
     font-size: 30px;
     font-weight: 800;
-    color: #2563eb;
+    color: black;
     margin-bottom: 4px;
 }
 
@@ -193,7 +215,7 @@ body {
     position: sticky;
     top: 0;
     background: #eff6ff;
-    color: #1e3a8a;
+    color: var(--green);
     font-size: 15px;
     font-weight: 800;
     z-index: 2;
@@ -217,7 +239,7 @@ body {
 
 /* ROW COLORS */
 .manage-table tbody tr:nth-child(even) {
-    background: #f9fafb;
+    background: #f9fbf9;
 }
 
 .manage-table tbody tr:hover {
@@ -253,11 +275,11 @@ body {
 }
 
 .manage-edit-btn {
-    background: #2563eb;
+    background: var(--green);
 }
 
 .manage-edit-btn:hover {
-    background: #1d4ed8;
+    background: #286c21;
 }
 
 .manage-delete-btn {

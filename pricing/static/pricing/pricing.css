@@ -11,18 +11,21 @@
 }
 
 :root {
-    --bg: #f3f4f6;
-    --card: #ffffff;
-    --text: #111827;
-    --muted: #6b7280;
-    --border: #d1d5db;
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
-    --danger: #dc2626;
-    --danger-hover: #b91c1c;
-    --shadow: 0 4px 14px rgba(0,0,0,0.08);
-    --shadow-hover: 0 8px 20px rgba(0,0,0,0.12);
-    --radius: 14px;
+    /* CORE THEME */
+    --gold: #D4AF37;
+    --gold-soft: #F5E6A7;
+    --black: #1E1E1E;
+    --dark: #2C2C2C;
+    --green: #16A34A;
+    --green-soft: #DCFCE7;
+    --bg-page: #f4f5f7;
+    --bg-card: #ffffff;
+    --text: #1a1d21;
+    --text-muted: #6b7280;
+    --border: #e8eaed;
+    --shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    --radius: 16px;
+    --radius-sm: 12px;
 }
 
 .pricing-page {
@@ -55,7 +58,7 @@
 
 /* TOP ACTION */
 .manage-btn {
-    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+    background: linear-gradient(135deg, var(--black));
     color: white;
     text-decoration: none;
     padding: 12px 18px;
@@ -97,7 +100,7 @@
     font-size: 20px;
     margin-bottom: 14px;
     padding-bottom: 8px;
-    border-bottom: 2px solid #e5e7eb;
+    border-bottom: 2px solid var(--gold);
 }
 
 /* FORM */
@@ -141,19 +144,19 @@ textarea {
 /* BUTTON */
 .pricing-page button {
     width: 100%;
-    background: var(--primary);
-    color: white;
+    background: var(--gold);
+    color: black;
     border: none;
     padding: 11px 14px;
     border-radius: 10px;
     font-size: 15px;
-    font-weight: bold;
+    font-weight: 600;
     cursor: pointer;
     transition: 0.3s;
 }
 
 button:hover {
-    background: var(--primary-hover);
+    background: #7c5c10;
 }
 
 /* PRICE RULE FORM */
@@ -338,7 +341,7 @@ tr:nth-child(even) {
     margin-top: 8px;
     margin-bottom: 18px;
 
-    background: #2563eb;
+    background: var(--black);
     color: white;
 
     border: none;
@@ -354,7 +357,7 @@ tr:nth-child(even) {
 }
 
 #add-variant-btn:hover {
-    background: #1d4ed8;
+    background: #333;
     transform: translateY(-1px);
 }
 
@@ -365,7 +368,7 @@ tr:nth-child(even) {
 .remove-variant-btn {
     padding: 10px 14px;
 
-    background: #ef4444;
+    background: #efc744;
     color: white;
 
     border: none;
@@ -382,7 +385,7 @@ tr:nth-child(even) {
 }
 
 .remove-variant-btn:hover {
-    background: #dc2626;
+    background: #dca526;
 }
 
 

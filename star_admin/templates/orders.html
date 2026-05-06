@@ -57,11 +57,16 @@
                 {% for order in orders %}
                 <tr>
 
-                    <td>O{{ order.id|stringformat:"03d" }}</td>
+                    <td>W{{ order.id|stringformat:"03d" }}</td>
 
                     <td>{{ order.customer.name }}</td>
 
-                    <td>{{ order.work_name }}</td>
+                    <td>
+                        {{ order.work_name }}
+                        <span class="toggle-arrow" onclick="toggleRow({{ order.id }})" id="arrow-{{ order.id }}">
+                            ▼
+                        </span>
+                    </td>
 
                     <td>{{ order.order_date|date:"d-m-Y" }}</td>
 
@@ -109,6 +114,15 @@
                         </div>
                     </td>
 
+                </tr>
+
+                <tr id="notes-{{ order.id }}" class="notes-row">
+                    <td colspan="10">
+                        <div class="notes-box">
+                            <strong>Notes:</strong>
+                            {{ order.notes|default:"No notes available" }}
+                        </div>
+                    </td>
                 </tr>
 
                 {% empty %}
@@ -172,6 +186,33 @@ function openDeleteModal(orderId) {
 
 function closeDeleteModal() {
     document.getElementById("deleteOrderModal").style.display = "none";
+}
+</script>
+
+<script>
+function toggleRow(id) {
+    document.querySelectorAll(".notes-row").forEach(row => {
+        if (row.id !== "notes-" + id) {
+            row.style.display = "none";
+        }
+    });
+
+    document.querySelectorAll(".toggle-arrow").forEach(a => {
+        if (a.id !== "arrow-" + id) {
+            a.innerHTML = "▼";
+        }
+    });
+
+    let row = document.getElementById("notes-" + id);
+    let arrow = document.getElementById("arrow-" + id);
+
+    if (row.style.display === "table-row") {
+        row.style.display = "none";
+        arrow.innerHTML = "▼";
+    } else {
+        row.style.display = "table-row";
+        arrow.innerHTML = "▲";
+    }
 }
 </script>
 {% endblock %}

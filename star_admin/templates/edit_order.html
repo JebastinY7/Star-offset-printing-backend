@@ -33,13 +33,13 @@
 
             <div class="form-group">
                 <label>Delivery Date</label>
-                <input type="date" name="delivery_date" value="{{ order.delivery_date|date:'Y-m-d' }}" required>
+                <input type="date" name="delivery_date" value="{{ order.delivery_date|date:'Y-m-d' }}">
             </div>
 
             <div class="form-group">
                 <label>Total Amount</label>
                 <input type="number" step="0.01" name="total_amount" id="totalAmount"
-                       value="{{ order.total_amount }}" oninput="calculateDue()" required>
+                       value="{{ order.total_amount }}" oninput="calculateDue()">
             </div>
 
             <div class="form-group">
@@ -65,10 +65,10 @@
 
         </div>
 
-        {% comment %} <div class="form-group full-width">
+        <div class="form-group full-width">
             <label>Notes</label>
             <textarea name="notes" rows="4">{{ order.notes }}</textarea>
-        </div> {% endcomment %}
+        </div> 
 
         <button type="submit" class="save-order-btn">Update Order</button>
         <a href="/orders/" class="cancel-order-btn">Back</a>
@@ -77,17 +77,28 @@
 
 <script>
 function calculateDue() {
-    let total = parseFloat(document.getElementById("totalAmount").value) || 0;
-    let advance = parseFloat(document.getElementById("advancePaid").value) || 0;
+    let totalInput = document.getElementById("totalAmount");
+    let advanceInput = document.getElementById("advancePaid");
 
-    if (advance > total) {
+    let total = parseFloat(totalInput.value);
+    let advance = parseFloat(advanceInput.value);
+
+    if (isNaN(total)) total = 0;
+    if (isNaN(advance)) advance = 0;
+
+    // ❌ DO NOT overwrite advance input automatically
+    // Just validate
+    if (total > 0 && advance > total) {
         advance = total;
-        document.getElementById("advancePaid").value = total.toFixed(2);
     }
 
     let due = total - advance;
+    if (due < 0) due = 0;
+
     document.getElementById("dueAmount").value = "₹" + due.toFixed(2);
 }
+
+window.onload = calculateDue;
 
 window.onload = calculateDue;
 </script>
