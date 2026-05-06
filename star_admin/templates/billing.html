@@ -388,10 +388,22 @@ function addItem() {
         return;
       }
 
-      let totalPrice = qty * price;
-      
-      let discount = previewDiscount;
-      let total = previewTotal || totalPrice;
+      let grossAmount = 0;
+
+      if (
+          categoryName.toLowerCase().includes("notice") ||
+          categoryName.toLowerCase().includes("banner") ||
+          categoryName.toLowerCase().includes("bill book") ||
+          categoryName.toLowerCase().includes("poster")
+      ) {
+          grossAmount = price;
+      }
+      else {
+          grossAmount = qty * price;
+      }
+
+let discount = previewDiscount;
+let total = previewTotal || grossAmount;
 
 
       let itemName = `${categoryName} - ${sizeName} - ${variantName}`;
@@ -403,6 +415,7 @@ function addItem() {
         variantId,
         qty,
         price,
+        gross: grossAmount,
         discount,
         extraCharge,
         extraPurpose,
@@ -429,7 +442,7 @@ function renderItems() {
   tbody.innerHTML = "";
 
   items.forEach((item, index) => {
-    let totalPrice = item.price*item.qty;
+    let totalPrice = parseFloat(item.gross || 0);
 
     let percent = totalPrice? (item.discount / totalPrice) * 100 : 0;
 
@@ -543,7 +556,7 @@ function editItem(index) {
       document.getElementById("itemTotalPreview").value = parseFloat(item.total || 0).toFixed(2);
 
       // DISCOUNT %
-      let gross = (parseFloat(item.price || 0) * parseFloat(item.qty || 0));
+      let gross = parseFloat(item.gross || 0);
       let percent = gross ? ((parseFloat(item.discount || 0) / gross) * 100) : 0;
 
       document.getElementById("itemDiscount").value = percent.toFixed(2);
@@ -585,17 +598,15 @@ function customRoundAmount(amount) {
 
 /* TOTAL CALC */
 function calculateTotal() {
-  {% comment %} let gross = items.reduce((sum, item) => {
-    let price = parseFloat(item.price) || 0;
-    let qty = parseFloat(item.qty) || 0;
-    let extra = parseFloat(item.extraCharge) || 0;
-
-    return sum + (price * qty) + extra;
-  }, 0); {% endcomment %}
 
   let gross = items.reduce((sum, item) => {
-    let total = parseFloat(item.total) || 0;
-    return sum + total;
+
+    let itemGross =
+        (parseFloat(item.gross) || 0) +
+        (parseFloat(item.extraCharge) || 0);
+
+    return sum + itemGross;
+
 }, 0);
 
   let itemDiscount = items.reduce((sum, item) => {
@@ -685,7 +696,11 @@ document.getElementById("remainingOldDue").innerText =
 
 let currentBillDue = Math.max(final - paid, 0);
 
-  let due = currentBillDue + remainingOldDue;
+let due = currentBillDue;
+
+{% if not bill %}
+due += remainingOldDue;
+{% endif %}
 
   {% comment %} let status = "PAID";
 
@@ -819,12 +834,13 @@ document.addEventListener("DOMContentLoaded", function () {
     is_member: {{ bill.customer.is_member|yesno:"true,false" }},
     member_id: "{{ bill.customer.member_id|default:''|escapejs }}",
     points: {{ bill.customer.points|default:0 }},
-    due_amount: {{ bill.previous_due|default:0 }},
+    due_amount: {{ bill.customer.due_amount|default:0 }},
     expiry_date: "{{ bill.customer.expiry_date|date:'Y-m-d' }}"
   });
 
   // PAYMENT PREFILL
   document.getElementById("paidAmount").value = "{{ bill.paid_amount|default:0 }}";
+  document.getElementById("paidAmount").dataset.manual = "true";
   document.getElementById("oldDuePayment").value = "{{ bill.old_due_paid|default:0 }}";
   document.getElementById("extraDiscount").value = "{{ bill.extra_discount|default:0 }}";
 
@@ -840,6 +856,7 @@ document.addEventListener("DOMContentLoaded", function () {
       qty: parseFloat("{{ i.qty|default:0 }}"),
       price: parseFloat("{{ i.price|default:0 }}"),
       discount: parseFloat("{{ i.discount|default:0 }}"),
+      gross: parseFloat("{{ i.total|default:0 }}") + parseFloat("{{ i.discount|default:0 }}") - parseFloat("{{ i.extra_charge|default:0 }}"),
       extraCharge: parseFloat("{{ i.extra_charge|default:0 }}"),
       extraPurpose: "{{ i.extra_purpose|default:''|escapejs }}",
       total: parseFloat("{{ i.total|default:0 }}")

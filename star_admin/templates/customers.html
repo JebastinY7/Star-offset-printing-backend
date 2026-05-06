@@ -79,7 +79,16 @@
                         {% comment %} <td>{{ c.points }}</td> {% endcomment %}
 
                         <td>{% if c.due_amount %}
-                                <span class="c-due">{{ c.due_amount }}</span>
+                            <span
+                                class="c-due due-clickable"
+                                onclick="openDueModal(
+                                '{{ c.id }}',
+                                '{{ c.name|escapejs }}',
+                                '{{ c.due_amount }}'
+                                )"
+                            >
+                                ₹{{ c.due_amount }}
+                            </span>
                             {% else %}
                                 -
                             {% endif %}
@@ -169,6 +178,49 @@
 
     </div>
     {% endif %}
+</div>
+
+<!-- Due Modal -->
+<div id="dueModal" class="due-modal">
+
+  <div class="due-modal-content">
+
+    <h3>Pay Customer Due</h3>
+
+    <input type="hidden" id="dueCustomerId">
+
+    <div class="due-info">
+      <p><strong>Customer:</strong> <span id="dueCustomerName"></span></p>
+
+      <p><strong>Current Due:</strong>
+        ₹<span id="dueCurrentAmount"></span>
+      </p>
+    </div>
+
+    <input
+      type="number"
+      id="duePayAmount"
+      placeholder="Enter amount"
+    >
+
+    <div class="due-modal-actions">
+
+      <button type="button" onclick="payFullDue()">
+        Full Pay
+      </button>
+
+      <button type="button" onclick="submitDuePayment()">
+        Submit
+      </button>
+
+      <button type="button" onclick="closeDueModal()">
+        Cancel
+      </button>
+
+    </div>
+
+  </div>
+
 </div>
 
 
@@ -310,6 +362,82 @@ renewModal.addEventListener("click", function(e) {
     }
 });
     
+</script>
+
+<script>
+
+function openDueModal(id, name, due) {
+
+    document.getElementById("dueModal").style.display = "flex";
+
+    document.getElementById("dueCustomerId").value = id;
+
+    document.getElementById("dueCustomerName").innerText = name;
+
+    document.getElementById("dueCurrentAmount").innerText = due;
+
+    document.getElementById("duePayAmount").value = "";
+}
+
+function closeDueModal() {
+    document.getElementById("dueModal").style.display = "none";
+}
+
+function payFullDue() {
+
+    let due =
+      document.getElementById("dueCurrentAmount").innerText;
+
+    document.getElementById("duePayAmount").value = due;
+}
+
+function submitDuePayment() {
+
+    let customerId =
+      document.getElementById("dueCustomerId").value;
+
+    let amount =
+      document.getElementById("duePayAmount").value;
+
+    if (!amount || parseFloat(amount) <= 0) {
+        showToast("Enter valid amount");
+        return;
+    }
+
+    fetch("/pay-due/", {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+
+        body: JSON.stringify({
+            customer_id: customerId,
+            amount: amount
+        })
+
+    })
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        if (data.success) {
+
+            showToast("Due payment updated", "success");
+
+            setTimeout(() => {
+                location.reload();
+            }, 800);
+        }
+        else {
+            showToast(data.error || "Error");
+        }
+    });
+}
+
 </script>
 
 

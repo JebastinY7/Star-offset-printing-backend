@@ -43,4 +43,6 @@ urlpatterns = [
     path("get-discount/", views.get_discount, name="get_discount"),
     path('add-order/', views.add_order, name='add_order'),
     path('delete-membership/<int:id>/', views.delete_membership, name='delete_membership'),
+    path("pay-due/", views.pay_due, name="pay_due"),
+    # path("orders/<int:order_id>/bill/",views.generate_bill_from_order,name="generate_bill_from_order"),
 ]

@@ -997,7 +997,7 @@ def save_bill(request):
         ):
             customer_type = "Member"
 
-        gross_total = sum(Decimal(str(item['price'])) * Decimal(str(item['qty'])) for item in items)
+        gross_total = sum(Decimal(str(item['total'])) for item in items)
 
         item_discount_total = sum(Decimal(str(item['discount'])) for item in items)
         extra_discount = Decimal(request.POST.get("extraDiscount") or 0)
@@ -1201,7 +1201,7 @@ def renew_membership(request, id):
         if customer.category and customer.category.strip().lower() == "shop":
             amount = settings.shop_renewal_fee
         else:
-            amount = settings.renewal_fe
+            amount = settings.renewal_fee
 
             # if customer.category.strip().lower() == "shop":
             #     customer.category = "Customer"
@@ -1679,3 +1679,43 @@ def delete_order(request, id):
 
     messages.success(request, "Order deleted successfully")
     return redirect('/orders/')
+
+#Due
+def pay_due(request):
+
+    if request.method == "POST":
+
+        data = json.loads(request.body)
+
+        customer_id = data.get("customer_id")
+
+        amount = Decimal(data.get("amount"))
+
+        customer = Customer.objects.get(id=customer_id)
+
+        if amount > customer.due_amount:
+            return JsonResponse({
+                "success": False,
+                "error": "Amount exceeds due"
+            })
+
+        customer.due_amount -= amount
+
+        customer.save()
+
+        return JsonResponse({
+            "success": True
+        })
+
+    return JsonResponse({
+        "success": False
+    })
+
+
+# def generate_bill_from_order(request, order_id):
+
+#     order = Order.objects.get(id=order_id)
+
+#     return redirect(
+#     f"/billing/?customer={order.customer.id}&order={order.id}"
+# )

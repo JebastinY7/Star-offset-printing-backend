@@ -96,6 +96,23 @@
                     </td>
 
                     <td class="ordx-actions">
+
+                        {% if order.status == "completed" or order.status == "delivered" %}
+
+                        <div class="tooltip">
+                            <a href="{% url 'generate_bill_from_order' order.id %}"
+                            class="ordx-btn bill">
+
+                                <i class="fas fa-file-invoice"></i>
+
+                                <span class="tooltip-text">
+                                    Generate Bill
+                                </span>
+
+                            </a>
+                        </div>
+
+                        {% endif %}
                         <div class="tooltip">
                             <a href="{% url 'edit_order' order.id %}" class="ordx-btn edit">
                                 <i class="fas fa-pen"></i>
