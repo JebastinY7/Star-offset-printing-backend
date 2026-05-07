@@ -34,6 +34,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-fallback-key")
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = [
+    '127.0.0.1',
     "admin.starprinting.in",
     "https://web-production-d87ac.up.railway.app",
 ]

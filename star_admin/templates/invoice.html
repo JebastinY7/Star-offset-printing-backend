@@ -73,7 +73,13 @@
           -
         {% endif %}
       </td>
-      <td>{{ item.total }}</td>
+      <td>
+        {% if bill.current_due > 0 %}
+            {{ bill.gross_total }}
+        {% else %}
+            {{ item.total }}
+        {% endif %}
+      </td>
     </tr>
     {% endfor %}
   </tbody>
@@ -127,10 +133,17 @@
       </div> {% endcomment %}
 
       {% if bill.current_due > 0 %}
+
       <div class="summary-row">
-        <span>Due Amount :</span>
-        <span>₹ {{ bill.current_due }}</span>
+          <span>Paid Amount :</span>
+          <span>₹ {{ bill.paid_amount }}</span>
       </div>
+
+      <div class="summary-row">
+          <span>Due Amount :</span>
+          <span>₹ {{ bill.current_due }}</span>
+      </div>
+
       {% endif %}
 
       {% if bill.old_due_paid > 0 %}

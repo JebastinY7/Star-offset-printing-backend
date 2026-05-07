@@ -398,6 +398,19 @@ function addItem() {
       ) {
           grossAmount = price;
       }
+      else if (categoryName.toLowerCase().includes("train ticket")) {
+        let sizeText = sizeName.toLowerCase();
+
+        if (sizeText.includes("minimum")) {
+          grossAmount = 50 + ((qty - 1) * 20);
+        }
+        else if (sizeText.includes("thakkal")) {
+          grossAmount = 75 + ((qty - 1) * 20);
+        }
+        else if (sizeText.includes("premium")) {
+          grossAmount = 100 + ((qty - 1) * 20);
+        }
+      }
       else {
           grossAmount = qty * price;
       }

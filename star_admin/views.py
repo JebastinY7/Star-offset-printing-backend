@@ -997,7 +997,16 @@ def save_bill(request):
         ):
             customer_type = "Member"
 
-        gross_total = sum(Decimal(str(item['total'])) for item in items)
+        # gross_total = sum(Decimal(str(item['total'])) for item in items)
+
+        gross_total = sum(
+            (
+                Decimal(str(item['total'])) -
+                Decimal(str(item.get('extraCharge', 0)))  + 
+                Decimal(str(item['discount']))
+            ) 
+            for item in items
+        )
 
         item_discount_total = sum(Decimal(str(item['discount'])) for item in items)
         extra_discount = Decimal(request.POST.get("extraDiscount") or 0)
@@ -1038,9 +1047,24 @@ def save_bill(request):
 
         current_due = max(final - paid_amount, Decimal('0'))
 
+        remaining_old_due = max(previous_due - old_due_payment, Decimal('0'))
+
+        current_due = max(final - paid_amount, Decimal('0'))
+
+        total_remaining_due = remaining_old_due + current_due
+
+        if total_remaining_due > 0:
+            for item in items:
+                item['discount'] = 0    
+            total_discount = Decimal('0')
+            gross_total = gross_total
+            raw_final = gross_total + total_extra_charge
+            final = raw_final.quantize(Decimal('1'))
+            current_due = max(final - paid_amount, Decimal('0'))
+
         # current_bill_due = max(final - paid_amount, Decimal('0'))
 
-        remaining_old_due = max(previous_due - old_due_payment, Decimal('0'))
+        # remaining_old_due = max(previous_due - old_due_payment, Decimal('0'))
 
         due_amount = current_due + remaining_old_due
 
