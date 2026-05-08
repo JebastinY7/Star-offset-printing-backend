@@ -1978,6 +1978,10 @@ select option {
   color: #f20707;
 }
 
+.icon.bill {
+  color: #000;
+}
+
 
 
 /* Reports */
@@ -3182,6 +3186,16 @@ select option {
     background:#d9363e;
 }
 
+.ordx-btn.bill{
+    background: #2563eb;
+    color: white;
+}
+
+.ordx-btn.bill i{
+    color: white;
+    font-size: 15px;
+}
+
 /* Modal */
 .ordx-modal{
     display:none;
@@ -3310,6 +3324,105 @@ select option {
 }
 
 
+/* New add-order */
+/* ITEMS SECTION */
+.order-items-card{
+    margin-top:30px;
+}
+
+/* GRID */
+.items-grid{
+    display:grid;
+    grid-template-columns:
+        1.2fr
+        1fr
+        1fr
+        120px
+        140px
+        140px
+        120px;
+
+    gap:14px;
+    align-items:end;
+    margin-top:15px;
+}
+
+/* INPUTS */
+.items-grid select,
+.items-grid input{
+    width:100%;
+    height:56px;
+    border:1px solid #d8dce5;
+    border-radius:14px;
+    padding:0 18px;
+    font-size:15px;
+    background:#fff;
+}
+
+/* ADD BUTTON */
+.add-item-btn{
+    height:56px;
+    border:none;
+    border-radius:14px;
+    background:#d4af37;
+    color:#000;
+    font-weight:700;
+    font-size:18px;
+    cursor:pointer;
+}
+
+/* TABLE */
+.order-items-table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:25px;
+    overflow:hidden;
+    border-radius:16px;
+}
+
+.order-items-table th{
+    background:#efe2a3;
+    padding:18px;
+    font-size:18px;
+}
+
+.order-items-table td{
+    padding:18px;
+    border-top:1px solid #eee;
+    text-align:center;
+}
+
+/* SUMMARY */
+.payment-summary-card{
+    margin-top:35px;
+}
+
+.summary-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:25px;
+}
+
+/* MOBILE */
+@media(max-width:1100px){
+
+    .items-grid{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .summary-grid{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:700px){
+
+    .items-grid{
+        grid-template-columns:1fr;
+    }
+}
+
+
 
 /* =========================
    STATUS BADGES
@@ -3345,6 +3458,13 @@ select option {
 .status-badge.cancelled {
   background: #fee2e2;
   color: #b91c1c;
+}
+
+.addx-form-grids{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+    margin-top: 20px;
 }
 
 /* =========================
@@ -3402,8 +3522,8 @@ select option {
 }
 
 .orders-pagination a {
-  background: #2563eb;
-  color: white;
+  background: var(--gold);
+  color: black;
   padding: 12px 20px;
   border-radius: 10px;
   text-decoration: none;
@@ -3502,7 +3622,7 @@ select option {
 }
 
 .back-orders-btn {
-  color: #2563eb;
+  color: var(--gold);
   font-weight: 700;
   text-decoration: none;
   font-size: 17px;
@@ -3572,8 +3692,8 @@ select option {
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
 }
 
 /* TEXTAREA */

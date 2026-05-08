@@ -1,51 +1,73 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<!-- JUST REPLACE YOUR TOP DIV -->
+
 <div class="addx-page">
 
   <!-- HEADER -->
   <div class="addx-header">
     <h1>Add New Order</h1>
-    <p>Create customer work orders with deadline, payment, and tracking</p>
 
-    <a href="{% url 'orders_page' %}" class="addx-back-link">
+    <p>
+      Create customer work orders with deadline,
+      payment and production tracking
+    </p>
+
+    <a href="{% url 'orders_page' %}" class="back-orders-btn">
       ← Back to Orders
     </a>
   </div>
 
-  <!-- FORM CARD -->
+  <!-- FORM -->
   <div class="order-form-card addx-form-card">
+
     <form method="POST">
+
       {% csrf_token %}
 
+      <!-- TOP DETAILS -->
       <div class="form-grid addx-form-grid">
 
         <!-- CUSTOMER -->
         <div class="form-group addx-form-group">
           <label>Customer</label>
+
           <select name="customer" required>
             <option value="">Select Customer</option>
+
             {% for customer in customers %}
-              <option value="{{ customer.id }}">
-                {{ customer.name }} - {{ customer.phone }}
-              </option>
+            <option value="{{ customer.id }}">
+              {{ customer.name }} - {{ customer.phone }}
+            </option>
             {% endfor %}
           </select>
         </div>
-
-        <!-- WORK -->
+        
+        
         <div class="form-group addx-form-group">
           <label>Work Name</label>
           <input type="text"
-                 name="work_name"
-                 placeholder="e.g. Visiting Card, Banner, Xerox"
-                 required>
+                name="work_name"
+                placeholder="e.g. Visiting Card, Wedding Notice" required>
+        </div>
+        </div>
+
+        <div class="addx-form-grids">
+        <div class="form-group addx-form-group">
+          <label>Status</label>
+
+          <select name="status">
+            <option value="pending">Pending</option>
+            <option value="progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="delivered">Delivered</option>
+          </select>
         </div>
 
         <!-- ORDER DATE -->
         <div class="form-group addx-form-group">
           <label>Order Date</label>
+
           <input type="date"
                  name="order_date"
                  value="{{ today|date:'Y-m-d' }}"
@@ -55,146 +77,450 @@
         <!-- DELIVERY DATE -->
         <div class="form-group addx-form-group">
           <label>Delivery Date</label>
+
           <input type="date"
-                 name="delivery_date"
-                 >
+                 name="delivery_date">
         </div>
+      </div>
+      
 
-        <!-- TOTAL -->
-        <div class="form-group addx-form-group">
-          <label>Total Amount</label>
-          <input type="text"
-                inputmode="decimal"
-                name="total_amount"
-                id="totalAmount"
-                placeholder="0"
-                oninput="calculateDue()"
-                onwheel="this.blur()">
-        </div>
 
-        <!-- ADVANCE -->
-        <div class="form-group addx-form-group">
-          <label>Advance Paid</label>
-          <input type="text"
-                inputmode="decimal"
-                name="advance_paid"
-                id="advancePaid"
-                placeholder="0"
-                oninput="calculateDue()"
-                onwheel="this.blur()">
-        </div>
+      <!-- ITEM SECTION -->
+      <div class="order-items-card">
 
-        <!-- DUE -->
-        <div class="form-group addx-form-group">
-          <label>Due Amount</label>
-          <input type="text"
-                 id="dueAmount"
-                 readonly
-                 placeholder="₹0.00">
-        </div>
+        <h2>Items</h2>
 
-        <!-- STATUS -->
-        <div class="form-group addx-form-group">
-          <label>Status</label>
-          <select name="status">
-            <option value="pending">Pending</option>
-            <option value="progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="delivered">Delivered</option>
+        <div class="items-grid">
+
+          <!-- CATEGORY -->
+          <select id="itemCategory">
+            <option value="">Select Category</option>
+
+            {% for cat in categories %}
+            <option value="{{ cat.id }}">
+              {{ cat.name }}
+            </option>
+            {% endfor %}
           </select>
+
+          <!-- SIZE -->
+          <select id="itemSize">
+            <option value="">Select Size</option>
+          </select>
+
+          <!-- VARIANT -->
+          <select id="itemVariant">
+            <option value="">Select Variant</option>
+          </select>
+
+          <!-- QTY -->
+          <input type="number"
+                 id="itemQty"
+                 placeholder="Qty"
+                 min="1">
+
+          <!-- PRICE -->
+          <input type="text"
+                 id="itemPrice"
+                 placeholder="Price"
+                 readonly>
+
+          <!-- TOTAL -->
+          <input type="text"
+                 id="itemTotal"
+                 placeholder="Total"
+                 readonly>
+
+          <!-- ADD BUTTON -->
+          <button type="button"
+                  class="add-item-btn"
+                  onclick="addOrderItem()">
+
+            Add
+          </button>
+
         </div>
 
-        <!-- NOTES -->
+
+        <!-- TABLE -->
+        <table class="order-items-table">
+
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>Total</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody id="orderItemsBody">
+          </tbody>
+
+        </table>
+
+      </div>
+
+
+      <!-- PAYMENT SUMMARY -->
+      <div class="payment-summary-card">
+
+        <div class="summary-grid">
+
+          <!-- GROSS -->
+          <div class="form-group addx-form-group">
+            <label>Gross Total</label>
+
+            <input type="text"
+                   id="grossTotal"
+                   name="total_amount"
+                   readonly
+                   value="0.00">
+          </div>
+
+          <!-- ADVANCE -->
+          <div class="form-group addx-form-group">
+            <label>Advance Paid</label>
+
+            <input type="number"
+                   step="0.01"
+                   id="advancePaid"
+                   name="advance_paid"
+                   value="0"
+                   oninput="calculateDue()">
+          </div>
+
+          <!-- DUE -->
+          <div class="form-group addx-form-group">
+            <label>Due Amount</label>
+
+            <input type="text"
+                   id="dueAmount"
+                   readonly
+                   value="0.00">
+          </div>
+          <!-- NOTES -->
         <div class="form-group addx-form-group addx-full">
           <label>Description / Notes</label>
+
           <textarea name="notes"
-                    placeholder="Paper type, design notes, size, urgent work, printing details..."></textarea>
+            placeholder="Paper type, urgent work, design notes, printing details..."></textarea>
+        </div>
+
         </div>
 
       </div>
 
-      <!-- ACTIONS -->
+
+      <!-- SAVE -->
       <div class="addx-btn-row">
-        <button type="submit" class="addx-save-btn">
+
+        <button type="submit"
+                class="addx-save-btn">
+
           Save Order
         </button>
 
-        <a href="{% url 'orders_page' %}" class="addx-cancel-btn">
+        <a href="{% url 'orders_page' %}"
+           class="addx-cancel-btn">
+
           Cancel
         </a>
+
       </div>
 
     </form>
+
   </div>
 
 </div>
 
-{% comment %} <script>
-function calculateDue() {
-    let total = parseFloat(document.getElementById("totalAmount").value) || 0;
-    let advance = parseFloat(document.getElementById("advancePaid").value) || 0;
 
-    if (advance > total) {
-        advance = total;
-        document.getElementById("advancePaid").value = total.toFixed(2);
-    }
 
-    let due = total - advance;
-
-    document.getElementById("dueAmount").value = "₹" + due.toFixed(2);
-}
-</script> {% endcomment %}
 <script>
-/* function calculateDue() {
-    let total = parseFloat(document.getElementById("totalAmount").value) || 0;
-    let advance = parseFloat(document.getElementById("advancePaid").value) || 0;
 
-    if (advance > total) {
-        advance = total;
-        document.getElementById("advancePaid").value = total.toFixed(2);
+let orderItems = [];
+
+
+/* ADD ITEM */
+function addOrderItem() {
+
+    let category =
+      document.getElementById("itemCategory");
+
+    let size =
+      document.getElementById("itemSize");
+
+    let variant =
+      document.getElementById("itemVariant");
+
+    let qty =
+      parseFloat(document.getElementById("itemQty").value) || 0;
+
+    let price =
+      parseFloat(document.getElementById("itemPrice").value) || 0;
+
+    if (!category.value || !size.value || !variant.value || qty <= 0) {
+        alert("Fill all item fields");
+        return;
     }
 
-    if (advance < 0) {
-        advance = 0;
-        document.getElementById("advancePaid").value = "0";
-    }
+    let total =
+  parseFloat(document.getElementById("itemTotal").value) || 0;
 
-    let due = total - advance;
-    document.getElementById("dueAmount").value = "₹" + due.toFixed(2);
-} */
+    orderItems.push({
+    category_id: category.value,
+    category: category.options[category.selectedIndex].text,
+    size_id: size.value,
+size: size.options[size.selectedIndex].text,
 
-function calculateDue() {
-  let totalInput = document.getElementById("totalAmount").value.trim();
-  let advanceInput = document.getElementById("advancePaid").value.trim();
+variant_id: variant.value,
+variant: variant.options[variant.selectedIndex].text,
+    qty: qty,
+    price: price,
+    total: total
+});
 
-  let total = totalInput === "" ? null : parseFloat(totalInput);
-  let advance = parseFloat(advanceInput) || 0;
-
-  if ( advance < 0) advance = 0;
-
-  let due = 0;
-
-  if (total !== null && total > 0) {
-    if (advance > total) {
-      advance = total;
-      document.getElementById("advancePaid").value = total.toFixed(2);
-    }
-    due = total - advance;
-  } else {
-    due = 0;
-  }
-  document.getElementById("dueAmount").value = "₹" + due.toFixed(2);
+    renderItems();
 }
 
-/* BLOCK ARROW UP/DOWN VALUE CHANGE */
-document.addEventListener("keydown", function(e) {
-    if (
-        (e.target.id === "totalAmount" || e.target.id === "advancePaid") &&
-        (e.key === "ArrowUp" || e.key === "ArrowDown")
-    ) {
-        e.preventDefault();
+
+
+/* RENDER ITEMS */
+function renderItems() {
+
+    let tbody =
+      document.getElementById("orderItemsBody");
+
+    tbody.innerHTML = "";
+
+    let gross = 0;
+
+    orderItems.forEach((item, index) => {
+
+        gross += item.total;
+
+        tbody.innerHTML += `
+        <tr>
+
+          <td>
+            ${item.category}
+            -
+            ${item.size}
+            -
+            ${item.variant}
+            <input type="hidden" name="item_category[]" value="${item.category_id}">
+            <input type="hidden" name="item_size[]" value="${item.size_id}">
+            <input type="hidden" name="item_variant[]" value="${item.variant_id}">
+            <input type="hidden" name="item_qty[]" value="${item.qty}">
+            <input type="hidden" name="item_price[]" value="${item.price}">
+            <input type="hidden" name="item_total[]" value="${item.total}">
+          </td>
+
+          <td>${item.qty}</td>
+
+          <td>₹${item.price.toFixed(2)}</td>
+
+          <td>₹${item.total.toFixed(2)}</td>
+
+          <td>
+              
+              <div class="tooltip">
+                <button type="button"
+                    onclick="removeItem(${index})">X</button>
+                    <span class="tooltip-text">Remove</span>
+              </div>
+           
+          </td>
+
+        </tr>
+        `;
+    });
+
+    document.getElementById("grossTotal").value =
+      gross.toFixed(2);
+
+    calculateDue();
+}
+
+
+
+
+/* REMOVE ITEM */
+function removeItem(index) {
+
+    orderItems.splice(index, 1);
+
+    renderItems();
+}
+
+
+
+/* DUE */
+function calculateDue() {
+
+    let gross =
+      parseFloat(document.getElementById("grossTotal").value) || 0;
+
+    let advance =
+      parseFloat(document.getElementById("advancePaid").value) || 0;
+
+    if (advance > gross) {
+        advance = gross;
+
+        document.getElementById("advancePaid").value =
+          gross.toFixed(2);
     }
+
+    let due = gross - advance;
+
+    document.getElementById("dueAmount").value =
+      due.toFixed(2);
+}
+
+
+const categorySelect = document.getElementById("itemCategory");
+const sizeSelect = document.getElementById("itemSize");
+const variantSelect = document.getElementById("itemVariant");
+
+categorySelect.addEventListener("change", function () {
+
+    const categoryId = this.value;
+
+    fetch(`/get-sizes/?category_id=${categoryId}`)
+        .then(response => response.json())
+        .then(data => {
+
+            sizeSelect.innerHTML =
+                '<option value="">Select Size</option>';
+
+            data.sizes.forEach(size => {
+
+                sizeSelect.innerHTML += `
+                    <option value="${size.id}">
+                        ${size.name}
+                    </option>
+                `;
+            });
+        });
+
 });
+
+sizeSelect.addEventListener("change", function () {
+
+    const sizeId = this.value;
+
+    fetch(`/get-variants/?size_id=${sizeId}`)
+        .then(response => response.json())
+        .then(data => {
+
+            variantSelect.innerHTML =
+                '<option value="">Select Variant</option>';
+
+            data.variants.forEach(variant => {
+
+                variantSelect.innerHTML += `
+                    <option value="${variant.id}">
+                        ${variant.name}
+                    </option>
+                `;
+            });
+
+        });
+
+});
+
+const priceInput =
+  document.getElementById("itemPrice");
+
+const qtyInput =
+  document.getElementById("itemQty");
+
+const totalInput =
+  document.getElementById("itemTotal");
+
+function fetchPrice() {
+
+    const categoryId = categorySelect.value;
+    const sizeId = sizeSelect.value;
+    const variantId = variantSelect.value;
+    const qty = qtyInput.value || 1;
+
+    if (!categoryId || !sizeId || !variantId) {
+        return;
+    }
+
+    fetch(
+      `/get-order-price/?category_id=${categoryId}&size_id=${sizeId}&variant_id=${variantId}&qty=${qty}`
+    )
+    .then(response => response.json())
+    .then(data => {
+      console.log(data);
+
+        priceInput.value = data.price || 0;
+
+        calculateItemTotal();
+
+    });
+
+}
+variantSelect.addEventListener(
+    "change",
+    fetchPrice
+);
+
+qtyInput.addEventListener(
+    "input",
+    fetchPrice
+);
+
+function calculateItemTotal() {
+
+    let qty =
+      parseFloat(qtyInput.value) || 0;
+
+    let price =
+      parseFloat(priceInput.value) || 0;
+
+    let categoryName = "";
+
+    if (categorySelect.selectedIndex >= 0) {
+
+        categoryName =
+          categorySelect.options[
+            categorySelect.selectedIndex
+          ].text.toLowerCase();
+
+    }
+
+    let grossAmount = 0;
+
+    /* FIXED / SLAB ITEMS */
+    if (
+        categoryName.includes("notice") ||
+        categoryName.includes("banner") ||
+        categoryName.includes("bill book") ||
+        categoryName.includes("poster")
+    ) {
+
+        grossAmount = price;
+
+    }
+
+    /* NORMAL ITEMS */
+    else {
+
+        grossAmount = qty * price;
+
+    }
+
+    totalInput.value =
+      grossAmount.toFixed(2);
+
+}
+
+
 </script>
 
 {% endblock %}

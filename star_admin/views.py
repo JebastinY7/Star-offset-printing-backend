@@ -562,20 +562,82 @@ def invoice(request, bill_id):
 
 def billing_system(request):
     bill_id = request.GET.get("bill_id")
+    order_id = request.GET.get("order_id")
 
     bill = None
     items = []
 
+    selected_order = None
+    order_items = []
+
+    prepared_items = []
+
     categories = Category.objects.all()
+
+    advance_paid = 0
+
+    if selected_order:
+        advance_paid = selected_order.advance_paid or 0
 
     if bill_id:
         bill = get_object_or_404(Bill, id=bill_id)
         items = BillItem.objects.filter(bill=bill)
-        
+    
+    if order_id:
+        selected_order = get_object_or_404(Order, id=order_id)
+        order_items = OrderItem.objects.filter(order=selected_order)
+
+        customer = selected_order.customer
+
+        for item in order_items:
+
+            discount = Decimal('0')
+
+            rule = PriceRule.objects.filter(
+                category=item.category,
+                size=item.size,
+                variant=item.variant,
+                min_qty__lte=item.qty
+            ).order_by('-min_qty').first()
+
+            if rule:
+
+                # Shop discount
+                if customer.category.lower() == "shop":
+
+                    discount = (
+                        item.total *
+                        Decimal(str(rule.shop_discount or 0))
+                    ) / 100
+
+                # Customer member discount
+                elif customer.category.lower() == "customer" and customer.is_member:
+
+                    discount = (
+                        item.total *
+                        Decimal(str(rule.cs_discount or 0))
+                    ) / 100
+
+            final_total = item.total - discount
+
+            prepared_items.append({
+                "category": item.category.name,
+                "size": item.size.name,
+                "variant": item.variant.name,
+                "qty": item.qty,
+                "price": item.price,
+                "discount": discount,
+                "extra_charge": 0,
+                "total": final_total,
+            })
 
     return render(request, 'billing.html', {
         'bill': bill,
         'items': items,
+        'selected_order': selected_order,
+        'order_items': order_items,
+        'prepared_items': prepared_items,
+        'advance_paid': advance_paid,
         'categories': categories
     })
 
@@ -1056,9 +1118,11 @@ def save_bill(request):
         if total_remaining_due > 0:
             for item in items:
                 item['discount'] = 0    
-            total_discount = Decimal('0')
-            gross_total = gross_total
-            raw_final = gross_total + total_extra_charge
+           #  total_discount = Decimal('0')
+            # gross_total = gross_total
+            total_discount = extra_discount
+            # raw_final = gross_total + total_extra_charge
+            raw_final = gross_total - extra_discount  + total_extra_charge
             final = raw_final.quantize(Decimal('1'))
             current_due = max(final - paid_amount, Decimal('0'))
 
@@ -1640,8 +1704,10 @@ def edit_order(request, id):
         'customers': customers
     })
 
+from .models import (Customer, Category, Order, OrderItem)
 def add_order(request):
     customers = Customer.objects.all().order_by("name")
+    categories = Category.objects.all().order_by("name")
 
     if request.method == "POST":
         
@@ -1649,10 +1715,14 @@ def add_order(request):
         if not customer_id:
             messages.error(request, "Please select a customer")
             return render(request, "add_order.html", {
-                "customers": customers
+                "customers": customers,
+                "categories": categories,
             })
         
+        customer = get_object_or_404(Customer, id=customer_id)
+
         work_name = request.POST.get("work_name")
+
         notes = request.POST.get("notes")
 
         order_date = request.POST.get("order_date")
@@ -1661,23 +1731,23 @@ def add_order(request):
         total_amount = Decimal(request.POST.get("total_amount") or 0)
         advance_paid = Decimal(request.POST.get("advance_paid") or 0)
 
-        customer = get_object_or_404(Customer, id=customer_id)
-
-        if total_amount > 0:
-            due_amount = max(total_amount - advance_paid, 0)
-        else:
-            due_amount = Decimal(0)
+        # if total_amount > 0:
+        #     due_amount = max(total_amount - advance_paid, 0)
+        # else:
+        #     due_amount = Decimal(0)
 
         if advance_paid < 0:
             advance_paid = Decimal(0)
         
-        if advance_paid > total_amount and total_amount > 0:
+        if advance_paid > total_amount:
             advance_paid = total_amount
+        
+        due_amount = total_amount - advance_paid
 
-        Order.objects.create(
+        order = Order.objects.create(
             customer=customer,
-            work_name=work_name,
             notes=notes,
+            work_name=work_name,
             order_date=order_date,
             delivery_date=delivery_date,
             total_amount=total_amount,
@@ -1686,14 +1756,53 @@ def add_order(request):
             status="pending"
         )
 
+        # ITEMS
+        categories_ids = request.POST.getlist("item_category[]")
+        sizes = request.POST.getlist("item_size[]")
+        variants = request.POST.getlist("item_variant[]")
+
+        qtys = request.POST.getlist("item_qty[]")
+        prices = request.POST.getlist("item_price[]")
+        totals = request.POST.getlist("item_total[]")
+
+        for i in range(len(categories_ids)):
+            OrderItem.objects.create(
+                order=order,
+                category_id=categories_ids[i],
+                size_id=sizes[i],
+                variant_id=variants[i],
+                qty=Decimal(qtys[i] or 0),
+                price=Decimal(prices[i] or 0),
+                total=Decimal(totals[i] or 0)
+            )
+        
+        # work_names = []
+
+        # for item in categories_ids:
+        #     category = Category.objects.get(id=item["category_id"])
+
+        #     work_names.append(category.name)
+        
+        # unique_names = list(set(work_names))
+
+        # if len(unique_names) == 1:
+        #     work_name = unique_names[0]
+        # else:
+        #     work_name = f"{unique_names[0]} + {len(unique_names)-1} more"
+
+        # order.work_name = work_name
+        # order.save()
+
         messages.success(request, "Order added successfully")
         return redirect("orders_page")
 
-    else:
-        return render(request,"add_order.html",
-            {"customers": customers,
-             "today": date.today()}
-        )
+
+    return render(request,"add_order.html", {
+        "customers": customers,
+        "today": date.today(),
+        "categories":categories,
+    })
+
 
 # Delete Order
 @require_POST
@@ -1736,10 +1845,34 @@ def pay_due(request):
     })
 
 
-# def generate_bill_from_order(request, order_id):
+def generate_bill_from_order(request, order_id):
 
-#     order = Order.objects.get(id=order_id)
+    order = Order.objects.get(id=order_id)
 
-#     return redirect(
-#     f"/billing/?customer={order.customer.id}&order={order.id}"
-# )
+    return redirect(
+    f"/billing/?customer={order.customer.id}&order={order.id}"
+)
+
+def get_order_price(request):
+
+    category_id = request.GET.get("category_id")
+    size_id = request.GET.get("size_id")
+    variant_id = request.GET.get("variant_id")
+    qty = int(request.GET.get("qty", 1))
+
+    rule = PriceRule.objects.filter(
+        category_id=category_id,
+        size_id=size_id,
+        variant_id=variant_id,
+        min_qty__lte=qty,
+        max_qty__gte=qty
+    ).first()
+
+    if rule:
+        return JsonResponse({
+            "price": str(rule.price)
+        })
+
+    return JsonResponse({
+        "price": 0
+    })

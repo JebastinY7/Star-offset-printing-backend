@@ -97,37 +97,36 @@
 
                     <td class="ordx-actions">
 
-                        {% comment %} {% if order.status == "completed" or order.status == "delivered" %}
+                        {% if order.status == "completed" or order.status == "delivered" %}
 
                         <div class="tooltip">
-                            <a href="{% url 'generate_bill_from_order' order.id %}"
-                            class="ordx-btn bill">
+                            <a href="/billing/?order_id={{ order.id }}" class="icon bill">
 
-                                <i class="fas fa-file-invoice"></i>
+                                <i class="fa-solid fa-file-invoice"></i></a>
 
                                 <span class="tooltip-text">
                                     Generate Bill
                                 </span>
 
-                            </a>
+                            
                         </div>
 
-                        {% endif %} {% endcomment %}
+                        {% endif %}
                         <div class="tooltip">
-                            <a href="{% url 'edit_order' order.id %}" class="ordx-btn edit">
-                                <i class="fas fa-pen"></i>
+                            <a href="{% url 'edit_order' order.id %}" class="icon edit">
+                                ✏️
+                                </a>
                                 <span class="tooltip-text">Edit</span>
-                            </a>
+                            
                         </div>
 
 
                         <div class="tooltip">
                             <button type="button"
-                                    class="ordx-btn delete"
-                                    onclick="openDeleteModal('{{ order.id }}')">
-                                <i class="fas fa-trash"></i>
+                                    class="icon delete"
+                                    onclick="openDeleteModal('{{ order.id }}')">🗑</button>
                                 <span class="tooltip-text">Delete</span>
-                            </button>
+                            
                         </div>
                     </td>
 

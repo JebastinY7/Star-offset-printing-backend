@@ -1,105 +1,280 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="order-form-card">
-    <h2>Edit Order #{{ order.id }}</h2>
+
+<div class="addx-page">
+
+  <!-- HEADER -->
+  <div class="addx-header">
+    <h1>Edit Order</h1>
+  </div>
+
+  <!-- FORM -->
+  <div class="order-form-card addx-form-card">
 
     <form method="POST">
-        {% csrf_token %}
 
-        <div class="form-grid">
+      {% csrf_token %}
 
-            <div class="form-group">
-                <label>Customer</label>
-                <select name="customer_id" required>
-                    {% for customer in customers %}
-                    <option value="{{ customer.id }}"
-                        {% if customer.id == order.customer.id %}selected{% endif %}>
-                        {{ customer.name }} - {{ customer.phone }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
+      <!-- TOP DETAILS -->
+      <div class="form-grid addx-form-grid">
 
-            <div class="form-group">
-                <label>Work Name</label>
-                <input type="text" name="work_name" value="{{ order.work_name }}" required>
-            </div>
+        <!-- CUSTOMER -->
+        <div class="form-group addx-form-group">
+          <label>Customer</label>
 
-            <div class="form-group">
-                <label>Order Date</label>
-                <input type="date" name="order_date" value="{{ order.order_date|date:'Y-m-d' }}" required>
-            </div>
+          <select name="customer" required>
+            <option value="">Select Customer</option>
 
-            <div class="form-group">
-                <label>Delivery Date</label>
-                <input type="date" name="delivery_date" value="{{ order.delivery_date|date:'Y-m-d' }}">
-            </div>
+            {% for customer in customers %}
+            <option value="{{ customer.id }}"
+            {% if customer.id == order.customer.id %}selected{% endif %}>
+              {{ customer.name }} - {{ customer.phone }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        
+        <div class="form-group addx-form-group">
+          <label>Work Name</label>
+          <input type="text"
+                name="work_name"
+                value="{{ order.work_name }}"
+                placeholder="e.g. Visiting Card, Wedding Notice" required>
+        </div>
+        </div>
 
-            <div class="form-group">
-                <label>Total Amount</label>
-                <input type="number" step="0.01" name="total_amount" id="totalAmount"
-                       value="{{ order.total_amount }}" oninput="calculateDue()">
-            </div>
+        <div class="addx-form-grids">
+        <div class="form-group addx-form-group">
+          <label>Status</label>
 
-            <div class="form-group">
-                <label>Advance Paid</label>
-                <input type="number" step="0.01" name="advance_paid" id="advancePaid"
-                       value="{{ order.advance_paid }}" oninput="calculateDue()">
-            </div>
+          <select name="status">
+            <option value="pending"
+            {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+            <option value="progress"
+            {% if order.status == 'progress' %}selected{% endif %}>In Progress</option>
+            <option value="completed"
+            {% if order.status == 'completed' %}selected{% endif %}>Completed</option>
+            <option value="delivered"
+            {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+          </select>
+        </div>
 
-            <div class="form-group">
-                <label>Due Amount</label>
-                <input type="text" id="dueAmount" readonly>
-            </div>
+        <!-- ORDER DATE -->
+        <div class="form-group addx-form-group">
+          <label>Order Date</label>
 
-            <div class="form-group">
-                <label>Status</label>
-                <select name="status">
-                    <option value="pending" {% if order.status == "pending" %}selected{% endif %}>Pending</option>
-                    <option value="progress" {% if order.status == "progress" %}selected{% endif %}>In Progress</option>
-                    <option value="completed" {% if order.status == "completed" %}selected{% endif %}>Completed</option>
-                    <option value="delivered" {% if order.status == "delivered" %}selected{% endif %}>Delivered</option>
-                </select>
-            </div>
+          <input type="date"
+                 name="order_date"
+                 value="{{ order.order_date|date:'Y-m-d' }}"
+                 required>
+        </div>
+
+        <!-- DELIVERY DATE -->
+        <div class="form-group addx-form-group">
+          <label>Delivery Date</label>
+
+          <input type="date"
+                 name="delivery_date"
+                 value="{{ order.delivery_date|date:'Y-m-d' }}">
+        </div>
+      </div>
+      
+
+
+      <!-- ITEM SECTION -->
+      <div class="order-items-card">
+
+        <h2>Items</h2>
+
+        <div class="items-grid">
+
+          <!-- CATEGORY -->
+          <select id="itemCategory">
+            <option value="">Select Category</option>
+
+            {% for cat in categories %}
+            <option value="{{ cat.id }}">
+              {{ cat.name }}
+            </option>
+            {% endfor %}
+          </select>
+
+          <!-- SIZE -->
+          <select id="itemSize">
+            <option value="">Select Size</option>
+          </select>
+
+          <!-- VARIANT -->
+          <select id="itemVariant">
+            <option value="">Select Variant</option>
+          </select>
+
+          <!-- QTY -->
+          <input type="number"
+                 id="itemQty"
+                 placeholder="Qty"
+                 min="1">
+
+          <!-- PRICE -->
+          <input type="text"
+                 id="itemPrice"
+                 placeholder="Price"
+                 readonly>
+
+          <!-- TOTAL -->
+          <input type="text"
+                 id="itemTotal"
+                 placeholder="Total"
+                 readonly>
+
+          <!-- ADD BUTTON -->
+          <button type="button"
+                  class="add-item-btn"
+                  onclick="addOrderItem()">
+
+            Add
+          </button>
 
         </div>
 
-        <div class="form-group full-width">
-            <label>Notes</label>
-            <textarea name="notes" rows="4">{{ order.notes }}</textarea>
-        </div> 
 
-        <button type="submit" class="save-order-btn">Update Order</button>
-        <a href="/orders/" class="cancel-order-btn">Back</a>
+        <!-- TABLE -->
+        <table class="order-items-table">
+
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>Total</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody id="orderItemsBody">
+
+            {% for item in order.items.all %}
+
+            <tr>
+
+            <td>
+                {{ item.category.name }} -
+                {{ item.size.name }} -
+                {{ item.variant.name }}
+
+                <input type="hidden" name="item_category[]" value="{{ item.category.id }}">
+                <input type="hidden" name="item_size[]" value="{{ item.size.id }}">
+                <input type="hidden" name="item_variant[]" value="{{ item.variant.id }}">
+                <input type="hidden" name="item_qty[]" value="{{ item.qty }}">
+                <input type="hidden" name="item_price[]" value="{{ item.price }}">
+                <input type="hidden" name="item_total[]" value="{{ item.total }}">
+            </td>
+
+            <td>{{ item.qty }}</td>
+
+            <td>₹{{ item.price }}</td>
+
+            <td>₹{{ item.total }}</td>
+
+            <td>
+                <div class="action-btns">
+                    <div class="tooltip">
+                        <button type="button" class="a-edit" >✏️</button>
+                        <span class="tooltip-text">Edit</span>
+                    </div>
+                    <div class="tooltip">
+                        <button type="button"
+                            onclick="this.closest('tr').remove(); calculateGrossTotal();"
+                            class="a-close">X</button>
+                        <span class="tooltip-text">Remove</span>
+                    </div>
+                </div>
+            </td>
+
+            </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+      </div>
+
+
+      <!-- PAYMENT SUMMARY -->
+      <div class="payment-summary-card">
+
+        <div class="summary-grid">
+
+          <!-- GROSS -->
+          <div class="form-group addx-form-group">
+            <label>Gross Total</label>
+
+            <input type="text"
+                   id="grossTotal"
+                   name="total_amount"
+                   readonly
+                   value="{{ order.total_amount }}">
+          </div>
+
+          <!-- ADVANCE -->
+          <div class="form-group addx-form-group">
+            <label>Advance Paid</label>
+
+            <input type="number"
+                   step="0.01"
+                   id="advancePaid"
+                   name="advance_paid"
+                   value="{{ order.advance_paid }}"
+                   oninput="calculateDue()">
+          </div>
+
+          <!-- DUE -->
+          <div class="form-group addx-form-group">
+            <label>Due Amount</label>
+
+            <input type="text"
+                   id="dueAmount"
+                   readonly
+                   value="{{ order.due_amount }}">
+          </div>
+          <!-- NOTES -->
+        <div class="form-group addx-form-group addx-full">
+          <label>Description / Notes</label>
+
+          <textarea name="notes"
+            placeholder="Paper type, urgent work, design notes, printing details...">{{ order.notes }}</textarea>
+        </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- SAVE -->
+      <div class="addx-btn-row">
+
+        <button type="submit"
+                class="addx-save-btn">
+
+          Save Order
+        </button>
+
+        <a href="{% url 'orders_page' %}"
+           class="addx-cancel-btn">
+
+          Cancel
+        </a>
+
+      </div>
+
     </form>
+
+  </div>
+
 </div>
 
-<script>
-function calculateDue() {
-    let totalInput = document.getElementById("totalAmount");
-    let advanceInput = document.getElementById("advancePaid");
-
-    let total = parseFloat(totalInput.value);
-    let advance = parseFloat(advanceInput.value);
-
-    if (isNaN(total)) total = 0;
-    if (isNaN(advance)) advance = 0;
-
-    // ❌ DO NOT overwrite advance input automatically
-    // Just validate
-    if (total > 0 && advance > total) {
-        advance = total;
-    }
-
-    let due = total - advance;
-    if (due < 0) due = 0;
-
-    document.getElementById("dueAmount").value = "₹" + due.toFixed(2);
-}
-
-window.onload = calculateDue;
-
-window.onload = calculateDue;
-</script>
 {% endblock %}

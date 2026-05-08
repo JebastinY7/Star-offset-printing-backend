@@ -23,6 +23,27 @@
   <div class="bill-card">
     <label>Search Customer: </label>
     <input type="text" id="customerInput" placeholder="Enter a Mobile /  ID">
+    {% if selected_order %}
+      <input type="hidden" id="selectedCustomerName" value="{{ selected_order.customer.name }}">
+
+      <input type="hidden" id="selectedCustomerPhone" value="{{ selected_order.customer.phone }}">
+
+      <input type="hidden" id="selectedCustomerId" value="{{ selected_order.customer.id }}">
+      <input type="hidden" id="selectedCustomerCategory" value="{{ selected_order.customer.category }}">
+
+<input type="hidden" id="selectedCustomerIsMember" value="{{ selected_order.customer.is_member|yesno:'true,false' }}">
+
+<input type="hidden" id="selectedCustomerMemberId" value="{{ selected_order.customer.member_id }}">
+
+<input type="hidden" id="selectedCustomerPoints" value="{{ selected_order.customer.points }}">
+
+<input type="hidden" id="selectedCustomerExpiry" value="{{ selected_order.customer.expiry_date|date:'Y-m-d' }}">
+
+<input type="hidden" id="selectedCustomerDue" value="{{ selected_order.customer.due_amount }}">
+<input type="hidden"
+       id="orderAdvance"
+       value="{{ selected_order.advance_paid|default:0 }}">
+    {% endif %}
 
     <div id="customerResult" class="bill-customer-result">
       <!-- Dynamic -->
@@ -83,6 +104,7 @@
       </thead>
 
       <tbody id="billItems"></tbody>
+      <tbody id="billItemsBody"></tbody>
     </table>
   </div>
 
@@ -140,7 +162,7 @@
 
     <div class="bill-field">
       <label>Extra Discount</label>
-      <input type="number" id="extraDiscount" oninput="calculateTotal()">
+      <input type="number" id="extraDiscount" name="extraDiscount" oninput="calculateTotal()">
     </div>
 
     <div class="bill-summary-row">
@@ -178,6 +200,12 @@
   const resultBox = document.getElementById("customerResult");
   
   input.addEventListener("input", function () {
+    let value = this.value.trim();
+
+    if (this.value.match(/.+\s-\s.*/)) {
+      resultBox.innerHTML = "";
+      return;
+    }
     let query = this.value;
     
     if (query.length < 2) {
@@ -231,6 +259,11 @@ function selectCustomer(c){
 
   document.getElementById("customerId").value = c.id;
   window.selectedCustomer = c;
+
+  document.getElementById("customerInput").value =
+      c.name + " - " + c.phone;
+
+  document.getElementById("customerResult").innerHTML = "";
 
   window.previousDue = parseFloat(c.due_amount || 0);
 
@@ -661,9 +694,7 @@ document.getElementById("netAmount").innerText = "₹" + netTotal.toFixed(2);
   this.dataset.manual = "true";
 });
 
-  if (!paidField.dataset.manual) {
-  paidField.value = final.toFixed(2);
-}
+
 
   let paidInput = paidField.value.trim();
 
@@ -707,7 +738,23 @@ let remainingOldDue = previousDue - oldDuePayment;
 document.getElementById("remainingOldDue").innerText =
   "₹" + remainingOldDue.toFixed(2);
 
-let currentBillDue = Math.max(final - paid, 0);
+let orderAdvance = parseFloat(
+  document.getElementById("orderAdvance")?.value || 0
+);
+
+// Remaining amount after advance
+let remainingBillAmount = Math.max(final - orderAdvance, 0);
+
+// AUTO FILL ONLY FIRST TIME
+if (!paidField.dataset.manual) {
+    paidField.value = remainingBillAmount.toFixed(2);
+}
+
+// Re-read paid after auto fill
+paid = parseFloat(paidField.value || 0);
+
+// Due Calculation
+let currentBillDue = Math.max(remainingBillAmount - paid, 0);
 
 let due = currentBillDue;
 
@@ -837,6 +884,7 @@ window.addEventListener("pageshow", function(event) {
 <script>
 {% if bill %}
 document.addEventListener("DOMContentLoaded", function () {
+
 
   // CUSTOMER PREFILL
   selectCustomer({
@@ -1028,6 +1076,89 @@ document.querySelectorAll('input[type="number"]').forEach(input => {
           this.blur();
       });
   });
+</script>
+
+<script>
+window.addEventListener("DOMContentLoaded", function () {
+
+    let customerName = document.getElementById("selectedCustomerName")?.value;
+    let customerPhone = document.getElementById("selectedCustomerPhone")?.value;
+    let customerId = document.getElementById("selectedCustomerId")?.value;
+
+    if(customerName){
+
+        let customerObj = {
+            id: customerId,
+            name: customerName,
+            phone: customerPhone,
+
+            category: document.getElementById("selectedCustomerCategory")?.value,
+
+            due_amount: parseFloat(
+                document.getElementById("selectedCustomerDue")?.value || 0
+            ),
+
+            is_member:
+                document.getElementById("selectedCustomerIsMember")?.value === "true",
+
+            member_id:
+                document.getElementById("selectedCustomerMemberId")?.value,
+
+            points: parseFloat(
+                document.getElementById("selectedCustomerPoints")?.value || 0
+            ),
+
+            expiry_date:
+                document.getElementById("selectedCustomerExpiry")?.value
+        };
+
+        selectCustomer(customerObj);
+    }
+
+});
+</script>
+
+<script>
+window.addEventListener("DOMContentLoaded", function () {
+
+    {% if prepared_items %}
+
+    items = [];
+
+    {% for item in prepared_items %}
+
+    items.push({
+
+        name:
+          "{{ item.category|escapejs }} - " +
+          "{{ item.size|escapejs }} - " +
+          "{{ item.variant|escapejs }}",
+
+        qty: parseFloat("{{ item.qty }}"),
+
+        price: parseFloat("{{ item.price }}"),
+
+        gross:
+          parseFloat("{{ item.total }}") +
+          parseFloat("{{ item.discount }}"),
+
+        discount: parseFloat("{{ item.discount }}"),
+
+        extraCharge: parseFloat("{{ item.extra_charge }}"),
+
+        extraPurpose: "",
+
+        total: parseFloat("{{ item.total }}")
+    });
+
+    {% endfor %}
+
+        renderItems();
+
+        calculateTotal();
+
+    {% endif %}
+});
 </script>
 
 
