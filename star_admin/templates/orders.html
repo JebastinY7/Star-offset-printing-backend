@@ -97,37 +97,42 @@
 
                     <td class="ordx-actions">
 
+                        {% if order.is_billed %}
+                            <span class="ordx-status delivered">
+                                Billed
+                            </span>
+                        {% else %}
+
                         {% if order.status == "completed" or order.status == "delivered" %}
 
-                        <div class="tooltip">
-                            <a href="/billing/?order_id={{ order.id }}" class="icon bill">
-
-                                <i class="fa-solid fa-file-invoice"></i></a>
+                            <div class="tooltip">
+                                <a href="/billing/?order_id={{ order.id }}" class="icon bill">
+                                    <i class="fa-solid fa-file-invoice"></i>
+                                </a>
 
                                 <span class="tooltip-text">
                                     Generate Bill
                                 </span>
-
-                            
-                        </div>
-
+                            </div>
                         {% endif %}
-                        <div class="tooltip">
-                            <a href="{% url 'edit_order' order.id %}" class="icon edit">
-                                ✏️
-                                </a>
-                                <span class="tooltip-text">Edit</span>
-                            
-                        </div>
 
+                            <div class="tooltip">
+                                <a href="{% url 'edit_order' order.id %}" class="icon edit">
+                                    ✏️
+                                    </a>
+                                    <span class="tooltip-text">Edit</span>
+                                
+                            </div>
+                        {% endif %}        
 
-                        <div class="tooltip">
-                            <button type="button"
-                                    class="icon delete"
-                                    onclick="openDeleteModal('{{ order.id }}')">🗑</button>
-                                <span class="tooltip-text">Delete</span>
-                            
-                        </div>
+                            <div class="tooltip">
+                                <button type="button"
+                                        class="icon delete"
+                                        onclick="openDeleteModal('{{ order.id }}')">🗑</button>
+                                    <span class="tooltip-text">Delete</span>
+                                
+                            </div>
+        
                     </td>
 
                 </tr>

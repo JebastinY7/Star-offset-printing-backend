@@ -241,6 +241,7 @@
 <script>
 
 let orderItems = [];
+let editIndex = -1;
 
 
 /* ADD ITEM */
@@ -260,29 +261,48 @@ function addOrderItem() {
 
     let price =
       parseFloat(document.getElementById("itemPrice").value) || 0;
+    
+    let total =
+      parseFloat(document.getElementById("itemTotal").value) || 0;
 
     if (!category.value || !size.value || !variant.value || qty <= 0) {
         alert("Fill all item fields");
         return;
     }
 
-    let total =
-  parseFloat(document.getElementById("itemTotal").value) || 0;
+    let itemData = {
+        category_id: category.value,
+        category: category.options[category.selectedIndex].text,
 
-    orderItems.push({
-    category_id: category.value,
-    category: category.options[category.selectedIndex].text,
-    size_id: size.value,
-size: size.options[size.selectedIndex].text,
+        size_id: size.value,
+        size: size.options[size.selectedIndex].text,
 
-variant_id: variant.value,
-variant: variant.options[variant.selectedIndex].text,
-    qty: qty,
-    price: price,
-    total: total
-});
+        variant_id: variant.value,
+        variant: variant.options[variant.selectedIndex].text,
+
+        qty: qty,
+        price: price,
+        total: total
+    };
+
+    if (editIndex > -1) {
+
+        orderItems[editIndex] = itemData;
+
+        editIndex = -1;
+
+        document.querySelector(".add-item-btn").innerText = "Add";
+    }
+
+    /* ADD NEW ITEM */
+    else {
+
+        orderItems.push(itemData);
+    }
 
     renderItems();
+
+    clearItemFields();
 }
 
 
@@ -325,13 +345,21 @@ function renderItems() {
           <td>₹${item.total.toFixed(2)}</td>
 
           <td>
+          <div class="action-btns">
+          <div class="tooltip">
+          <button type="button"
+            onclick="editItem(${index})">
+            ✏️
+        </button>
+        <span class="tooltip-text">Edit</span>
+        </div>
               
               <div class="tooltip">
                 <button type="button"
                     onclick="removeItem(${index})">X</button>
                     <span class="tooltip-text">Remove</span>
               </div>
-           
+           </div>
           </td>
 
         </tr>
@@ -356,6 +384,89 @@ function removeItem(index) {
 }
 
 
+function editItem(index) {
+
+    let item = orderItems[index];
+
+    let currentAdvance =
+        document.getElementById("advancePaid").value;
+
+    orderItems.splice(index, 1);
+
+    renderItems();
+
+    document.getElementById("advancePaid").value =
+        currentAdvance;
+
+    calculateDue();
+
+    editIndex = -1;
+
+    document.getElementById("itemCategory").value =
+      item.category_id;
+
+    fetch(`/get-sizes/?category_id=${item.category_id}`)
+    .then(response => response.json())
+    .then(data => {
+
+        sizeSelect.innerHTML =
+          '<option value="">Select Size</option>';
+
+        data.sizes.forEach(size => {
+
+            sizeSelect.innerHTML += `
+                <option value="${size.id}">
+                    ${size.name}
+                </option>
+            `;
+        });
+
+        document.getElementById("itemSize").value =
+          item.size_id;
+
+        return fetch(`/get-variants/?size_id=${item.size_id}`);
+    })
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        variantSelect.innerHTML =
+          '<option value="">Select Variant</option>';
+
+        data.variants.forEach(variant => {
+
+            variantSelect.innerHTML += `
+                <option value="${variant.id}">
+                    ${variant.name}
+                </option>
+            `;
+        });
+
+        document.getElementById("itemVariant").value =
+          item.variant_id;
+
+          variantSelect.dispatchEvent(new Event("change"));
+
+        document.getElementById("itemQty").value =
+          item.qty;
+
+        document.getElementById("itemPrice").value =
+          item.price;
+
+        fetchPrice();
+
+
+        document.getElementById("itemTotal").value =
+          item.total;
+
+        document.querySelector(".add-item-btn").innerText =
+          "Update";
+    });
+
+}
+
+
 
 /* DUE */
 function calculateDue() {
@@ -366,14 +477,14 @@ function calculateDue() {
     let advance =
       parseFloat(document.getElementById("advancePaid").value) || 0;
 
-    if (advance > gross) {
-        advance = gross;
-
-        document.getElementById("advancePaid").value =
-          gross.toFixed(2);
-    }
+    
 
     let due = gross - advance;
+
+    if (due < 0) {
+        due = 0;
+    }
+
 
     document.getElementById("dueAmount").value =
       due.toFixed(2);
@@ -447,6 +558,7 @@ function fetchPrice() {
     const variantId = variantSelect.value;
     const qty = qtyInput.value || 1;
 
+    console.log(categoryId, sizeId, variantId, qty);
     if (!categoryId || !sizeId || !variantId) {
         return;
     }
@@ -474,6 +586,17 @@ qtyInput.addEventListener(
     "input",
     fetchPrice
 );
+
+sizeSelect.addEventListener(
+    "change",
+    fetchPrice
+);
+
+categorySelect.addEventListener("change", function () {
+
+    document.getElementById("itemPrice").value = "";
+    document.getElementById("itemTotal").value = "";
+});
 
 function calculateItemTotal() {
 
@@ -518,6 +641,20 @@ function calculateItemTotal() {
     totalInput.value =
       grossAmount.toFixed(2);
 
+}
+
+function clearItemFields() {
+
+    document.getElementById("itemCategory").value = "";
+    document.getElementById("itemSize").innerHTML =
+      '<option value="">Select Size</option>';
+
+    document.getElementById("itemVariant").innerHTML =
+      '<option value="">Select Variant</option>';
+
+    document.getElementById("itemQty").value = "";
+    document.getElementById("itemPrice").value = "";
+    document.getElementById("itemTotal").value = "";
 }
 
 

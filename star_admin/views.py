@@ -624,6 +624,9 @@ def billing_system(request):
                 "category": item.category.name,
                 "size": item.size.name,
                 "variant": item.variant.name,
+                "category_id": item.category.id,
+                "size_id": item.size.id,
+                "variant_id": item.variant.id if item.variant else "",
                 "qty": item.qty,
                 "price": item.price,
                 "discount": discount,
@@ -1203,6 +1206,15 @@ def save_bill(request):
                 bill_date=timezone.now()
             )
 
+            order_id = request.POST.get("order_id")
+
+            if order_id:
+                order = Order.objects.get(id=order_id)
+
+                order.is_billed = True
+
+                order.save()
+
         # due_amount = remaining_old_due + current_due
 
         
@@ -1690,7 +1702,8 @@ def edit_order(request, id):
         order.status = request.POST.get("status")
 
         customer_id = request.POST.get("customer_id")
-        order.customer = get_object_or_404(Customer, id=customer_id)
+        if customer_id:
+            order.customer = get_object_or_404(Customer, id=customer_id)
 
         order.save()
 
@@ -1699,9 +1712,12 @@ def edit_order(request, id):
 
     customers = Customer.objects.all().order_by('name')
 
+    categories = Category.objects.all().order_by("name")
+
     return render(request, 'edit_order.html', {
         'order': order,
-        'customers': customers
+        'customers': customers,
+        'categories': categories
     })
 
 from .models import (Customer, Category, Order, OrderItem)
@@ -1864,9 +1880,10 @@ def get_order_price(request):
         category_id=category_id,
         size_id=size_id,
         variant_id=variant_id,
-        min_qty__lte=qty,
-        max_qty__gte=qty
-    ).first()
+        min_qty__lte=qty
+    ).filter(
+        Q(max_qty__gte=qty) | Q(max_qty__isnull=True)
+    ).order_by("min_qty").first()
 
     if rule:
         return JsonResponse({

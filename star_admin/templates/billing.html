@@ -25,24 +25,16 @@
     <input type="text" id="customerInput" placeholder="Enter a Mobile /  ID">
     {% if selected_order %}
       <input type="hidden" id="selectedCustomerName" value="{{ selected_order.customer.name }}">
-
       <input type="hidden" id="selectedCustomerPhone" value="{{ selected_order.customer.phone }}">
-
       <input type="hidden" id="selectedCustomerId" value="{{ selected_order.customer.id }}">
       <input type="hidden" id="selectedCustomerCategory" value="{{ selected_order.customer.category }}">
-
-<input type="hidden" id="selectedCustomerIsMember" value="{{ selected_order.customer.is_member|yesno:'true,false' }}">
-
-<input type="hidden" id="selectedCustomerMemberId" value="{{ selected_order.customer.member_id }}">
-
-<input type="hidden" id="selectedCustomerPoints" value="{{ selected_order.customer.points }}">
-
-<input type="hidden" id="selectedCustomerExpiry" value="{{ selected_order.customer.expiry_date|date:'Y-m-d' }}">
-
-<input type="hidden" id="selectedCustomerDue" value="{{ selected_order.customer.due_amount }}">
-<input type="hidden"
-       id="orderAdvance"
-       value="{{ selected_order.advance_paid|default:0 }}">
+      <input type="hidden" id="selectedCustomerIsMember" value="{{ selected_order.customer.is_member|yesno:'true,false' }}">
+      <input type="hidden" id="selectedCustomerMemberId" value="{{ selected_order.customer.member_id }}">
+      <input type="hidden" id="selectedCustomerPoints" value="{{ selected_order.customer.points }}">
+      <input type="hidden" id="selectedCustomerExpiry" value="{{ selected_order.customer.expiry_date|date:'Y-m-d' }}">
+      <input type="hidden" id="selectedCustomerDue" value="{{ selected_order.customer.due_amount }}">
+      <input type="hidden" id="orderAdvance" value="{{ selected_order.advance_paid|default:0 }}">
+      <input type="hidden" name="order_id" value="{{ selected_order.id }}">
     {% endif %}
 
     <div id="customerResult" class="bill-customer-result">
@@ -133,7 +125,7 @@
   </div>
 
 
-  <div class="bill-section">
+  <div class="bill-section bill">
     <h4>Payment</h4>
 
     <div class="bill-field">
@@ -742,13 +734,26 @@ let orderAdvance = parseFloat(
   document.getElementById("orderAdvance")?.value || 0
 );
 
+if (orderAdvance > 0) {
+  document.querySelector(".bill h4").innerText =
+  `Payment (Advance Paid ₹${orderAdvance.toFixed(2)})`;
+}
 // Remaining amount after advance
 let remainingBillAmount = Math.max(final - orderAdvance, 0);
 
-// AUTO FILL ONLY FIRST TIME
-if (!paidField.dataset.manual) {
-    paidField.value = remainingBillAmount.toFixed(2);
+if (
+    !paidField.dataset.manual &&
+    final > 0
+) {
+
+    paidField.value =
+      remainingBillAmount.toFixed(2);
 }
+
+// AUTO FILL ONLY FIRST TIME
+/*if (!paidField.dataset.manual) {
+    paidField.value = remainingBillAmount.toFixed(2);
+}*/
 
 // Re-read paid after auto fill
 paid = parseFloat(paidField.value || 0);
@@ -785,7 +790,7 @@ else {
   status = "DUE";
 }
 
-  {% comment %} document.getElementById("grossAmount").innerText = "₹" + gross.toFixed(2); {% endcomment %}
+  // document.getElementById("grossAmount").innerText = "₹" + gross.toFixed(2);
   document.getElementById("finalAmount").innerText = "₹" + final.toFixed(2);
   document.getElementById("dueAmount").innerText = "₹" + due.toFixed(2);
 
@@ -1133,6 +1138,10 @@ window.addEventListener("DOMContentLoaded", function () {
           "{{ item.category|escapejs }} - " +
           "{{ item.size|escapejs }} - " +
           "{{ item.variant|escapejs }}",
+
+        categoryId: "{{ item.category_id }}",
+        sizeId: "{{ item.size_id }}",
+        variantId: "{{ item.variant_id }}",
 
         qty: parseFloat("{{ item.qty }}"),
 

@@ -164,9 +164,9 @@
                 {{ item.size.name }} -
                 {{ item.variant.name }}
 
-                <input type="hidden" name="item_category[]" value="{{ item.category.id }}">
-                <input type="hidden" name="item_size[]" value="{{ item.size.id }}">
-                <input type="hidden" name="item_variant[]" value="{{ item.variant.id }}">
+                <input type="hidden" name="item_category[]" value="{{ item.category_id }}">
+                <input type="hidden" name="item_size[]" value="{{ item.size_id }}">
+                <input type="hidden" name="item_variant[]" value="{{ item.variant_id }}">
                 <input type="hidden" name="item_qty[]" value="{{ item.qty }}">
                 <input type="hidden" name="item_price[]" value="{{ item.price }}">
                 <input type="hidden" name="item_total[]" value="{{ item.total }}">
@@ -181,7 +181,7 @@
             <td>
                 <div class="action-btns">
                     <div class="tooltip">
-                        <button type="button" class="a-edit" >✏️</button>
+                        <button type="button" class="a-edit" onclick="editOrderItem(this)">✏️</button>
                         <span class="tooltip-text">Edit</span>
                     </div>
                     <div class="tooltip">
@@ -276,5 +276,568 @@
   </div>
 
 </div>
+<script>
+
+let orderItems = [];
+let editIndex = -1;
+
+
+/* ADD ITEM */
+function addOrderItem() {
+
+    let category =
+      document.getElementById("itemCategory");
+
+    let size =
+      document.getElementById("itemSize");
+
+    let variant =
+      document.getElementById("itemVariant");
+
+    let qty =
+      parseFloat(document.getElementById("itemQty").value) || 0;
+
+    let price =
+      parseFloat(document.getElementById("itemPrice").value) || 0;
+    
+    let total =
+      parseFloat(document.getElementById("itemTotal").value) || 0;
+
+    if (!category.value || !size.value || !variant.value || qty <= 0) {
+        alert("Fill all item fields");
+        return;
+    }
+
+    let itemData = {
+        category_id: category.value,
+        category: category.options[category.selectedIndex].text,
+
+        size_id: size.value,
+        size: size.options[size.selectedIndex].text,
+
+        variant_id: variant.value,
+        variant: variant.options[variant.selectedIndex].text,
+
+        qty: qty,
+        price: price,
+        total: total
+    };
+
+    if (document.querySelector(".add-item-btn").innerText === "Update") {
+
+    orderItems.push(itemData);
+
+    editIndex = -1;
+
+    document.querySelector(".add-item-btn").innerText = "Add";
+}
+
+    /* ADD NEW ITEM */
+    else {
+
+        orderItems.push(itemData);
+    }
+
+    renderItems();
+
+    clearItemFields();
+}
+
+
+
+/* RENDER ITEMS */
+function renderItems() {
+
+    let tbody =
+      document.getElementById("orderItemsBody");
+
+    tbody.innerHTML = "";
+
+    let gross = 0;
+
+    orderItems.forEach((item, index) => {
+
+        gross += item.total;
+
+        tbody.innerHTML += `
+        <tr>
+
+          <td>
+            ${item.category}
+            -
+            ${item.size}
+            -
+            ${item.variant}
+            <input type="hidden" name="item_category[]" value="${String(item.category_id)}">
+            <input type="hidden" name="item_size[]" value="${String(item.size_id)}">
+            <input type="hidden" name="item_variant[]" value="${String(item.variant_id)}">
+            <input type="hidden" name="item_qty[]" value="${item.qty}">
+            <input type="hidden" name="item_price[]" value="${item.price}">
+            <input type="hidden" name="item_total[]" value="${item.total}">
+          </td>
+
+          <td>${item.qty}</td>
+
+          <td>₹${item.price.toFixed(2)}</td>
+
+          <td>₹${item.total.toFixed(2)}</td>
+
+          <td>
+          <div class="action-btns">
+          <div class="tooltip">
+          <button type="button"
+            onclick="editItem(${index})">
+            ✏️
+        </button>
+        <span class="tooltip-text">Edit</span>
+        </div>
+              
+              <div class="tooltip">
+                <button type="button"
+                    onclick="removeItem(${index})">X</button>
+                    <span class="tooltip-text">Remove</span>
+              </div>
+           </div>
+          </td>
+
+        </tr>
+        `;
+    });
+
+    document.getElementById("grossTotal").value =
+      gross.toFixed(2);
+
+    calculateDue();
+}
+
+
+
+
+/* REMOVE ITEM */
+function removeItem(index) {
+
+    orderItems.splice(index, 1);
+
+    renderItems();
+}
+
+
+function editItem(index) {
+
+    let item = orderItems[index];
+
+    editIndex = -1;
+
+    orderItems.splice(index, 1);
+
+    renderItems();
+
+    const categoryDropdown =
+  document.getElementById("itemCategory");
+
+categoryDropdown.value =
+  String(item.category_id);
+
+    fetch(`/get-sizes/?category_id=${item.category_id}`)
+    .then(response => response.json())
+    .then(data => {
+      const sizeSelect =
+  document.getElementById("itemSize");
+
+        sizeSelect.innerHTML =
+          '<option value="">Select Size</option>';
+
+        data.sizes.forEach(size => {
+
+            sizeSelect.innerHTML += `
+                <option value="${size.id}">
+                    ${size.name}
+                </option>
+            `;
+        });
+
+        document.getElementById("itemSize").value =
+          item.size_id;
+
+        return fetch(`/get-variants/?size_id=${item.size_id}`);
+    })
+
+    .then(response => response.json())
+
+    .then(data => {
+      const variantSelect =
+  document.getElementById("itemVariant");
+
+        variantSelect.innerHTML =
+          '<option value="">Select Variant</option>';
+
+        data.variants.forEach(variant => {
+
+            variantSelect.innerHTML += `
+                <option value="${variant.id}">
+                    ${variant.name}
+                </option>
+            `;
+        });
+
+        document.getElementById("itemVariant").value =
+          item.variant_id;
+
+        document.getElementById("itemQty").value =
+          item.qty;
+
+        document.getElementById("itemPrice").value =
+          item.price;
+
+        fetchPrice();
+
+
+        document.getElementById("itemTotal").value =
+          item.total;
+
+        document.querySelector(".add-item-btn").innerText =
+          "Update";
+    });
+
+}
+
+
+
+/* DUE */
+function calculateDue() {
+
+    let gross =
+      parseFloat(document.getElementById("grossTotal").value) || 0;
+
+    let advance =
+      parseFloat(document.getElementById("advancePaid").value) || 0;
+
+    let due = gross - advance;
+
+    if (due < 0) {
+        due = 0;
+    }
+
+    document.getElementById("dueAmount").value =
+      due.toFixed(2);
+}
+
+
+const categorySelect = document.getElementById("itemCategory");
+const sizeSelect = document.getElementById("itemSize");
+const variantSelect = document.getElementById("itemVariant");
+
+categorySelect.addEventListener("change", function () {
+
+    const categoryId = this.value;
+
+    fetch(`/get-sizes/?category_id=${categoryId}`)
+        .then(response => response.json())
+        .then(data => {
+          const sizeSelect =
+  document.getElementById("itemSize");
+
+            sizeSelect.innerHTML =
+                '<option value="">Select Size</option>';
+
+            data.sizes.forEach(size => {
+
+                sizeSelect.innerHTML += `
+                    <option value="${size.id}">
+                        ${size.name}
+                    </option>
+                `;
+            });
+        });
+
+});
+
+sizeSelect.addEventListener("change", function () {
+
+    const sizeId = this.value;
+
+    fetch(`/get-variants/?size_id=${sizeId}`)
+        .then(response => response.json())
+        .then(data => {
+          const variantSelect =
+  document.getElementById("itemVariant");
+
+            variantSelect.innerHTML =
+                '<option value="">Select Variant</option>';
+
+            data.variants.forEach(variant => {
+
+                variantSelect.innerHTML += `
+                    <option value="${variant.id}">
+                        ${variant.name}
+                    </option>
+                `;
+            });
+
+        });
+
+});
+
+const priceInput =
+  document.getElementById("itemPrice");
+
+const qtyInput =
+  document.getElementById("itemQty");
+
+const totalInput =
+  document.getElementById("itemTotal");
+
+function fetchPrice() {
+
+    const categoryId = categorySelect.value;
+    const sizeId = sizeSelect.value;
+    const variantId = variantSelect.value;
+    const qty = qtyInput.value || 1;
+
+    console.log(categoryId, sizeId, variantId, qty);
+    if (!categoryId || !sizeId || !variantId) {
+        return;
+    }
+
+    fetch(
+      `/get-order-price/?category_id=${categoryId}&size_id=${sizeId}&variant_id=${variantId}&qty=${qty}`
+    )
+    .then(response => response.json())
+    .then(data => {
+      console.log(data);
+
+        priceInput.value = data.price || 0;
+
+        calculateItemTotal();
+
+    });
+
+}
+variantSelect.addEventListener(
+    "change",
+    fetchPrice
+);
+
+qtyInput.addEventListener(
+    "input",
+    fetchPrice
+);
+
+sizeSelect.addEventListener(
+    "change",
+    fetchPrice
+);
+
+categorySelect.addEventListener("change", function () {
+
+    document.getElementById("itemPrice").value = "";
+    document.getElementById("itemTotal").value = "";
+});
+
+function calculateItemTotal() {
+
+    let qty =
+      parseFloat(qtyInput.value) || 0;
+
+    let price =
+      parseFloat(priceInput.value) || 0;
+
+    let categoryName = "";
+
+    if (categorySelect.selectedIndex >= 0) {
+
+        categoryName =
+          categorySelect.options[
+            categorySelect.selectedIndex
+          ].text.toLowerCase();
+
+    }
+
+    let grossAmount = 0;
+
+    /* FIXED / SLAB ITEMS */
+    if (
+        categoryName.includes("notice") ||
+        categoryName.includes("banner") ||
+        categoryName.includes("bill book") ||
+        categoryName.includes("poster")
+    ) {
+
+        grossAmount = price;
+
+    }
+
+    /* NORMAL ITEMS */
+    else {
+
+        grossAmount = qty * price;
+
+    }
+
+    totalInput.value =
+      grossAmount.toFixed(2);
+
+}
+
+function clearItemFields() {
+
+    document.getElementById("itemCategory").value = "";
+    document.getElementById("itemSize").innerHTML =
+      '<option value="">Select Size</option>';
+
+    document.getElementById("itemVariant").innerHTML =
+      '<option value="">Select Variant</option>';
+
+    document.getElementById("itemQty").value = "";
+    document.getElementById("itemPrice").value = "";
+    document.getElementById("itemTotal").value = "";
+}
+
+
+</script>
+<script>
+function calculateGrossTotal() {
+
+    let gross = 0;
+
+    document.querySelectorAll("#orderItemsBody tr").forEach(row => {
+
+        let totalText =
+            row.cells[3].innerText
+                .replace("₹", "")
+                .replace(",", "");
+
+        gross += parseFloat(totalText) || 0;
+    });
+
+    document.getElementById("grossTotal").value =
+        gross.toFixed(2);
+
+    calculateDue();
+}
+
+function editOrderItem(button) {
+
+    let row = button.closest("tr");
+
+    // Hidden Inputs
+    let categoryId =
+        row.querySelector('input[name="item_category[]"]').value;
+        console.log(
+row.querySelector('input[name="item_category[]"]').value
+)
+
+    let sizeId =
+        row.querySelector('input[name="item_size[]"]').value;
+
+    let variantId =
+        row.querySelector('input[name="item_variant[]"]').value;
+
+    let qty =
+        row.querySelector('input[name="item_qty[]"]').value;
+
+    // Set Category
+    let categoryDropdown =
+        document.getElementById("itemCategory");
+
+        categoryDropdown.innerHTML = `
+<option value="">Select Category</option>
+
+{% for cat in categories %}
+<option value="{{ cat.id }}">
+    {{ cat.name }}
+</option>
+{% endfor %}
+`;
+
+categoryDropdown.value = categoryId;
+    
+
+    console.log("CATEGORY ID:", categoryId);
+console.log("DROPDOWN VALUE:", categoryDropdown.value);
+
+
+    
+
+    // LOAD SIZES
+    fetch(`/get-sizes/?category_id=${categoryId}`)
+    .then(res => res.json())
+    .then(data => {
+
+        let sizeDropdown =
+            document.getElementById("itemSize");
+
+        sizeDropdown.innerHTML =
+            '<option value="">Select Size</option>';
+
+        data.sizes.forEach(size => {
+
+            sizeDropdown.innerHTML += `
+                <option value="${size.id}">
+                    ${size.name}
+                </option>
+            `;
+        });
+
+        sizeDropdown.value = String(sizeId);
+        
+
+        // LOAD VARIANTS
+        return fetch(`/get-variants/?size_id=${sizeId}`);
+    })
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        let variantDropdown =
+            document.getElementById("itemVariant");
+
+        variantDropdown.innerHTML =
+            '<option value="">Select Variant</option>';
+
+        data.variants.forEach(variant => {
+
+            variantDropdown.innerHTML += `
+                <option value="${variant.id}">
+                    ${variant.name}
+                </option>
+            `;
+        });
+
+        variantDropdown.value = String(variantId);
+        
+
+        
+
+        // Set Qty
+        document.getElementById("itemQty").value = qty;
+
+        setTimeout(() => {
+
+    fetchPrice();
+
+    document.getElementById("itemQty")
+        .dispatchEvent(new Event('input'));
+
+}, 50);
+
+document.querySelector(".add-item-btn").innerText = "Update";
+
+let currentAdvance =
+    document.getElementById("advancePaid").value;
+
+row.remove();
+
+calculateGrossTotal();
+
+document.getElementById("advancePaid").value =
+    currentAdvance;
+
+calculateDue();
+    });
+}
+
+</script>
 
 {% endblock %}
