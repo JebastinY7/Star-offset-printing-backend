@@ -400,7 +400,7 @@ function editItem(index) {
 
     calculateDue();
 
-    editIndex = -1;
+    editIndex = index;
 
     document.getElementById("itemCategory").value =
       item.category_id;
@@ -632,10 +632,47 @@ function calculateItemTotal() {
     }
 
     /* NORMAL ITEMS */
+        /* TRAIN TICKET */
+    else if (
+        categoryName.includes("train ticket")
+    ) {
+
+        let sizeText = "";
+
+        if (sizeSelect.selectedIndex >= 0) {
+
+            sizeText =
+              sizeSelect.options[
+                sizeSelect.selectedIndex
+              ].text.toLowerCase();
+        }
+
+        let basePrice = 0;
+
+        if (sizeText.includes("minimum")) {
+
+            basePrice = 50;
+
+        } else if (sizeText.includes("thakkal")) {
+
+            basePrice = 75;
+
+        } else if (sizeText.includes("premium")) {
+
+            basePrice = 100;
+        }
+
+        grossAmount =
+          basePrice + ((qty - 1) * 20);
+
+        priceInput.value =
+          basePrice.toFixed(2);
+    }
+
+    /* NORMAL ITEMS */
     else {
 
         grossAmount = qty * price;
-
     }
 
     totalInput.value =

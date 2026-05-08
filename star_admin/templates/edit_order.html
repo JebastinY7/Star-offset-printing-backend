@@ -325,18 +325,15 @@ function addOrderItem() {
 
     if (document.querySelector(".add-item-btn").innerText === "Update") {
 
+    // JUST ADD BACK UPDATED ITEM
     orderItems.push(itemData);
-
-    editIndex = -1;
 
     document.querySelector(".add-item-btn").innerText = "Add";
 }
+else {
 
-    /* ADD NEW ITEM */
-    else {
-
-        orderItems.push(itemData);
-    }
+    orderItems.push(itemData);
+}
 
     renderItems();
 
@@ -824,19 +821,98 @@ console.log("DROPDOWN VALUE:", categoryDropdown.value);
 
 document.querySelector(".add-item-btn").innerText = "Update";
 
-let currentAdvance =
-    document.getElementById("advancePaid").value;
-
+/* REMOVE OLD ROW FROM TABLE */
 row.remove();
 
-calculateGrossTotal();
+/* PUSH EXISTING ROWS INTO ARRAY */
+orderItems = [];
 
-document.getElementById("advancePaid").value =
-    currentAdvance;
+document.querySelectorAll("#orderItemsBody tr").forEach(tr => {
 
-calculateDue();
+    orderItems.push({
+
+        category_id:
+            tr.querySelector('input[name="item_category[]"]').value,
+
+        category:
+            tr.cells[0].innerText.split(" - ")[0].trim(),
+
+        size_id:
+            tr.querySelector('input[name="item_size[]"]').value,
+
+        size:
+            tr.cells[0].innerText.split(" - ")[1].trim(),
+
+        variant_id:
+            tr.querySelector('input[name="item_variant[]"]').value,
+
+        variant:
+            tr.cells[0].innerText.split(" - ")[2].trim(),
+
+        qty:
+            parseFloat(
+                tr.querySelector('input[name="item_qty[]"]').value
+            ),
+
+        price:
+            parseFloat(
+                tr.querySelector('input[name="item_price[]"]').value
+            ),
+
+        total:
+            parseFloat(
+                tr.querySelector('input[name="item_total[]"]').value
+            )
+    });
+
+});
     });
 }
+window.onload = function () {
+
+    orderItems = [];
+
+    document.querySelectorAll("#orderItemsBody tr").forEach(tr => {
+
+        orderItems.push({
+
+            category_id:
+                tr.querySelector('input[name="item_category[]"]').value,
+
+            category:
+                tr.cells[0].innerText.split(" - ")[0].trim(),
+
+            size_id:
+                tr.querySelector('input[name="item_size[]"]').value,
+
+            size:
+                tr.cells[0].innerText.split(" - ")[1].trim(),
+
+            variant_id:
+                tr.querySelector('input[name="item_variant[]"]').value,
+
+            variant:
+                tr.cells[0].innerText.split(" - ")[2].trim(),
+
+            qty:
+                parseFloat(
+                    tr.querySelector('input[name="item_qty[]"]').value
+                ),
+
+            price:
+                parseFloat(
+                    tr.querySelector('input[name="item_price[]"]').value
+                ),
+
+            total:
+                parseFloat(
+                    tr.querySelector('input[name="item_total[]"]').value
+                )
+        });
+
+    });
+
+};
 
 </script>
 

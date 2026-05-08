@@ -1151,13 +1151,18 @@ window.addEventListener("DOMContentLoaded", function () {
           parseFloat("{{ item.total }}") +
           parseFloat("{{ item.discount }}"),
 
-        discount: parseFloat("{{ item.discount }}"),
+        discount: parseFloat(window.selectedCustomer?.due_amount || 0) > 0
+                  ? 0
+                  : parseFloat("{{ item.discount }}"),
 
         extraCharge: parseFloat("{{ item.extra_charge }}"),
 
         extraPurpose: "",
 
-        total: parseFloat("{{ item.total }}")
+        total:
+              parseFloat(window.selectedCustomer?.due_amount || 0) > 0
+              ? parseFloat("{{ item.total }}") + parseFloat("{{ item.discount }}")
+              : parseFloat("{{ item.total }}")
     });
 
     {% endfor %}

@@ -1213,6 +1213,15 @@ def save_bill(request):
 
                 order.is_billed = True
 
+                order.total_amount = final
+
+                order.advance_paid = paid_amount
+
+                order.due_amount = current_due
+
+                # Optional:
+                # order.status = "delivered"
+
                 order.save()
 
         # due_amount = remaining_old_due + current_due
@@ -1698,6 +1707,13 @@ def edit_order(request, id):
 
         order.total_amount = Decimal(request.POST.get("total_amount") or 0)
         order.advance_paid = Decimal(request.POST.get("advance_paid") or 0)
+
+        order.due_amount = (
+            order.total_amount - order.advance_paid
+        )
+
+        if order.due_amount < 0:
+            order.due_amount = 0
 
         order.status = request.POST.get("status")
 
