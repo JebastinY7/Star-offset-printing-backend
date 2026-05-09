@@ -339,6 +339,7 @@ def dashboard(request):
         'recent_due_customers': recent_due_customers,
     })
 
+@login_required
 def customers_list(request):
     customers = Customer.objects.all().order_by('-id')
     settings = Setting.objects.first()
@@ -387,6 +388,7 @@ def customers_list(request):
         "setting": setting,
     })
 
+@login_required
 def add_customer(request):
     if request.method == "POST":
         name = request.POST.get("name", "").strip()
@@ -445,6 +447,7 @@ def add_customer(request):
     
     return render(request, 'add_customer.html')
 
+@login_required
 def edit_customer(request, id):
     customer = get_object_or_404(Customer, id=id)
 
@@ -495,6 +498,7 @@ def edit_customer(request, id):
     
     return render(request, 'edit_customer.html', {'customer': customer})
 
+@login_required
 @require_POST
 def delete_customer(request, id):
     customer = get_object_or_404(Customer, id=id)
@@ -503,6 +507,7 @@ def delete_customer(request, id):
     return redirect('/customers/')
 
 
+@login_required
 def search_customer(request):
     phone = request.GET.get("phone")
     print("input:", phone)
@@ -525,6 +530,7 @@ def search_customer(request):
         print("not found")
         return JsonResponse({"error": "not found"})
 
+@login_required
 def live_search_customers(request):
     query = request.GET.get("q", "")
 
@@ -551,6 +557,7 @@ def live_search_customers(request):
 
     return JsonResponse({"customers": data})
 
+@login_required
 def invoice(request, bill_id):
     bill = get_object_or_404(Bill, id=bill_id)
     items = BillItem.objects.filter(bill=bill)
@@ -560,6 +567,7 @@ def invoice(request, bill_id):
         'items': items,
     })
 
+@login_required
 def billing_system(request):
     bill_id = request.GET.get("bill_id")
     order_id = request.GET.get("order_id")
@@ -644,6 +652,7 @@ def billing_system(request):
         'categories': categories
     })
 
+@login_required
 def bill_history(request):
     query = request.GET.get('q')
 
@@ -671,6 +680,7 @@ def bill_history(request):
         'query_string':query_string
     })
 
+@login_required
 @require_POST
 def delete_bill(request, id):
     bill = get_object_or_404(Bill, id=id)
@@ -678,7 +688,7 @@ def delete_bill(request, id):
     messages.success(request, "Bill deleted successfully")
     return redirect('/history/')
 
-
+@login_required
 def reports(request):
     bills = Bill.objects.select_related('customer')
 
@@ -855,6 +865,7 @@ def reports(request):
     })
 
 #Membership
+@login_required
 def delete_membership(request, id):
     membership = get_object_or_404(MembershipTransaction, id=id)
 
@@ -868,7 +879,7 @@ def delete_membership(request, id):
     
     return redirect('membership_history')
 
-
+@login_required
 def offers(request):
     if request.method == "POST":
         title = request.POST.get("title")
@@ -949,7 +960,7 @@ def offers(request):
     return render(request, 'offers.html')
 
 
-
+@login_required
 def offer_history(request):
     query = request.GET.get("q")
 
@@ -976,6 +987,7 @@ def offer_history(request):
         'query_string': query_string
     })
 
+@login_required
 @require_POST
 def delete_offer(request, id):
     offer = get_object_or_404(OffersHistory, id=id)
@@ -983,6 +995,7 @@ def delete_offer(request, id):
     messages.success(request, "Offer deleted successfully")
     return redirect('offer_history')
 
+@login_required
 def settings(request):
     setting = Setting.objects.first()
 
@@ -1013,6 +1026,7 @@ def settings(request):
     
     return render(request, 'settings.html', { 'setting': setting })
 
+@login_required
 def custom_round_amount(amount):
     whole = int(amount)
     decimal = amount - whole
@@ -1022,6 +1036,7 @@ def custom_round_amount(amount):
 
     return whole + 1
 
+@login_required
 def save_bill(request):
     if request.method == "POST":
 
@@ -1285,6 +1300,7 @@ def save_bill(request):
     return redirect('/billing/')
 
 # Due
+@login_required
 def clear_due(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
 
@@ -1298,6 +1314,7 @@ def clear_due(request, customer_id):
     
     return redirect('/customers/')
 
+@login_required
 def renew_membership(request, id):
     customer = Customer.objects.get(id=id)
 
@@ -1337,6 +1354,7 @@ def renew_membership(request, id):
 
 
 # Download Excel
+@login_required
 def download_report(request):
     bills = Bill.objects.select_related('customer')
 
@@ -1456,6 +1474,7 @@ def download_report(request):
     
 
 # Membership Renewal History
+@login_required
 def membership_history(request):
     transactions = MembershipTransaction.objects.select_related('customer').order_by('-created_at')
 
@@ -1486,6 +1505,7 @@ def membership_history(request):
         'end': end
     })
 
+@login_required
 def update_password(request):
     if request.method == "POST":
         current = request.POST.get("current_password")
@@ -1520,7 +1540,7 @@ def update_password(request):
 
 # From Pricing App
 # Auto size show-up
-
+@login_required
 def get_sizes(request):
     category_id = request.GET.get("category_id")
 
@@ -1539,6 +1559,7 @@ def get_sizes(request):
     return JsonResponse(data)
 
 
+@login_required
 def get_price(request):
     category_id = request.GET.get("category_id")
     size_id = request.GET.get("size_id")
@@ -1592,6 +1613,7 @@ def get_price(request):
         "notes": price_rule.notes or ""
     })
 
+@login_required
 def get_discount(request):
     category_id = request.GET.get("category_id")
     customer_type = request.GET.get("customer_type")
@@ -1613,6 +1635,7 @@ def get_discount(request):
         "discount": 0
     })
 
+@login_required
 def get_variants(request):
     size_id = request.GET.get("size_id")
 
@@ -1632,6 +1655,7 @@ def get_variants(request):
 
 
 # Orders
+@login_required
 def orders_page(request):
     query = request.GET.get("q", "")
     status_filter = request.GET.get("status", "")
@@ -1676,6 +1700,7 @@ def orders_page(request):
 
 
 # Update Order
+@login_required
 def update_order_status(request, id, new_status):
     order = get_object_or_404(Order, id=id)
 
@@ -1695,6 +1720,7 @@ def update_order_status(request, id, new_status):
     return redirect('/orders/')
 
 # Edit Order
+@login_required
 def edit_order(request, id):
     order = get_object_or_404(Order, id=id)
 
@@ -1737,6 +1763,7 @@ def edit_order(request, id):
     })
 
 from .models import (Customer, Category, Order, OrderItem)
+@login_required
 def add_order(request):
     customers = Customer.objects.all().order_by("name")
     categories = Category.objects.all().order_by("name")
@@ -1837,6 +1864,7 @@ def add_order(request):
 
 
 # Delete Order
+@login_required
 @require_POST
 def delete_order(request, id):
     order = get_object_or_404(Order, id=id)
@@ -1846,6 +1874,7 @@ def delete_order(request, id):
     return redirect('/orders/')
 
 #Due
+@login_required
 def pay_due(request):
 
     if request.method == "POST":
@@ -1876,7 +1905,7 @@ def pay_due(request):
         "success": False
     })
 
-
+@login_required
 def generate_bill_from_order(request, order_id):
 
     order = Order.objects.get(id=order_id)
@@ -1885,6 +1914,7 @@ def generate_bill_from_order(request, order_id):
     f"/billing/?customer={order.customer.id}&order={order.id}"
 )
 
+@login_required
 def get_order_price(request):
 
     category_id = request.GET.get("category_id")

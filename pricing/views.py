@@ -1,11 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Category, Size, Variant, PriceRule, MemberType, CategoryDiscount
 from .forms import CategoryForm, BulkSizeForm,BulkVariantForm, PriceRuleForm, CategoryDiscountForm
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.contrib import messages
 from django.db import IntegrityError
 
+
+@login_required
 def settings_page(request):
     categories = Category.objects.all()
     sizes = Size.objects.all()
@@ -20,6 +23,7 @@ def settings_page(request):
     })
 
 
+@login_required
 def pricing_setup(request):
 
     # Empty forms for page load
@@ -144,6 +148,7 @@ def pricing_setup(request):
         # 'categories': categories,
     })
 
+@login_required
 def get_sizes(request):
 
     category_id = request.GET.get("category_id")
@@ -161,6 +166,7 @@ def get_sizes(request):
 
 
 # 🔥 GET VARIANTS BY SIZE
+@login_required
 def get_variants(request):
 
     size_id = request.GET.get("size_id")
@@ -174,6 +180,7 @@ def get_variants(request):
     })
 
 # Edit Price Rule
+@login_required
 def edit_price_rule(request, rule_id):
     rule = get_object_or_404(PriceRule, id=rule_id)
 
@@ -209,6 +216,7 @@ def edit_price_rule(request, rule_id):
         "rule": rule
     })
 
+@login_required
 def manage_pricing(request):
 
     search = request.GET.get("search", "")
@@ -241,6 +249,7 @@ def manage_pricing(request):
     })
 
 
+@login_required
 def delete_price_rule(request, rule_id):
     rule = get_object_or_404(PriceRule, id=rule_id)
 
@@ -249,6 +258,7 @@ def delete_price_rule(request, rule_id):
     return redirect("manage_pricing")
 
 # Delete Full Category
+@login_required
 def delete_category(request, category_id):
 
     category = get_object_or_404(Category, id=category_id)
