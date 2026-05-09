@@ -1026,7 +1026,7 @@ def settings(request):
     
     return render(request, 'settings.html', { 'setting': setting })
 
-@login_required
+
 def custom_round_amount(amount):
     whole = int(amount)
     decimal = amount - whole
@@ -1199,13 +1199,19 @@ def save_bill(request):
         else:
             last_bill = Bill.objects.order_by('-id').first()
             next_id = last_bill.id + 1 if last_bill else 1
-        
-            
+
+            order_id = request.POST.get("order_id")
+
+            order = None
+
+            if order_id:
+                order = Order.objects.get(id=order_id)
 
 
             bill = Bill.objects.create(
                 bill_no=f"B{next_id}",
                 customer=customer,
+                order=order,
                 gross_total=gross_total,
                 extra_charge_total=total_extra_charge,
                 total_amount=gross_total - total_discount + total_extra_charge,
@@ -1221,19 +1227,14 @@ def save_bill(request):
                 bill_date=timezone.now()
             )
 
-            order_id = request.POST.get("order_id")
+            
 
-            if order_id:
+            if order:
                 order = Order.objects.get(id=order_id)
-
                 order.is_billed = True
-
                 order.total_amount = final
-
                 order.advance_paid = paid_amount
-
                 order.due_amount = current_due
-
                 # Optional:
                 # order.status = "delivered"
 
@@ -1696,6 +1697,31 @@ def orders_page(request):
         "progress_count": progress_count,
         "completed_count": completed_count,
         "overdue_count": overdue_count,
+    })
+
+@login_required
+def order_history(request):
+    query = request.GET.get("q", "")
+
+    bills = Bill.objects.filter(
+        order__isnull=False
+    ).select_related(
+        "customer", "order"
+    ).order_by("-id")
+
+    if query:
+        bills = bills.filter(
+            Q(customer__name__icontains=query) |
+            Q(order__work_name__icontains=query)
+        )
+    
+    paginator = Paginator(bills, 1)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render (request, 'order_history.html', {
+        "page_obj": page_obj,
+        "query_string": request.GET.urlencode(),
     })
 
 

@@ -44,6 +44,8 @@ class Bill(models.Model):
     final_amount = models.DecimalField(max_digits=10, decimal_places=2)
     bill_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    order = models.ForeignKey("Order", on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return self.bill_no

@@ -68,11 +68,27 @@
       </a>
 
       <ul id="history-submenu" 
-      class="submenu {% if '/history/' in request.path or '/offer-history/' in request.path or '/membership-history/' in request.path %}show{% endif %}">
+      class="submenu {% if '/history/' in request.path or '/order-history/' in request.path or '/membership-history/' in request.path or '/offer-history/' in request.path %}show{% endif %}">
         <li>
           <a class="{% if '/history/' in request.path %}active{% endif %}" href="/history/">
             <i class="fas fa-file-invoice"></i>
             <span>Bills</span>
+          </a>
+        </li>
+
+        <li>
+          <a class="{% if '/order-history/' in request.path %}active{% endif %}" href="/order-history/">
+            <i class="fas fa-shopping-cart"></i>
+            <span>Orders</span>
+          </a>
+        </li>
+
+        
+
+        <li>
+          <a class="{% if '/membership-history/' in request.path %}active{% endif %}" href="/membership-history/">
+            <i class="fas fa-id-card"></i>
+            <span>Membership</span>
           </a>
         </li>
 
@@ -83,12 +99,6 @@
           </a>
         </li>
 
-        <li>
-          <a class="{% if '/membership-history/' in request.path %}active{% endif %}" href="/membership-history/">
-            <i class="fas fa-id-card"></i>
-            <span>Membership</span>
-          </a>
-        </li>
       </ul>
     </li>
 
