@@ -26,6 +26,10 @@
 
             {% csrf_token %}
 
+            <input type="hidden" name="page" value="{{ request.GET.page }}">
+            <input type="hidden" name="category" value="{{ request.GET.category }}">
+            <input type="hidden" name="search" value="{{ request.GET.search }}">
+
             {{ form.as_p }}
 
             <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:20px;">

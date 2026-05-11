@@ -6,6 +6,7 @@ from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.contrib import messages
 from django.db import IntegrityError
+from django.urls import reverse
 
 
 @login_required
@@ -198,7 +199,15 @@ def edit_price_rule(request, rule_id):
 
         if form.is_valid():
             form.save()
-            return redirect("manage_pricing")
+            page = request.POST.get("page", "")
+            category = request.POST.get("category", "")
+            search = request.POST.get("search", "")
+
+            url = reverse("manage_pricing")
+
+            return redirect(
+                f"{url}?page={page}&category={category}&search={search}"
+            )
 
     else:
         # GET page open

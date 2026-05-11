@@ -109,7 +109,8 @@
                     <td>{{ rule.notes|default:"-" }}</td>
                     <td>
                         <div class="manage-action-group">
-                            <a href="{% url 'edit_price_rule' rule.id %}" class="manage-edit-btn">Edit</a>
+                            <a href="{% url 'edit_price_rule' rule.id %}?page={{ page_obj.number }}&category={{ selected_category }}&search={{ search_query }}"
+                             class="manage-edit-btn">Edit</a>
                             <a href="{% url 'delete_price_rule' rule.id %}"
                                class="manage-delete-btn"
                                onclick="return confirm('Delete this rule?')">

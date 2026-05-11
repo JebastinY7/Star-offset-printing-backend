@@ -1,6 +1,7 @@
 import json
 import random
 import time
+import traceback
 from decimal import Decimal, InvalidOperation
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
@@ -1869,119 +1870,113 @@ def add_order(request):
 
     if request.method == "POST":
         
-        customer_id = request.POST.get("customer")
-        if not customer_id:
-            messages.error(request, "Please select a customer")
-            return render(request, "add_order.html", {
-                "customers": customers,
-                "categories": categories,
-            })
-        
-        customer = get_object_or_404(Customer, id=customer_id)
+        try:
+            customer_id = request.POST.get("customer")
+            if not customer_id:
+                messages.error(request, "Please select a customer")
+                return render(request, "add_order.html", {
+                    "customers": customers,
+                    "categories": categories,
+                })
+            
+            customer = get_object_or_404(Customer, id=customer_id)
 
-        work_name = request.POST.get("work_name")
+            work_name = request.POST.get("work_name")
 
-        notes = request.POST.get("notes")
+            notes = request.POST.get("notes")
 
-        order_date = request.POST.get("order_date")
-        delivery_date = request.POST.get("delivery_date")
+            order_date = request.POST.get("order_date")
+            delivery_date = request.POST.get("delivery_date")
 
-        total_amount = Decimal(request.POST.get("total_amount") or 0)
-        advance_paid = Decimal(request.POST.get("advance_paid") or 0)
+            total_amount = Decimal(request.POST.get("total_amount") or 0)
+            advance_paid = Decimal(request.POST.get("advance_paid") or 0)
 
-        # if total_amount > 0:
-        #     due_amount = max(total_amount - advance_paid, 0)
-        # else:
-        #     due_amount = Decimal(0)
+            if advance_paid < 0:
+                advance_paid = Decimal(0)
+            
+            if advance_paid > total_amount:
+                advance_paid = total_amount
+            
+            due_amount = total_amount - advance_paid
 
-        if advance_paid < 0:
-            advance_paid = Decimal(0)
-        
-        if advance_paid > total_amount:
-            advance_paid = total_amount
-        
-        due_amount = total_amount - advance_paid
-
-        order = Order.objects.create(
-            customer=customer,
-            notes=notes,
-            work_name=work_name,
-            order_date=order_date,
-            delivery_date=delivery_date,
-            total_amount=total_amount,
-            advance_paid=advance_paid,
-            due_amount=due_amount,
-            status="pending"
-        )
-
-        # ITEMS
-        categories_ids = request.POST.getlist("item_category[]")
-        sizes = request.POST.getlist("item_size[]")
-        variants = request.POST.getlist("item_variant[]")
-
-        qtys = request.POST.getlist("item_qty[]")
-        prices = request.POST.getlist("item_price[]")
-        totals = request.POST.getlist("item_total[]")
-
-        # for i in range(len(categories_ids)):
-        #     OrderItem.objects.create(
-        #         order=order,
-        #         category_id=categories_ids[i],
-        #         size_id=sizes[i],
-        #         variant_id=variants[i],
-        #         qty=Decimal(qtys[i] or 0),
-        #         price=Decimal(prices[i] or 0),
-        #         total=Decimal(totals[i] or 0)
-        #     )
-
-        item_count = min(
-            len(categories_ids),
-            len(sizes),
-            len(variants),
-            len(qtys),
-            len(prices),
-            len(totals),
-        )
-
-        if item_count == 0:
-            messages.error(request, "Add at least one item")
-
-            return render(request, "add_order.html", {
-                "customers": customers,
-                "categories": categories,
-                "today": date.today(),
-            })
-
-        for i in range(item_count):
-
-            if not categories_ids[i]:
-                continue
-
-            OrderItem.objects.create(
-                order=order,
-
-                category_id=categories_ids[i],
-
-                size_id=sizes[i] or None,
-
-                variant_id=variants[i] or None,
-
-                qty=Decimal(str(qtys[i] or 0)),
-
-                price=Decimal(str(prices[i] or 0)),
-
-                total=Decimal(str(totals[i] or 0))
+            order = Order.objects.create(
+                customer=customer,
+                notes=notes,
+                work_name=work_name,
+                order_date=order_date,
+                delivery_date=delivery_date,
+                total_amount=total_amount,
+                advance_paid=advance_paid,
+                due_amount=due_amount,
+                status="pending"
             )
 
-        messages.success(request, "Order added successfully")
-        return redirect("orders_page")
+            # ITEMS
+            categories_ids = request.POST.getlist("item_category[]")
+            sizes = request.POST.getlist("item_size[]")
+            variants = request.POST.getlist("item_variant[]")
+
+            qtys = request.POST.getlist("item_qty[]")
+            prices = request.POST.getlist("item_price[]")
+            totals = request.POST.getlist("item_total[]")
+
+            item_count = min(
+                len(categories_ids),
+                len(sizes),
+                len(variants),
+                len(qtys),
+                len(prices),
+                len(totals),
+            )
+
+            if item_count == 0:
+                messages.error(request, "Add at least one item")
+
+                return render(request, "add_order.html", {
+                    "customers": customers,
+                    "categories": categories,
+                    "today": date.today(),
+                })
+
+            for i in range(item_count):
+
+                if not categories_ids[i]:
+                    continue
+
+                OrderItem.objects.create(
+                    order=order,
+
+                    category_id=categories_ids[i],
+
+                    # size_id=sizes[i] or None,
+
+                    # variant_id=variants[i] or None,
+                    size_id=sizes[i] if i < len(sizes) and sizes[i] else None,
+
+                    variant_id=variants[i] if i < len(variants) and variants[i] else None,
+
+                    qty=Decimal(str(qtys[i] or 0)),
+
+                    price=Decimal(str(prices[i] or 0)),
+
+                    total=Decimal(str(totals[i] or 0))
+                )
+
+            messages.success(request, "Order added successfully")
+            return redirect("orders_page")
+        
+        except Exception as e:
+            print("ADD ORDER ERROR")
+            print(traceback.format_exc())
+
+            messages.error(request, str(e))
 
 
-    return render(request,"add_order.html", {
-        "customers": customers,
-        "today": date.today(),
-        "categories":categories,
-    })
+            return render(request,"add_order.html", {
+                "customers": customers,
+                "today": date.today(),
+                "categories":categories,
+            })
 
 
 # Delete Order
