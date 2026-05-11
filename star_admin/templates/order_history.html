@@ -7,7 +7,7 @@
       <h2>Order History</h2>
 
       <form method="GET" class="history-search">
-        <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search by name / bill no">
+        <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search by name...">
         <button type="submit">Search</button>
       </form>
     </div>
@@ -38,8 +38,8 @@
             <td>{{ b.customer.phone }}</td>
             <td>{{ b.order.work_name }}</td>
             <td>{{ b.bill_date }}</td>
-            <td>{{ b.total_amount }}</td>
-            <td>{{ b.discount_amount }}</td>
+            <td>{{ b.gross_total }}</td>
+            <td>{{ b.discount }}</td>
             <td><strong>{{ b.final_amount }}</strong></td>
             <td class="action-icons">
               <div class="tooltip">
@@ -84,5 +84,34 @@
     </div>
   {% endif %}
 </div>
+
+<div id="deleteModal" class="modal">
+  <div class="modal-content">
+    <h3>Delete Bill</h3>
+    <p>Are you sure you want to delete this bill?</p>
+
+    <form id="deleteForm" method="POST">
+      {% csrf_token %}
+      <button type="submit" class="confirm-btn">Yes, Delete</button>
+      <button type="button" class="cancel-btn" onclick="closeDeleteModal()">Cancel</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const modal = document.getElementById("deleteModal");  // ✅ ADD THIS
+
+  function openDeleteModal(id) {
+    const form = document.getElementById("deleteForm");
+
+    form.action = `/delete-bill/${id}/`;
+
+    modal.classList.add("show");
+  }
+
+  function closeDeleteModal() {
+    modal.classList.remove("show");
+  }
+</script>
 
 {% endblock %}

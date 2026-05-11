@@ -316,7 +316,6 @@ document.getElementById("customerResult").innerHTML = `
 
     ${c.is_member ? `
       <p><strong>Member ID:</strong> ${c.member_id}</p>
-      <p><strong>Points:</strong> ${c.points}</p>
       <p><strong>Expiry:</strong> ${c.expiry_date 
       ? new Date(c.expiry_date).toLocaleDateString('en-GB').replace(/\//g, '-') :'-'}</p>
     ` : ""}
@@ -407,41 +406,198 @@ function addItem() {
     .then(data => {
 
       let price = parseFloat(data.price);
+      let allowCustomPricing =
+    categoryName.toLowerCase().includes("print out") ||
+    categoryName.toLowerCase().includes("train ticket") ||
+    categoryName.toLowerCase().includes("online application");
 
-      if (!price) {
+
+      if (!price && !allowCustomPricing) {
         showToast("No pricing rule found");
         return;
       }
 
       let grossAmount = 0;
 
+      let variantText = variantName.toLowerCase();
+
+      let isBlackSingle = variantText.includes("black s");
+
+      let isBlackDouble = variantText.includes("black d");
+
+      let isInkjetSingle = variantText.includes("color inkjet s");
+
+      let isInkjetDouble = variantText.includes("color inkjet d");
+        
       if (
           categoryName.toLowerCase().includes("notice") ||
           categoryName.toLowerCase().includes("banner") ||
           categoryName.toLowerCase().includes("bill book") ||
           categoryName.toLowerCase().includes("poster")
-      ) {
+        ) {
           grossAmount = price;
-      }
-      else if (categoryName.toLowerCase().includes("train ticket")) {
-        let sizeText = sizeName.toLowerCase();
+        }
+        else if (categoryName.toLowerCase().includes("train ticket")) {
+          let sizeText = sizeName.toLowerCase();
 
-        if (sizeText.includes("minimum")) {
-          grossAmount = 50 + ((qty - 1) * 20);
+          if (sizeText.includes("minimum")) {
+            grossAmount = 50 + ((qty - 1) * 20);
+          }
+          else if (sizeText.includes("thakkal")) {
+            grossAmount = 75 + ((qty - 1) * 20);
+          }
+          else if (sizeText.includes("premium")) {
+            grossAmount = 100 + ((qty - 1) * 20);
+          }
         }
-        else if (sizeText.includes("thakkal")) {
-          grossAmount = 75 + ((qty - 1) * 20);
+        else if (categoryName.toLowerCase().includes("online application")) {
+          let sizeText = sizeName.toLowerCase();
+          
+          if (
+            sizeText.includes("patta") ||
+            sizeText.includes("chitta") ||
+            sizeText.includes("ec")
+            ) {
+
+            if (qty <= 3) {
+                grossAmount = 20;
+            } else {
+                grossAmount = 20 + ((qty - 3) * 5);
+            }
+          }
+          else {
+            grossAmount = qty * price;
+          }
         }
-        else if (sizeText.includes("premium")) {
-          grossAmount = 100 + ((qty - 1) * 20);
-        }
-      }
-      else {
-          grossAmount = qty * price;
-      }
+        else if (
+          categoryName.toLowerCase().includes("print out")
+          ) {
+
+          let sizeText = sizeName.toLowerCase();
+
+          if (
+              isBlackSingle ||
+              isBlackDouble
+            ) {
+              
+              if (
+                sizeText.includes("a4") ||
+                sizeText.includes("legal")
+                ) {
+                  
+                  if (qty <= 10) {
+                    grossAmount = 10 + ((qty - 1) * 3);
+                    price = grossAmount;
+                  }
+                  else if (qty <= 20) {
+
+                    grossAmount = 37 + ((qty - 10) * 3) - 5;
+                    price = grossAmount;
+                  }
+                  else {
+
+                    grossAmount = qty * price;
+                  }
+                }
+                else if (
+                  sizeText.includes("a3")
+                  ) {
+                    
+                    if (isBlackSingle) {
+
+                      if (qty <= 9) {
+                        grossAmount = 15 + ((qty - 1) * 7);
+                        price = grossAmount;
+                      }
+                      else {
+                        grossAmount = qty * price;
+                      }
+                    }
+                    
+                    else if (isBlackDouble) {
+
+                      if (qty <= 9) {
+                        grossAmount = 20 + ((qty - 1) * 7);
+                        price = grossAmount
+                      }
+                      else {
+                        grossAmount = qty * price;
+                      }
+                    }
+                  }
+                }
+
+                /* COLOR INKJET */
+
+                else if (
+                  isInkjetSingle ||
+                  isInkjetDouble
+                  ) {
+
+                  if (
+                    sizeText.includes("a4") ||
+                    sizeText.includes("legal")
+                    ) {
+                      
+                      if (isInkjetSingle) {
+
+                        if (qty <= 10) {
+                          grossAmount = 15 + ((qty - 1) * 10);
+                          price = grossAmount;
+                        }
+
+                        else {
+                          grossAmount = qty * price;
+                        }
+                      }
+                      else if (isInkjetDouble) {
+
+                        if (qty <= 10) {
+                          grossAmount = 25 + ((qty - 1) * 10);
+                          price = grossAmount;
+                        }
+
+                        else {
+                          grossAmount = qty * price;
+                        }
+                      }
+                    }
+
+                    else {
+                      grossAmount = qty * price;
+                    }
+                  }
+                  
+                else {
+                    grossAmount = qty * price;
+                }
+              }
+              else {
+                grossAmount = qty * price;
+              }
+
+let previousDue =
+    parseFloat(window.previousDue || 0);
+
+let oldDuePayment =
+    parseFloat(
+        document.getElementById("oldDuePayment").value || 0
+    );
+
+let remainingOldDue =
+    Math.max(previousDue - oldDuePayment, 0);
 
 let discount = previewDiscount;
+
 let total = previewTotal || grossAmount;
+
+/* BLOCK ONLY IF OLD DUE STILL EXISTS */
+if (remainingOldDue > 0) {
+
+    discount = 0;
+
+    total = grossAmount + extraCharge;
+}
 
 
       let itemName = `${categoryName} - ${sizeName} - ${variantName}`;
@@ -727,6 +883,24 @@ if (oldDuePayment > previousDue) {
 
 let remainingOldDue = previousDue - oldDuePayment;
 
+/* REMOVE DISCOUNT ONLY IF DUE STILL EXISTS */
+if (remainingOldDue > 0) {
+
+    itemDiscount = 0;
+
+    totalDiscount = extraDiscount;
+
+    items.forEach(item => {
+
+        item.discount = 0;
+
+        item.total =
+            (parseFloat(item.gross || 0)) +
+            (parseFloat(item.extraCharge || 0));
+    });
+
+}
+
 document.getElementById("remainingOldDue").innerText =
   "₹" + remainingOldDue.toFixed(2);
 
@@ -988,63 +1162,225 @@ function updatePrice() {
 
             let price = parseFloat(data.price || 0);
 
-            if (price <= 0) {
-                document.getElementById("itemPrice").value = "";
-                document.getElementById("itemDiscount").value = "";
-                document.getElementById("itemDiscountValue").value = "";
-                document.getElementById("itemTotalPreview").value = "";
-                return;
-            }
+/*
+ALLOW PRINT OUT SPECIAL FORMULA
+EVEN IF DB PRICE NOT FOUND
+*/
+
+if (
+    price <= 0 &&
+    !categoryText.includes("print out")
+) {
+    document.getElementById("itemPrice").value = "";
+    document.getElementById("itemDiscount").value = "";
+    document.getElementById("itemDiscountValue").value = "";
+    document.getElementById("itemTotalPreview").value = "";
+    return;
+}
+
+            
+            
+            let isBlackSingle = variantText.includes("black s");
+
+            let isBlackDouble = variantText.includes("black d");
+
+            let isInkjetSingle = variantText.includes("color inkjet s");
+
+            let isInkjetDouble = variantText.includes("color inkjet d");
 
             let gross = 0;
 
-            if (
-              categoryText.includes("notice") ||
-              categoryText.includes("banner") ||
-              categoryText.includes("bill book") ||
-              categoryText.includes("poster")
-            ) {
-              gross = price;
+/* FIXED PRICE ITEMS */
+if (
+    categoryText.includes("notice") ||
+    categoryText.includes("banner") ||
+    categoryText.includes("bill book") ||
+    categoryText.includes("poster")
+) {
+    gross = price;
+}
+
+/* TRAIN TICKET */
+else if (categoryText.includes("train ticket")) {
+
+    if (sizeText.includes("minimum")) {
+        gross = 50 + ((qty - 1) * 20);
+    }
+    else if (sizeText.includes("thakkal")) {
+        gross = 75 + ((qty - 1) * 20);
+    }
+    else if (sizeText.includes("premium")) {
+        gross = 100 + ((qty - 1) * 20);
+    }
+}
+
+/* ONLINE APPLICATION */
+else if (categoryText.includes("online application")) {
+
+    if (
+        sizeText.includes("patta") ||
+        sizeText.includes("chitta") ||
+        sizeText.includes("ec")
+    ) {
+
+        if (qty <= 3) {
+            gross = 20;
+        }
+        else {
+            gross = 20 + ((qty - 3) * 5);
+        }
+    }
+    else {
+        gross = qty * price;
+    }
+}
+
+/* PRINT OUT */
+else if (categoryText.includes("print out")) {
+
+    let isBlackSingle = variantText.includes("black s");
+    let isBlackDouble = variantText.includes("black d");
+
+    let isInkjetSingle =
+        variantText.includes("color inkjet s");
+
+    let isInkjetDouble =
+        variantText.includes("color inkjet d");
+
+    /* BLACK */
+    if (isBlackSingle || isBlackDouble) {
+
+        if (
+            sizeText.includes("a4") ||
+            sizeText.includes("legal")
+        ) {
+
+            if (qty <= 10) {
+                gross = 10 + ((qty - 1) * 3);
+                price = gross;
             }
-            else if (categoryText.includes("train ticket")) {
-              if (sizeText.includes("minimum")) {
-                gross = 50 + ((qty-1) * 20);
-              }
-              else if (sizeText.includes("thakkal")) {
-                gross = 75 + ((qty - 1) * 20);
-              }
-              else if (sizeText.includes("premium")) {
-                gross = 100 + ((qty - 1) * 20);
-              }
+            else if (qty <= 20) {
+                gross = 37 + ((qty - 10) * 3) - 5;
+                price = gross;
             }
             else {
-              gross = qty * price;
+                gross = qty * price;
             }
+        }
+
+        else if (sizeText.includes("a3")) {
+
+            if (isBlackSingle) {
+
+                if (qty <= 9) {
+                    gross = 15 + ((qty - 1) * 7);
+                    price = gross;
+                }
+                else {
+                    gross = qty * price;
+                }
+            }
+
+            else if (isBlackDouble) {
+
+                if (qty <= 9) {
+                    gross = 20 + ((qty - 1) * 7);
+                    price = gross;
+                }
+                else {
+                    gross = qty * price;
+                }
+            }
+        }
+    }
+
+    /* INKJET */
+    else if (
+        isInkjetSingle ||
+        isInkjetDouble
+    ) {
+
+        if (
+            sizeText.includes("a4") ||
+            sizeText.includes("legal")
+        ) {
+
+            if (isInkjetSingle) {
+
+                if (qty <= 10) {
+                    gross = 15 + ((qty - 1) * 10);
+                    price = gross;
+                }
+                else {
+                    gross = qty * price;
+                }
+            }
+
+            else if (isInkjetDouble) {
+
+                if (qty <= 10) {
+                    gross = 25 + ((qty - 1) * 10);
+                    price = gross;
+                }
+                else {
+                    gross = qty * price;
+                }
+            }
+        }
+    }
+
+    /* OTHER PRINT OUT TYPES */
+    else {
+        gross = qty * price;
+    }
+}
+
+/* DEFAULT FOR ALL OTHER CATEGORIES */
+else {
+    gross = qty * price;
+}
+
+let shopDiscount =
+    parseFloat(data.shop_discount || 0);
+
+let memberDiscount =
+    parseFloat(data.cs_discount || 0);
 
             let discountPercent = 0;
 
-            if (parseFloat(window.selectedCustomer?.due_amount || 0) > 0) {
-              console.log(selectedCustomer);
-              discountPercent = 0;
-            } else {
-              if (customerType.toLowerCase() === "shop") {
-                discountPercent = parseFloat(data.shop_discount || 0);
-              }
-              else if (
-                customerType.toLowerCase() === "member"
-              ) {
-                  discountPercent = parseFloat(data.cs_discount || 0);
-              }
-              else {
-                  discountPercent = 0;
-              }
-            }
+            if (customerType.toLowerCase() === "shop") {
+
+    discountPercent = shopDiscount;
+
+}
+else if (
+    customerType.toLowerCase() === "member"
+) {
+
+    discountPercent = memberDiscount;
+
+}
 
             
-            
+            let previousDue =
+    parseFloat(window.previousDue || 0);
 
+let oldDuePayment =
+    parseFloat(
+        document.getElementById("oldDuePayment")?.value || 0
+    );
 
-            let discount = gross * (discountPercent / 100);
+let remainingOldDue =
+    Math.max(previousDue - oldDuePayment, 0);
+
+let discount = 0;
+
+/* ALLOW DISCOUNT ONLY IF NO REMAINING DUE */
+if (remainingOldDue <= 0) {
+
+    discount =
+        gross * (discountPercent / 100);
+}
 
             let extraCharge =
                 parseFloat(document.getElementById("itemExtraCharge").value) || 0;
@@ -1151,18 +1487,96 @@ window.addEventListener("DOMContentLoaded", function () {
           parseFloat("{{ item.total }}") +
           parseFloat("{{ item.discount }}"),
 
-        discount: parseFloat(window.selectedCustomer?.due_amount || 0) > 0
-                  ? 0
-                  : parseFloat("{{ item.discount }}"),
+        discount: (() => {
+
+    if (parseFloat(window.selectedCustomer?.due_amount || 0) > 0) {
+        return 0;
+    }
+
+    let savedDiscount =
+        parseFloat("{{ item.discount }}") || 0;
+
+    /*
+    PRINT OUT SPECIAL FIX
+    */
+    if (
+        "{{ item.category|lower }}".includes("print out") &&
+        savedDiscount === 0
+    ) {
+
+        let gross =
+            parseFloat("{{ item.total }}") +
+            parseFloat("{{ item.discount }}");
+
+        let customerType =
+            (window.selectedCustomerType || "").toLowerCase();
+
+        let percent = 0;
+
+        if (customerType === "shop") {
+            percent = 40;
+        }
+        else if (customerType === "member") {
+            percent = 25;
+        }
+
+        return gross * (percent / 100);
+    }
+
+    return savedDiscount;
+})(),
 
         extraCharge: parseFloat("{{ item.extra_charge }}"),
 
         extraPurpose: "",
 
-        total:
-              parseFloat(window.selectedCustomer?.due_amount || 0) > 0
-              ? parseFloat("{{ item.total }}") + parseFloat("{{ item.discount }}")
-              : parseFloat("{{ item.total }}")
+        total: (() => {
+
+    let originalTotal =
+        parseFloat("{{ item.total }}") || 0;
+
+    let originalDiscount =
+        parseFloat("{{ item.discount }}") || 0;
+
+    /*
+    Due customer -> no discount
+    */
+    if (parseFloat(window.selectedCustomer?.due_amount || 0) > 0) {
+        return originalTotal + originalDiscount;
+    }
+
+    /*
+    PRINT OUT BELOW 20 FIX
+    */
+    if (
+        "{{ item.category|lower }}".includes("print out") &&
+        originalDiscount === 0
+    ) {
+
+        let gross =
+            originalTotal + originalDiscount;
+
+        let customerType =
+            (window.selectedCustomerType || "").toLowerCase();
+
+        let percent = 0;
+
+        if (customerType === "shop") {
+            percent = 40;
+        }
+        else if (customerType === "member") {
+            percent = 25;
+        }
+
+        let discountAmount =
+            gross * (percent / 100);
+
+        return gross - discountAmount;
+    }
+
+    return originalTotal;
+
+})()
     });
 
     {% endfor %}

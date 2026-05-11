@@ -1,7 +1,7 @@
 import json
 import random
 import time
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
 from .models import PasswordResetOTP
@@ -1125,28 +1125,49 @@ def save_bill(request):
 
         previous_due = customer.due_amount
 
-        current_due = max(final - paid_amount, Decimal('0'))
+        # remaining_payment = max(paid_amount - old_due_payment, Decimal('0'))
+
+        # current_due = max(final - remaining_payment, Decimal('0'))
+
+        # remaining_old_due = max(previous_due - old_due_payment, Decimal('0'))
+
+
+        # total_remaining_due = remaining_old_due + current_due
+
+        # if (remaining_old_due > 0 or current_due > 0):
+        #     for item in items:
+        #         item['discount'] = 0    
+        #     total_discount = extra_discount
+        #     raw_final = gross_total - extra_discount  + total_extra_charge
+        #     final = raw_final.quantize(Decimal('1'))
+        #     current_due = max(final - paid_amount, Decimal('0'))
 
         remaining_old_due = max(previous_due - old_due_payment, Decimal('0'))
 
         current_due = max(final - paid_amount, Decimal('0'))
 
-        total_remaining_due = remaining_old_due + current_due
+        # BLOCK DISCOUNT ONLY IF ANY DUE REMAINS
+        discount_allowed = (remaining_old_due <= 0)
 
-        if total_remaining_due > 0:
+        if not discount_allowed:
+
             for item in items:
-                item['discount'] = 0    
-           #  total_discount = Decimal('0')
-            # gross_total = gross_total
+                original_total = (
+                    Decimal(str(item['total'])) +
+                    Decimal(str(item['discount']))
+                )
+
+                item['discount'] = 0
+
+                item['total'] = original_total
+
             total_discount = extra_discount
-            # raw_final = gross_total + total_extra_charge
-            raw_final = gross_total - extra_discount  + total_extra_charge
+
+            raw_final = (gross_total - extra_discount + total_extra_charge)
+
             final = raw_final.quantize(Decimal('1'))
+
             current_due = max(final - paid_amount, Decimal('0'))
-
-        # current_bill_due = max(final - paid_amount, Decimal('0'))
-
-        # remaining_old_due = max(previous_due - old_due_payment, Decimal('0'))
 
         due_amount = current_due + remaining_old_due
 
@@ -1596,11 +1617,32 @@ def get_price(request):
         Q(max_qty__gte=qty) | Q(max_qty__isnull=True)
     ).order_by("min_qty").first()
 
+    # if not price_rule:
+    #     return JsonResponse({
+    #         "price": 0,
+    #         "shop_discount": 0,
+    #         "cs_discount": 0,
+    #         "notes": ""
+    #     })
+
     if not price_rule:
+
+        latest_discount_rule = PriceRule.objects.filter(
+            category_id=category_id,
+            size_id=size_id,
+            variant_id=variant_id
+        ).order_by("-min_qty").first()
+
         return JsonResponse({
             "price": 0,
-            "shop_discount": 0,
-            "cs_discount": 0,
+            "shop_discount": float(
+                latest_discount_rule.shop_discount or 0
+            ) if latest_discount_rule else 0,
+
+            "cs_discount": float(
+                latest_discount_rule.cs_discount or 0
+            ) if latest_discount_rule else 0,
+
             "notes": ""
         })
 
@@ -1715,7 +1757,7 @@ def order_history(request):
             Q(order__work_name__icontains=query)
         )
     
-    paginator = Paginator(bills, 1)
+    paginator = Paginator(bills, 9)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
@@ -1772,6 +1814,37 @@ def edit_order(request, id):
         customer_id = request.POST.get("customer_id")
         if customer_id:
             order.customer = get_object_or_404(Customer, id=customer_id)
+        
+        # DELETE OLD ITEMS
+        order.items.all().delete()
+
+        # GET NEW ITEMS
+        categories = request.POST.getlist("item_category[]")
+        sizes = request.POST.getlist("item_size[]")
+        variants = request.POST.getlist("item_variant[]")
+        qtys = request.POST.getlist("item_qty[]")
+        prices = request.POST.getlist("item_price[]")
+        totals = request.POST.getlist("item_total[]")
+
+        # SAVE AGAIN
+        for i in range(len(categories)):
+
+            OrderItem.objects.create(
+
+                order=order,
+
+                category_id=categories[i],
+
+                size_id=sizes[i],
+
+                variant_id=variants[i],
+
+                qty=qtys[i],
+
+                price=prices[i],
+
+                total=totals[i]
+            )
 
         order.save()
 
@@ -1850,33 +1923,55 @@ def add_order(request):
         prices = request.POST.getlist("item_price[]")
         totals = request.POST.getlist("item_total[]")
 
-        for i in range(len(categories_ids)):
+        # for i in range(len(categories_ids)):
+        #     OrderItem.objects.create(
+        #         order=order,
+        #         category_id=categories_ids[i],
+        #         size_id=sizes[i],
+        #         variant_id=variants[i],
+        #         qty=Decimal(qtys[i] or 0),
+        #         price=Decimal(prices[i] or 0),
+        #         total=Decimal(totals[i] or 0)
+        #     )
+
+        item_count = min(
+            len(categories_ids),
+            len(sizes),
+            len(variants),
+            len(qtys),
+            len(prices),
+            len(totals),
+        )
+
+        if item_count == 0:
+            messages.error(request, "Add at least one item")
+
+            return render(request, "add_order.html", {
+                "customers": customers,
+                "categories": categories,
+                "today": date.today(),
+            })
+
+        for i in range(item_count):
+
+            if not categories_ids[i]:
+                continue
+
             OrderItem.objects.create(
                 order=order,
+
                 category_id=categories_ids[i],
-                size_id=sizes[i],
-                variant_id=variants[i],
-                qty=Decimal(qtys[i] or 0),
-                price=Decimal(prices[i] or 0),
-                total=Decimal(totals[i] or 0)
+
+                size_id=sizes[i] or None,
+
+                variant_id=variants[i] or None,
+
+                qty=Decimal(str(qtys[i] or 0)),
+
+                price=Decimal(str(prices[i] or 0)),
+
+                total=Decimal(str(totals[i] or 0))
             )
-        
-        # work_names = []
-
-        # for item in categories_ids:
-        #     category = Category.objects.get(id=item["category_id"])
-
-        #     work_names.append(category.name)
-        
-        # unique_names = list(set(work_names))
-
-        # if len(unique_names) == 1:
-        #     work_name = unique_names[0]
-        # else:
-        #     work_name = f"{unique_names[0]} + {len(unique_names)-1} more"
-
-        # order.work_name = work_name
-        # order.save()
 
         messages.success(request, "Order added successfully")
         return redirect("orders_page")

@@ -542,14 +542,9 @@ sizeSelect.addEventListener("change", function () {
 
 });
 
-const priceInput =
-  document.getElementById("itemPrice");
-
-const qtyInput =
-  document.getElementById("itemQty");
-
-const totalInput =
-  document.getElementById("itemTotal");
+const priceInput = document.getElementById("itemPrice");
+const qtyInput = document.getElementById("itemQty");
+const totalInput = document.getElementById("itemTotal");
 
 function fetchPrice() {
 
@@ -600,11 +595,9 @@ categorySelect.addEventListener("change", function () {
 
 function calculateItemTotal() {
 
-    let qty =
-      parseFloat(qtyInput.value) || 0;
+    let qty = parseFloat(qtyInput.value) || 0;
 
-    let price =
-      parseFloat(priceInput.value) || 0;
+    let price = parseFloat(priceInput.value) || 0;
 
     let categoryName = "";
 
@@ -668,15 +661,180 @@ function calculateItemTotal() {
         priceInput.value =
           basePrice.toFixed(2);
     }
+    /* ONLINE APPLICATION */
+else if (
+    categoryName.includes("online application")
+) {
 
-    /* NORMAL ITEMS */
-    else {
+    let sizeText = "";
+
+    if (sizeSelect.selectedIndex >= 0) {
+
+        sizeText =
+          sizeSelect.options[
+            sizeSelect.selectedIndex
+          ].text.toLowerCase();
+    }
+
+    if (
+        sizeText.includes("patta") ||
+        sizeText.includes("chitta") ||
+        sizeText.includes("ec")
+    ) {
+
+        if (qty <= 3) {
+
+            grossAmount = 20;
+
+        } else {
+
+            grossAmount =
+              20 + ((qty - 3) * 5);
+        }
+
+        priceInput.value = "20.00";
+
+    } else {
 
         grossAmount = qty * price;
     }
+}
+/* PRINT OUT */
+else if (
+    categoryName.includes("print out")
+) {
 
-    totalInput.value =
-      grossAmount.toFixed(2);
+    let sizeText = "";
+
+    if (sizeSelect.selectedIndex >= 0) {
+
+        sizeText =
+          sizeSelect.options[
+            sizeSelect.selectedIndex
+          ].text.toLowerCase();
+    }
+
+    let variantText = "";
+
+    if (variantSelect.selectedIndex >= 0) {
+
+        variantText =
+          variantSelect.options[
+            variantSelect.selectedIndex
+          ].text.toLowerCase();
+    }
+
+    let isBlackSingle = variantText.includes("black s");
+
+    let isBlackDouble = variantText.includes("black d");
+
+    let isInkjetSingle = variantText.includes("color inkjet s");
+
+    let isInkjetDouble = variantText.includes("color inkjet d");
+
+    /*
+    A4 / LEGAL
+    */
+    if (
+        sizeText.includes("a4") ||
+        sizeText.includes("legal")
+    ) {
+
+        /* BLACK */
+        if (
+            isBlackSingle ||
+            isBlackDouble
+        ) {
+
+            if (qty <= 10) {
+
+              grossAmount = 10 + ((qty - 1) * 3);
+              priceInput.value = (grossAmount).toFixed(2);
+            }
+
+            else if (qty <= 20) {
+
+                grossAmount = 37 + ((qty - 10) * 3) - 5;
+                priceInput.value = (grossAmount).toFixed(2);
+
+            }
+
+            else {
+
+                grossAmount = qty * price;
+            }
+        }
+
+        /* INKJET */
+        else if (isInkjetSingle) {
+
+            if (qty <= 10) {
+              grossAmount = 15 + ((qty - 1) * 10);
+              priceInput.value = (grossAmount).toFixed(2);
+            }
+
+            else {
+
+                grossAmount = qty * price;
+            }
+        }
+
+        else if (isInkjetDouble) {
+
+            if (qty <= 10) {
+                grossAmount = 25 + ((qty - 1) * 10);
+                priceInput.value = (grossAmount).toFixed(2);
+            }
+
+            else {
+
+                grossAmount = qty * price;
+            }
+        }
+    }
+
+
+    else if (
+        sizeText.includes("a3")
+    ) {
+
+        if (isBlackSingle) {
+
+            if (qty <= 9) {
+                grossAmount = 15 + ((qty - 1) * 7);
+                priceInput.value = (grossAmount).toFixed(2);
+            }
+
+            else {
+
+                grossAmount = qty * price;
+            }
+        }
+
+        else if (isBlackDouble) {
+
+            if (qty <= 9) {
+
+                grossAmount = 20 + ((qty - 1) * 7);
+                priceInput.value = (grossAmount).toFixed(2);
+            }
+
+            else {
+
+                grossAmount = qty * price;
+            }
+        }
+    }
+}
+
+/* NORMAL ITEMS */
+else {
+
+    grossAmount = qty * price;
+}
+
+
+    totalInput.value = grossAmount.toFixed(2);
 
 }
 
@@ -685,15 +843,12 @@ function clearItemFields() {
     document.getElementById("itemCategory").value = "";
     document.getElementById("itemSize").innerHTML =
       '<option value="">Select Size</option>';
-
     document.getElementById("itemVariant").innerHTML =
       '<option value="">Select Variant</option>';
-
     document.getElementById("itemQty").value = "";
     document.getElementById("itemPrice").value = "";
     document.getElementById("itemTotal").value = "";
 }
-
 
 </script>
 
