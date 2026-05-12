@@ -4394,3 +4394,28 @@ html, body {
 
     opacity: 0.95;
 }
+
+
+
+
+
+
+
+
+.page-number{
+    padding:10px 16px;
+    background:#f1f1f1;
+    border-radius:10px;
+    text-decoration:none;
+    color:#111;
+    font-weight:600;
+}
+
+.page-number.active{
+    background:#111;
+    color:#fff;
+}
+
+.page-number:hover {
+  background: gray;
+}

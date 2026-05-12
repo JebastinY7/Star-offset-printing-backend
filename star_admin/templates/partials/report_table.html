@@ -37,8 +37,8 @@
   <div class="paginations">
 
     {% if page_obj.has_previous %}
-      <a href="#" data-page="{{ num }}" class="page-link page-btn">«</a>
-      <a href="#" data-page="{{ num }}" class="page-link page-btn">‹</a>
+      <a href="#" data-page="1" class="page-link page-btn">«</a>
+      <a href="#" data-page="{{ page_obj.previous_page_number }}" class="page-link page-btn">‹</a>
     {% endif %}
 
     {% for num in page_obj.paginator.page_range %}
@@ -59,8 +59,17 @@
     {% endfor %}
 
     {% if page_obj.has_next %}
-      <a href="#" data-page="{{ num }}" class="page-link page-btn">›</a>
-      <a href="#" data-page="{{ num }}" class="page-link page-btn">»</a>
+      <a href="#"
+   data-page="{{ page_obj.next_page_number }}"
+   class="page-link page-btn">
+   ›
+</a>
+
+<a href="#"
+   data-page="{{ page_obj.paginator.num_pages }}"
+   class="page-link page-btn">
+   »
+</a>
     {% endif %}
 
   </div>
