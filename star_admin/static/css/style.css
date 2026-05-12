@@ -32,6 +32,44 @@ body {
   max-width: 400px;
 }
 
+.login-switch{
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.login-switch button{
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+
+    background: #2b2b2b;
+
+    transition: all 0.3s ease;
+}
+
+.login-switch button.active{
+    background: linear-gradient(
+        135deg,
+        var(--gold),
+        #c49b2c
+    );
+
+    transform: translateY(-2px);
+    color: black;
+
+    box-shadow: 0 8px 20px rgba(252, 185, 1, 0.70);
+}
+
+.login-switch button:hover{
+    transform: scale(1.02);
+}
+
 /* CARD */
 .login-box {
   position: relative;
@@ -4419,3 +4457,53 @@ html, body {
 .page-number:hover {
   background: gray;
 }
+
+
+
+.staff-table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.staff-table th,
+.staff-table td{
+    padding:14px;
+    border-bottom:1px solid #ddd;
+    text-align:left;
+}
+
+.active-badge{
+    background:#d4f7d4;
+    color:green;
+    padding:6px 12px;
+    border-radius:20px;
+    font-size:14px;
+}
+
+.blocked-badge{
+    background:#ffd6d6;
+    color:red;
+    padding:6px 12px;
+    border-radius:20px;
+    font-size:14px;
+}
+
+.btn-block,
+.btn-unblock{
+    padding:8px 16px;
+    border-radius:8px;
+    text-decoration:none;
+    color:white;
+    font-size:14px;
+}
+
+.btn-block{
+    background:#e74c3c;
+}
+
+.btn-unblock{
+    background:#27ae60;
+}
+
+
+

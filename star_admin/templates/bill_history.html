@@ -44,6 +44,8 @@
                 <a href="{% url 'invoice' b.id %}" class="icon view">👁</a>
                 <span class="tooltip-text">View</span>
               </div>
+
+              {% if request.user.is_superuser %}
               <div class="tooltip">
                 <a href="{% url 'billing' %}?bill_id={{ b.id }}" class="icon edit">✏️</a>
                 <span class="tooltip-text">Edit</span>
@@ -52,6 +54,7 @@
                 <button class="icon delete" onclick="openDeleteModal('{{ b.id }}')">🗑</button>
                 <span class="tooltip-text">Delete</span>
               </div>
+              {% endif %}
             </td>
           </tr>
 

@@ -1,9 +1,17 @@
 {% extends 'auth_base.html' %}
 
-{% block title %}Admin Login{% endblock %}
-{% block heading %}Admin Login{% endblock %}
+{% block title %}Login{% endblock %}
 
 {% block content%}
+<div class="login-switch">
+    <button id="adminTab" class="active">
+        Admin Login
+    </button>
+
+    <button id="staffTab">
+        Staff Login
+    </button>
+</div>
   {% if error %}
     <p class="error-msg">{{ error }}</p>
   {% endif %}
@@ -14,13 +22,14 @@
   {% endfor %}
 {% endif %}
   
-  <form method="POST" autocomplete="off">
+  <form method="POST" id="adminForm" autocomplete="off">
     {% csrf_token %}
     
+    <input type="hidden" name="login_type" value="admin">
     <input type="email" name="email" placeholder="Email" autocomplete="off" required>
     <div class="password-field">
-      <input type="password" name="password" id="password" placeholder="Password" autocomplete="off" required>
-      <span class="toggle-password" onclick="togglePassword()">
+      <input type="password" name="password" id="adminPassword" placeholder="Password" autocomplete="off" required>
+      <span class="toggle-password" onclick="togglePassword('adminPassword', this)">
         <i id="eye-icon" class="fa-solid fa-eye-slash"></i>
       </span>
     </div>
@@ -32,24 +41,90 @@
         <a href="/forgot-password/">Forgot Password?</a>
     </div>
     
-    <button type="submit">Login</button>
+    <button type="submit">Admin Login</button>
+  </form>
+
+  <form method="POST" id="staffForm" autocomplete="off" style="display:none;">
+
+  {% csrf_token %}
+
+  <input type="hidden" name="login_type" value="staff">
+  <input type="text" name="username" placeholder="Username" autocomplete="off">
+
+  <div class="password-field">
+
+        <input type="password"
+               name="password"
+               id="staffPassword"
+               placeholder="Password"
+               autocomplete="off">
+
+        <span class="toggle-password"
+              onclick="togglePassword('staffPassword', this)">
+            <i class="fa-solid fa-eye-slash"></i>
+        </span>
+
+    </div>
+    <div class="form-options">
+
+        <label class="remember">
+            <input type="checkbox" name="remember">
+            Remember me
+        </label>
+
+    </div>
+
+    <button type="submit">
+        Staff Login
+    </button>
   </form>
 
 <script>
-  function togglePassword() {
-    const passwordInput = document.getElementById("password");
-    const icon = document.getElementById("eye-icon");
-    
-    if (passwordInput.type === "password") {
-      passwordInput.type = "text";
-      icon.classList.remove("fa-eye-slash");
-      icon.classList.add("fa-eye");
+  const adminTab = document.getElementById("adminTab");
+const staffTab = document.getElementById("staffTab");
+
+const adminForm = document.getElementById("adminForm");
+const staffForm = document.getElementById("staffForm");
+
+adminTab.onclick = () => {
+
+    adminForm.style.display = "block";
+    staffForm.style.display = "none";
+
+    adminTab.classList.add("active");
+    staffTab.classList.remove("active");
+};
+
+staffTab.onclick = () => {
+
+    adminForm.style.display = "none";
+    staffForm.style.display = "block";
+
+    staffTab.classList.add("active");
+    adminTab.classList.remove("active");
+};
+
+  function togglePassword(inputId, el) {
+
+    const input = document.getElementById(inputId);
+
+    const icon = el.querySelector("i");
+
+    if (input.type === "password") {
+
+        input.type = "text";
+
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+
     } else {
-      passwordInput.type = "password";
-      icon.classList.remove("fa-eye");
-      icon.classList.add("fa-eye-slash");
+
+        input.type = "password";
+
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
     }
-  }
+}
 </script>
 
 <script>

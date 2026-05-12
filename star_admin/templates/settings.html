@@ -75,7 +75,7 @@
           <label>Current Password</label>
           <div class="password-field">
             <input type="password" name="current_password" id="currentPassword">
-            <span onclick="togglePassword('currentPassword', this)">👁</span>
+            <span onclick="togglePassword('currentPassword', this)">🙉</span>
           </div>
         </div>
 
@@ -83,7 +83,7 @@
           <label>New Password</label>
           <div class="password-field">
             <input type="password" name="new_password" id="newPassword">
-            <span onclick="togglePassword('newPassword', this)">👁</span>
+            <span onclick="togglePassword('newPassword', this)">🙉</span>
           </div>
         </div>
 
@@ -91,7 +91,7 @@
           <label>Confirm Password</label>
           <div class="password-field">
             <input type="password" name="confirm_password" id="confirmPassword">
-            <span onclick="togglePassword('confirmPassword', this)">👁</span>
+            <span onclick="togglePassword('confirmPassword', this)">🙉</span>
           </div>
         </div>
       </div>
@@ -99,6 +99,108 @@
       <button type="submit" class="btn-save">Update Password</button>
     <form>
   </div>
+
+  <!-- STAFF MANAGEMENT -->
+<div class="settings-card">
+
+  <h3>👨‍💼 Staff Management</h3>
+
+  <form method="POST">
+
+    {% csrf_token %}
+
+    <input type="hidden"
+           name="form_type"
+           value="staff_create">
+
+    <div class="settings-grid">
+
+      <div>
+        <label>Username</label>
+
+        <input type="text"
+               name="staff_username"
+               required>
+      </div>
+
+      <div>
+        <label>Password</label>
+
+        <input type="password"
+               name="staff_password"
+               required>
+      </div>
+
+    </div>
+
+    <button type="submit"
+            class="btn-save">
+      Add Staff
+    </button>
+
+  </form>
+
+  <hr style="margin:25px 0;">
+
+  <table class="staff-table">
+
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for staff in staffs %}
+
+      <tr>
+
+        <td>{{ staff.username }}</td>
+
+        <td>
+          {% if staff.is_active %}
+            <span class="active-badge">
+              Active
+            </span>
+          {% else %}
+            <span class="blocked-badge">
+              Blocked
+            </span>
+          {% endif %}
+        </td>
+
+        <td>
+
+          {% if staff.is_active %}
+
+          <a href="{% url 'toggle_staff' staff.id %}"
+             class="btn-block">
+             Block
+          </a>
+
+          {% else %}
+
+          <a href="{% url 'toggle_staff' staff.id %}"
+             class="btn-unblock">
+             Unblock
+          </a>
+
+          {% endif %}
+
+        </td>
+
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+
+</div>
 
 </div>
 
@@ -111,7 +213,7 @@ function togglePassword(fieldId, icon) {
     icon.textContent = "🙈";
   } else {
     input.type = "password";
-    icon.textContent = "👁";
+    icon.textContent = "🙉";
   }
 }
 </script>

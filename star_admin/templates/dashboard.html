@@ -11,9 +11,13 @@
       <a href="/add-customer/" class="btn-primary">
         <i class="fas fa-plus"></i> Add Customer
       </a>
+
+      {% if request.user.is_superuser %}
       <a href="{% url 'pricing_setup' %}" class="btn-danger">
         ⚙ Price Setup
       </a>
+      {% endif %}
+      
       <a href="/billing/" class="btn-secondary">
         <i class="fas fa-plus"></i> Create Bill
       </a>
@@ -172,6 +176,7 @@
     </div>
 
     <!-- Expiring -->
+     
     <div class="dash-box">
       <h3>Expiring Soon</h3>
       <ul>

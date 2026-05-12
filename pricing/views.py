@@ -6,11 +6,15 @@ from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.contrib import messages
 from django.db import IntegrityError
+from django.http import HttpResponseForbidden
 from django.urls import reverse
 
 
 @login_required
 def settings_page(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+    
     categories = Category.objects.all()
     sizes = Size.objects.all()
     price_rules = PriceRule.objects.all()
@@ -26,6 +30,8 @@ def settings_page(request):
 
 @login_required
 def pricing_setup(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
 
     # Empty forms for page load
     category_form = CategoryForm(prefix='cat')
@@ -151,6 +157,8 @@ def pricing_setup(request):
 
 @login_required
 def get_sizes(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
 
     category_id = request.GET.get("category_id")
 
@@ -169,6 +177,8 @@ def get_sizes(request):
 # 🔥 GET VARIANTS BY SIZE
 @login_required
 def get_variants(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
 
     size_id = request.GET.get("size_id")
 
@@ -183,6 +193,9 @@ def get_variants(request):
 # Edit Price Rule
 @login_required
 def edit_price_rule(request, rule_id):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+    
     rule = get_object_or_404(PriceRule, id=rule_id)
 
     if request.method == "POST":
@@ -227,6 +240,8 @@ def edit_price_rule(request, rule_id):
 
 @login_required
 def manage_pricing(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
 
     search = request.GET.get("search", "")
     category_filter = request.GET.get("category", "")
@@ -260,6 +275,9 @@ def manage_pricing(request):
 
 @login_required
 def delete_price_rule(request, rule_id):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+    
     rule = get_object_or_404(PriceRule, id=rule_id)
 
     rule.delete()
@@ -269,6 +287,8 @@ def delete_price_rule(request, rule_id):
 # Delete Full Category
 @login_required
 def delete_category(request, category_id):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
 
     category = get_object_or_404(Category, id=category_id)
 

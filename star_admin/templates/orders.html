@@ -116,6 +116,7 @@
                             </div>
                         {% endif %}
 
+                            {% if request.user.is_superuser %}
                             <div class="tooltip">
                                 <a href="{% url 'edit_order' order.id %}" class="icon edit">
                                     ✏️
@@ -132,6 +133,7 @@
                                     <span class="tooltip-text">Delete</span>
                                 
                             </div>
+                            {% endif %}
                         {% endif %} 
                     </td>
 

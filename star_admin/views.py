@@ -5,6 +5,7 @@ import traceback
 from decimal import Decimal, InvalidOperation
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
+from django.http import HttpResponseForbidden
 from .models import PasswordResetOTP
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
@@ -34,47 +35,120 @@ from pricing.models import Category, Size, PriceRule, CategoryDiscount, Variant
 MAX_ATTEMPTS = 5
 BLOCK_MINUTES = 10
 
+# def admin_login(request):
+#     if request.user.is_authenticated:
+#         return redirect('/dashboard/')
+
+#     if request.method == "POST":
+#         email = request.POST.get("email", "").lower().strip()
+#         password = request.POST.get("password", "")
+
+#         if not email or not password:
+#             return render(request, 'login.html', {
+#                 'error': 'Email and password required'
+#             })
+
+#         obj, _ = LoginAttempt.objects.get_or_create(email=email)
+
+#         block_time = timezone.now() - timedelta(minutes=BLOCK_MINUTES)
+
+#         if obj.attempts >= MAX_ATTEMPTS and obj.last_attempt > block_time:
+#             return render(request, 'login.html', {
+#                 'error': 'Too many attempts. Try again later'
+#             })
+
+#         user = authenticate(request, username=email, password=password)
+
+#         if user and user.is_superuser:
+
+#             obj.attempts = 0
+#             obj.save()
+
+#             login(request, user)
+
+#             if not request.POST.get('remember'):
+#                 request.session.set_expiry(0)
+
+#             return redirect('/dashboard/')
+#         else:
+#              obj.attempts += 1
+#              obj.save()
+
+#              return render(request, 'login.html', {'error': 'Invalid email or password'})
+    
+#     return render(request, 'login.html')
+
 def admin_login(request):
+
     if request.user.is_authenticated:
         return redirect('/dashboard/')
 
     if request.method == "POST":
-        email = request.POST.get("email").lower().strip()
-        password = request.POST.get("password")
 
-        if not email or not password:
+        login_type = request.POST.get("login_type")
+
+        password = request.POST.get("password", "")
+
+        if login_type == "admin":
+
+            email = request.POST.get("email", "").lower().strip()
+
+            if not email or not password:
+                return render(request, 'login.html', {
+                    'error': 'Email and password required'
+                })
+
+            user = authenticate(
+                request,
+                username=email,
+                password=password
+            )
+
+            if user and user.is_superuser:
+
+                login(request, user)
+
+                if not request.POST.get('remember'):
+                    request.session.set_expiry(0)
+
+                return redirect('/dashboard/')
+
             return render(request, 'login.html', {
-                'error': 'Email and password required'
+                'error': 'Invalid admin email or password'
             })
 
-        obj, _ = LoginAttempt.objects.get_or_create(email=email)
 
-        block_time = timezone.now() - timedelta(minutes=BLOCK_MINUTES)
+        elif login_type == "staff":
 
-        if obj.attempts >= MAX_ATTEMPTS and obj.last_attempt > block_time:
+            username = request.POST.get("username", "").strip()
+
+            if not username or not password:
+                return render(request, 'login.html', {
+                    'error': 'Username and password required'
+                })
+
+            user = authenticate(
+                request,
+                username=username,
+                password=password
+            )
+
+            if (
+                user and user.is_staff and not user.is_superuser):
+
+                login(request, user)
+
+                if not request.POST.get('remember'):
+                    request.session.set_expiry(0)
+
+                return redirect('/dashboard/')
+
             return render(request, 'login.html', {
-                'error': 'Too many attempts. Try again later'
+                'error': 'Invalid staff username or password'
             })
 
-        user = authenticate(request, username=email, password=password)
-
-        if user:
-            obj.attempts = 0
-            obj.save()
-
-            login(request, user)
-
-            if not request.POST.get('remember'):
-                request.session.set_expiry(0)
-
-            return redirect('/dashboard/')
-        else:
-             obj.attempts += 1
-             obj.save()
-
-             return render(request, 'login.html', {'error': 'Invalid email or password'})
-    
     return render(request, 'login.html')
+
 
 # Forgot Password
 def forgot_password(request):
@@ -502,6 +576,9 @@ def edit_customer(request, id):
 @login_required
 @require_POST
 def delete_customer(request, id):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+    
     customer = get_object_or_404(Customer, id=id)
     customer.delete()
     messages.success(request, "Customer deleted successfully")
@@ -684,6 +761,9 @@ def bill_history(request):
 @login_required
 @require_POST
 def delete_bill(request, id):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+    
     bill = get_object_or_404(Bill, id=id)
     bill.delete()
     messages.success(request, "Bill deleted successfully")
@@ -691,6 +771,9 @@ def delete_bill(request, id):
 
 @login_required
 def reports(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+    
     bills = Bill.objects.select_related('customer')
 
     
@@ -868,6 +951,9 @@ def reports(request):
 #Membership
 @login_required
 def delete_membership(request, id):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+    
     membership = get_object_or_404(MembershipTransaction, id=id)
 
     if request.method == "POST":
@@ -882,6 +968,9 @@ def delete_membership(request, id):
 
 @login_required
 def offers(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+    
     if request.method == "POST":
         title = request.POST.get("title")
         message_text = request.POST.get("message")
@@ -963,6 +1052,9 @@ def offers(request):
 
 @login_required
 def offer_history(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+    
     query = request.GET.get("q")
 
     offers = OffersHistory.objects.all().order_by('-id')
@@ -991,6 +1083,9 @@ def offer_history(request):
 @login_required
 @require_POST
 def delete_offer(request, id):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+    
     offer = get_object_or_404(OffersHistory, id=id)
     offer.delete()
     messages.success(request, "Offer deleted successfully")
@@ -998,6 +1093,9 @@ def delete_offer(request, id):
 
 @login_required
 def settings(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+    
     setting = Setting.objects.first()
 
     if not setting:
@@ -1008,6 +1106,11 @@ def settings(request):
             renewal_fee = 0,
             shop_renewal_fee = 0
         )
+    
+    staffs = User.objects.filter(
+        is_staff=True,
+        is_superuser=False
+    )
 
     if request.method == "POST":
         form_type = request.POST.get("form_type")
@@ -1016,16 +1119,62 @@ def settings(request):
             setting.points_per_rupee = request.POST.get("points_per_rupee")
             setting.max_redeem_percent = request.POST.get("max_redeem_percent")
 
+            setting.save()
+            messages.success(request, "Points settings updated")
+
         elif form_type == "membership":
             setting.membership_validity_days = request.POST.get("membership_validity_days")
             setting.renewal_fee = request.POST.get("renewal_fee")
             setting.shop_renewal_fee = request.POST.get("shop_renewal_fee")
 
-        setting.save()
-        messages.success(request, "Settings updated successfully")
+            setting.save()
+            messages.success(request, "Settings updated successfully")
+            
+        elif form_type == "staff_create":
+            username = request.POST.get(
+                "staff_username", ""
+            ).strip()
+            password = request.POST.get("staff_password", "")
+
+            if not username or not password:
+
+                messages.error(request, "Username and password required")
+            
+            elif User.objects.filter(username=username).exists():
+                messages.error(request, "Username already exists")
+            
+            else:
+                User.objects.create_user(
+                    username=username,
+                    password=password,
+                    is_staff=True
+                )
+                messages.success(request, "Staff Created successfully")
+
         return redirect('settings')
     
-    return render(request, 'settings.html', { 'setting': setting })
+    return render(request, 'settings.html', { 
+        'setting': setting,
+        'staffs': staffs
+    })
+
+@login_required
+def toggle_staff(request, id):
+
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+
+    staff = get_object_or_404(
+        User,
+        id=id,
+        is_staff=True
+    )
+
+    staff.is_active = not staff.is_active
+
+    staff.save()
+
+    return redirect('settings')
 
 
 def custom_round_amount(amount):
@@ -1379,6 +1528,9 @@ def renew_membership(request, id):
 # Download Excel
 @login_required
 def download_report(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+    
     bills = Bill.objects.select_related('customer')
 
     category = request.GET.get('category')
@@ -1530,6 +1682,9 @@ def membership_history(request):
 
 @login_required
 def update_password(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+    
     if request.method == "POST":
         current = request.POST.get("current_password")
         new = request.POST.get("new_password")
@@ -1972,17 +2127,20 @@ def add_order(request):
             messages.error(request, str(e))
 
 
-            return render(request,"add_order.html", {
-                "customers": customers,
-                "today": date.today(),
-                "categories":categories,
-            })
+    return render(request,"add_order.html", {
+        "customers": customers,
+        "today": date.today(),
+        "categories":categories,
+    })
 
 
 # Delete Order
 @login_required
 @require_POST
 def delete_order(request, id):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+    
     order = get_object_or_404(Order, id=id)
     order.delete()
 

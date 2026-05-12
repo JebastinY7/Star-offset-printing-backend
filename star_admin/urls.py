@@ -24,6 +24,7 @@ urlpatterns = [
     path('offer-history/', views.offer_history, name='offer_history'),
     path('delete-offer/<int:id>/', views.delete_offer, name='delete_offer'),
     path('settings/', views.settings, name='settings'),
+    path('toggle-staff/<int:id>/', views.toggle_staff, name='toggle_staff'),
     path('update-password/', views.update_password, name='update_password'),
     path('save-bill/', views.save_bill, name='save_bill'),
     path('renew-membership/<int:id>/', views.renew_membership, name='renew_membership'),

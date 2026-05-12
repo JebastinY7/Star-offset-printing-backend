@@ -35,13 +35,15 @@
       <span>Billing</span>
     </a>  
     </li>
-
+    
+    {% if request.user.is_superuser %}
     <li>
       <a class="{% if '/reports/' in request.path %}active{% endif %}" href="/reports/">
       <i class="fas fa-chart-line"></i>
       <span>Reports</span>
     </a>
     </li>
+    {% endif %}
 
     <li>
       <a class="{% if '/orders/' in request.path %}active{% endif %}" href="/orders/">
@@ -50,12 +52,14 @@
     </a>
     </li>
 
+    {% if request.user.is_superuser %}
     <li>
       <a class="{% if '/offers/' in request.path %}active{% endif %}" href="/offers/">
       <i class="fas fa-gift"></i>
       <span>Offers</span>
     </a>
     </li>
+    {% endif %}
 
     <li class="menu-item">
       <a href="javascript:void(0);" onclick="toggleMenu()"
@@ -84,38 +88,45 @@
         </li>
 
         
-
+        {% if request.user.is_superuser %}
         <li>
           <a class="{% if '/membership-history/' in request.path %}active{% endif %}" href="/membership-history/">
             <i class="fas fa-id-card"></i>
             <span>Membership</span>
           </a>
         </li>
+        {% endif %}
 
+        {% if request.user.is_superuser %}
         <li>
           <a class="{% if '/offer-history/' in request.path %}active{% endif %}" href="/offer-history/">
             <i class="fas fa-gift"></i>
             <span>Offers</span>
           </a>
         </li>
+        {% endif %}
 
       </ul>
     </li>
 
+    {% if request.user.is_superuser %}
     <li>
       <a class="{% if '/pricing/setup/' in request.path %}active{% endif %}" href="/pricing/setup/">
       <i class="fas fa-tags"></i>
       <span>Price Setup</span>
     </a>
     </li>
+    {% endif %}
 
   
+    {% if request.user.is_superuser %}
     <li>
       <a class="{% if '/settings/' in request.path %}active{% endif %}" href="/settings/">
       <i class="fas fa-cog"></i>
       <span>Settings</span>
     </a>
     </li>
+    {% endif %}
 
     <li>
       <a href="{% url 'logout' %}">
