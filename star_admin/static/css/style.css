@@ -2820,8 +2820,8 @@ select option {
 
 /* Buttons */
 .nav-btn {
-  background: #fb8626d3; /* your red */
-  color: #fff;
+  background: var(--gold); /* your red */
+  color: black;
   padding: 6px 14px;
   border-radius: 8px;
   text-decoration: none;
@@ -2831,7 +2831,7 @@ select option {
 
 /* Hover */
 .nav-btn:hover {
-  background: #cd7730d3;
+  background: #a07622d3;
 }
 
 /* Disabled */

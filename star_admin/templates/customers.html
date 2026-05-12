@@ -159,48 +159,74 @@
 
     <!-- Pagination -->
     {% if page_obj.paginator.num_pages > 1 %}
-    <div class="pagination">
+<div class="pagination">
 
-        {% if page_obj.has_previous %}
-            <a href="?{{ query_string }}&page={{ page_obj.previous_page_number }}"
-            class="nav-btn prev">
-            ‹ Prev
-            </a>
-        {% else %}
-            <span class="nav-btn disabled">‹ Prev</span>
-        {% endif %}
-
-
-        {% for num in page_obj.paginator.page_range %}
-
-            {% if num == page_obj.number %}
-
-                <span class="page-number active">
-                    {{ num }}
-                </span>
-
-            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-
-                <a href="?{{ query_string }}&page={{ num }}"
-                class="page-number">
-                {{ num }}
-                </a>
-
-            {% endif %}
-
-        {% endfor %}
-
-        {% if page_obj.has_next %}
-            <a href="?{{ query_string }}&page={{ page_obj.next_page_number }}"
-            class="nav-btn next">
-            Next ›
-            </a>
-        {% else %}
-            <span class="nav-btn disabled">Next ›</span>
-        {% endif %}
-
-    </div>
+    <!-- FIRST PAGE -->
+    {% if page_obj.has_previous %}
+        <a href="?{{ query_string }}&page=1"
+           class="nav-btn">
+           «
+        </a>
+    {% else %}
+        <span class="nav-btn disabled">«</span>
     {% endif %}
+
+
+    <!-- PREVIOUS PAGE -->
+    {% if page_obj.has_previous %}
+        <a href="?{{ query_string }}&page={{ page_obj.previous_page_number }}"
+           class="nav-btn">
+           ‹
+        </a>
+    {% else %}
+        <span class="nav-btn disabled">‹</span>
+    {% endif %}
+
+
+    <!-- PAGE NUMBERS -->
+    {% for num in page_obj.paginator.page_range %}
+
+        {% if num == page_obj.number %}
+
+            <span class="page-number active">
+                {{ num }}
+            </span>
+
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+
+            <a href="?{{ query_string }}&page={{ num }}"
+               class="page-number">
+               {{ num }}
+            </a>
+
+        {% endif %}
+
+    {% endfor %}
+
+
+    <!-- NEXT PAGE -->
+    {% if page_obj.has_next %}
+        <a href="?{{ query_string }}&page={{ page_obj.next_page_number }}"
+           class="nav-btn">
+           ›
+        </a>
+    {% else %}
+        <span class="nav-btn disabled">›</span>
+    {% endif %}
+
+
+    <!-- LAST PAGE -->
+    {% if page_obj.has_next %}
+        <a href="?{{ query_string }}&page={{ page_obj.paginator.num_pages }}"
+           class="nav-btn">
+           »
+        </a>
+    {% else %}
+        <span class="nav-btn disabled">»</span>
+    {% endif %}
+
+</div>
+{% endif %}
 </div>
 
 <!-- Due Modal -->
