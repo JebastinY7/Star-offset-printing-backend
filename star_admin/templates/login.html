@@ -12,8 +12,14 @@
         Staff Login
     </button>
 </div>
-  {% if error %}
+  {% comment %} {% if error %}
     <p class="error-msg">{{ error }}</p>
+  {% endif %} {% endcomment %}
+
+  {% if error %}
+  <div class="login-error">
+      {{ error }}
+  </div>
   {% endif %}
 
   {% if messages %}

@@ -53,6 +53,18 @@ body {
     transition: all 0.3s ease;
 }
 
+.login-error{
+    width:100%;
+    padding:14px 18px;
+    border-radius:12px;
+    background:#ffe5e5;
+    color:#d63031;
+    border:1px solid #ffb3b3;
+    font-weight:600;
+    margin-bottom:18px;
+    text-align:center;
+}
+
 .login-switch button.active{
     background: linear-gradient(
         135deg,
@@ -4048,70 +4060,117 @@ input[type="number"] {
   z-index: 1001;
 }
 
+.mobile-logo {
+  display: none;
+}
+
 /* Mobile View */
 @media (max-width: 768px) {
 
-    /* Hide sidebar completely */
-    .sidebar {
-        position: fixed !important;
-        top: 0;
-        left: -100% !important;
-        width: 260px;
-        max-width: 80%;
-        height: 100%;
-        background: var(--black);
-        z-index: 9999;
-        transition: left 0.3s ease;
-        overflow-y: auto;
-        box-shadow: 4px 0 12px rgba(0,0,0,0.15);
+    html,
+    body{
+        overflow-x:hidden;
     }
 
-    /* Show only when clicked */
-    .sidebar.active {
-        left: 0 !important;
+    /* APP */
+    .app{
+        display:block;
     }
 
-    /* Main full width */
-    .main {
-        width: 100% !important;
-        margin-left: 0 !important;
-        padding: 70px 12px 20px !important;
+    /* TOPBAR */
+    .mobile-topbar{
+        position:fixed;
+        top:0;
+        left:0;
+        width:100%;
+        height:65px;
+        background:var(--black);
+        z-index:9999;
+
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+
+        padding:0 18px;
     }
 
-    /* App full width */
-    .app {
-        display: block !important;
+    /* LOGO */
+    .mobile-logo{
+        width:55px;
+        height:auto;
+        display:block;
     }
 
-    /* Overlay */
-    .overlay {
-        display: none;
+    /* TOGGLE */
+    .menu-toggle{
+        background:none;
+        border:none;
+        color:#fff;
+
+        font-size:32px;
+        cursor:pointer;
+
+        display:flex;
+        align-items:center;
+        justify-content: right;
+
+        padding:0 40px;
     }
 
-    .overlay.show {
-        display: block;
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.4);
-        z-index: 9998;
+    /* SIDEBAR */
+    .sidebar{
+        position:fixed !important;
+        top:0;
+        left:-260px !important;
+
+        width:260px;
+        height:100vh;
+
+        background:var(--black);
+
+        z-index:10000;
+
+        transition:0.3s ease;
+
+        overflow-y:auto;
     }
 
-    /* Hamburger */
-    .menu-toggle {
-        display: block !important;
-        position: fixed;
-        top: 15px;
-        left: 15px;
-        z-index: 10000;
-        width: 50px;
-        height: 50px;
-        background: var(--black);
-        color: white;
-        border: none;
-        padding: 10px 14px;
-        border-radius: 8px;
-        font-size: 22px;
-        cursor: pointer;
+    .sidebar.active{
+        left:0 !important;
+    }
+
+    /* OVERLAY */
+    .overlay{
+        display:none;
+    }
+
+    .overlay.show{
+        display:block;
+        position:fixed;
+        inset:0;
+        background:rgba(0,0,0,0.5);
+        z-index:9998;
+    }
+
+    /* MAIN */
+    .main{
+        margin-left:0 !important;
+        width:100%;
+
+        padding:
+            85px
+            14px
+            20px
+            14px;
+
+        min-height:100vh;
+
+        overflow-y:auto;
+    }
+
+    /* FIX SCROLL */
+    body{
+        overflow-y:auto !important;
     }
 }
 
@@ -4128,6 +4187,8 @@ input[type="number"] {
 /* =========================
    MOBILE FULL RESPONSIVE FIX
 ========================= */
+
+
 @media (max-width: 768px) {
 
   /* App layout */
@@ -4469,7 +4530,7 @@ html, body {
 .staff-table td{
     padding:14px;
     border-bottom:1px solid #ddd;
-    text-align:left;
+    text-align:center;
 }
 
 .active-badge{
@@ -4505,5 +4566,182 @@ html, body {
     background:#27ae60;
 }
 
+.staff-actions{
+    display:flex;
+    gap:10px;
+    align-items:center;
+}
+
+.staff-actions{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:12px;
+}
+
+.staff-actions a,
+.staff-actions button{
+    width:110px;
+    height:42px;
+    border:none;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+    font-size:16px;
+    cursor:pointer;
+}
+
+.btn-edit:hover {
+  background: gray;
+}
+
+.staff-actions button{
+  margin-bottom: 10px;
+}
+
+.btn-delete{
+    background:#e74c3c;
+    color:white;
+    padding:8px 14px;
+    border-radius:8px;
+    text-decoration:none;
+    font-size:14px;
+}
+
+.password-modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.5);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+}
+
+.password-modal-content{
+    background:white;
+    padding:30px;
+    border-radius:16px;
+    width:350px;
+    position:relative;
+}
+
+.close-modal{
+    position:absolute;
+    right:15px;
+    top:10px;
+    font-size:28px;
+    cursor:pointer;
+}
+
+.staff-name{
+    margin-bottom:15px;
+    font-weight:600;
+}
+
+.delete-modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.5);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+}
+
+.delete-modal-content{
+    width:380px;
+    background:white;
+    border-radius:18px;
+    padding:30px;
+    text-align:center;
+    position:relative;
+    animation:popup .2s ease;
+}
+
+.delete-text{
+    margin:20px 0;
+    font-size:17px;
+    color:#444;
+}
+
+.delete-actions{
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    margin-top:20px;
+}
+
+.cancel-btn{
+    background:#ddd;
+    border:none;
+    padding:10px 22px;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+.cancel-btn:hover {
+  background:gray ;
+}
+
+.confirm-delete-btn{
+    background:#e74c3c;
+    color:white;
+    padding:10px 22px;
+    border-radius:10px;
+    text-decoration:none;
+}
+
+.staff-user-info{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.online-dot{
+    width:5px;
+    height:5px;
+    border-radius:50%;
+    background:#00d26a;
+    margin-top: 5px;
+
+    box-shadow:
+        0 0 5px #00d26a,
+        0 0 10px #00d26a,
+        0 0 18px #00d26a;
+
+    animation:pulseGlow 1.5s infinite;
+}
+
+.offline-dot{
+    width:5px;
+    height:5px;
+    border-radius:50%;
+    background:#ff3b30;
+    margin-top: 5px;
+
+    box-shadow:
+        0 0 5px #ff3b30,
+        0 0 10px #ff3b30;
+}
+
+@keyframes pulseGlow{
+    0%{
+        transform:scale(1);
+        opacity:1;
+    }
+
+    50%{
+        transform:scale(1.2);
+        opacity:.7;
+    }
+
+    100%{
+        transform:scale(1);
+        opacity:1;
+    }
+}
 
 

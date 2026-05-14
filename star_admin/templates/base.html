@@ -31,12 +31,18 @@
         {{ message }}
       </div>
       {% endfor %}
-    {% endif %}
-  </div>
-    <main class="main">
+      {% endif %}
+    </div>
+    
+    <div class="mobile-topbar">
+      <div class="topbar-left">
+        <img src="{% static "images/logo.png" %}" class="mobile-logo">
+      </div>
       <button class="menu-toggle" onclick="toggleSidebar()">
         ☰
       </button>
+    </div>
+      <main class="main">
       {% block content %}
       {% endblock %}
     </main>
@@ -64,9 +70,16 @@ function showToast(message, type="error") {
 function toggleSidebar() {
     const sidebar = document.querySelector(".sidebar");
     const overlay = document.querySelector(".overlay");
+    const toggle = document.querySelector(".menu-toggle");
 
     sidebar.classList.toggle("active");
     overlay.classList.toggle("show");
+
+    if(sidebar.classList.contains("active")){
+        toggle.style.display = "none";
+    } else {
+        toggle.style.display = "flex";
+    }
 }
 </script>
 <div class="overlay" onclick="toggleSidebar()"></div>

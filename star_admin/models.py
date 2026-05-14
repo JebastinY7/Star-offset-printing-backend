@@ -174,3 +174,8 @@ class OrderItem(models.Model):
     qty = models.IntegerField(default=1)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+# Staff Activity
+class StaffActivity(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    last_seen = models.DateTimeField(null=True, blank=True)

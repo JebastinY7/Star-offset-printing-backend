@@ -3,14 +3,15 @@ import random
 import time
 import traceback
 from decimal import Decimal, InvalidOperation
+from django.utils.timezone import now
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
-from django.http import HttpResponseForbidden
+from django.contrib.auth import update_session_auth_hash
 from .models import PasswordResetOTP
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
-from .models import Customer, Bill, BillItem, OffersHistory, Setting, MembershipTransaction, LoginAttempt, PointTransaction, Order
+from .models import Customer, Bill, BillItem, OffersHistory, Setting, MembershipTransaction, LoginAttempt, PointTransaction, Order, StaffActivity
 from django.utils import timezone
 from .utils import send_whatsapp_template
 from datetime import timedelta, datetime, date
@@ -126,6 +127,19 @@ def admin_login(request):
                 return render(request, 'login.html', {
                     'error': 'Username and password required'
                 })
+            
+            try:
+                existing_user = User.objects.get(username=username, is_staff=True)
+
+                if not existing_user.is_active:
+                    return render(request, "login.html", {
+                        'error': 'Your account has been blocked by admin'
+                    })
+            
+            except User.DoesNotExist:
+                return render(request, 'login.html', {
+                    'error': 'Invalid staff username or password'
+                })
 
             user = authenticate(
                 request,
@@ -133,8 +147,11 @@ def admin_login(request):
                 password=password
             )
 
-            if (
-                user and user.is_staff and not user.is_superuser):
+            
+
+
+
+            if user and user.is_staff and not user.is_superuser:
 
                 login(request, user)
 
@@ -1129,6 +1146,25 @@ def settings(request):
 
             setting.save()
             messages.success(request, "Settings updated successfully")
+        
+        elif form_type == "admin_password":
+            current_password = request.POST.get("current_password")
+            new_password = request.POST.get("new_password")
+            confirm_password = request.POST.get("confirm_password")
+
+            if not request.user.check_password(current_password):
+                messages.error(request, "Current password incorrect")
+
+            elif new_password != confirm_password:
+                messages.error(request, "Passwords do not match")
+            
+            else:
+                request.user.set_password(new_password)
+                request.user.save()
+
+                update_session_auth_hash(request, request.user)
+
+                messages.success(request, "Password updated successfully")
             
         elif form_type == "staff_create":
             username = request.POST.get(
@@ -1150,13 +1186,58 @@ def settings(request):
                     is_staff=True
                 )
                 messages.success(request, "Staff Created successfully")
+        
+        elif form_type == "change_staff_password":
+            staff_id = request.POST.get("staff_id")
+            new_staff_password = request.POST.get("new_password")
+
+            staff = get_object_or_404(User, id=staff_id, is_staff=True, is_superuser=False)
+
+            staff.set_password(new_staff_password)
+            staff.save()
+
+            messages.success(request, "Staff password updated")
 
         return redirect('settings')
     
+    online_users = []
+
+    for staff in staffs:
+        try:
+            activity = StaffActivity.objects.get(user=staff)
+
+            is_online = (now() - activity.last_seen) < timedelta(minutes=5)
+        except:
+            is_online = False
+
+        online_users.append({
+            "staff": staff,
+            "is_online": is_online
+        })
+    
     return render(request, 'settings.html', { 
         'setting': setting,
-        'staffs': staffs
+        'staffs': staffs,
+        'online_users': online_users
     })
+
+def delete_staff(request, staff_id):
+
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+
+    staff = get_object_or_404(
+        User,
+        id=staff_id,
+        is_staff=True,
+        is_superuser=False
+    )
+
+    staff.delete()
+
+    messages.success(request, "Staff deleted successfully")
+
+    return redirect('settings')
 
 @login_required
 def toggle_staff(request, id):
@@ -1275,49 +1356,49 @@ def save_bill(request):
 
         previous_due = customer.due_amount
 
-        # remaining_payment = max(paid_amount - old_due_payment, Decimal('0'))
+        remaining_payment = max(paid_amount - old_due_payment, Decimal('0'))
 
-        # current_due = max(final - remaining_payment, Decimal('0'))
+        current_due = max(final - remaining_payment, Decimal('0'))
 
-        # remaining_old_due = max(previous_due - old_due_payment, Decimal('0'))
+        remaining_old_due = max(previous_due - old_due_payment, Decimal('0'))
 
 
         # total_remaining_due = remaining_old_due + current_due
 
-        # if (remaining_old_due > 0 or current_due > 0):
-        #     for item in items:
-        #         item['discount'] = 0    
-        #     total_discount = extra_discount
-        #     raw_final = gross_total - extra_discount  + total_extra_charge
-        #     final = raw_final.quantize(Decimal('1'))
-        #     current_due = max(final - paid_amount, Decimal('0'))
-
-        remaining_old_due = max(previous_due - old_due_payment, Decimal('0'))
-
-        current_due = max(final - paid_amount, Decimal('0'))
-
-        # BLOCK DISCOUNT ONLY IF ANY DUE REMAINS
-        discount_allowed = (remaining_old_due <= 0)
-
-        if not discount_allowed:
-
+        if (remaining_old_due > 0 or current_due > 0):
             for item in items:
-                original_total = (
-                    Decimal(str(item['total'])) +
-                    Decimal(str(item['discount']))
-                )
-
-                item['discount'] = 0
-
-                item['total'] = original_total
-
+                item['discount'] = 0    
             total_discount = extra_discount
-
-            raw_final = (gross_total - extra_discount + total_extra_charge)
-
+            raw_final = gross_total - extra_discount  + total_extra_charge
             final = raw_final.quantize(Decimal('1'))
-
             current_due = max(final - paid_amount, Decimal('0'))
+
+        # remaining_old_due = max(previous_due - old_due_payment, Decimal('0'))
+
+        # current_due = max(final - paid_amount, Decimal('0'))
+
+        # # BLOCK DISCOUNT ONLY IF ANY DUE REMAINS
+        # discount_allowed = (remaining_old_due <= 0)
+
+        # if not discount_allowed:
+
+        #     for item in items:
+        #         original_total = (
+        #             Decimal(str(item['total'])) +
+        #             Decimal(str(item['discount']))
+        #         )
+
+        #         item['discount'] = 0
+
+        #         item['total'] = original_total
+
+        #     total_discount = extra_discount
+
+        #     raw_final = (gross_total - extra_discount + total_extra_charge)
+
+        #     final = raw_final.quantize(Decimal('1'))
+
+        #     current_due = max(final - paid_amount, Decimal('0'))
 
         due_amount = current_due + remaining_old_due
 
