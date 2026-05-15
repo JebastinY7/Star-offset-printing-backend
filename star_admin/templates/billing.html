@@ -525,6 +525,10 @@ function addItem() {
                       }
                     }
                   }
+                  else {
+
+                    grossAmount = qty * price;
+                  }
                 }
 
                 /* COLOR INKJET */
@@ -1205,12 +1209,15 @@ else if (categoryText.includes("train ticket")) {
 
     if (sizeText.includes("minimum")) {
         gross = 50 + ((qty - 1) * 20);
+        price = gross;
     }
     else if (sizeText.includes("thakkal")) {
         gross = 75 + ((qty - 1) * 20);
+        price = gross;
     }
     else if (sizeText.includes("premium")) {
         gross = 100 + ((qty - 1) * 20);
+        price = gross;
     }
 }
 
@@ -1292,6 +1299,9 @@ else if (categoryText.includes("print out")) {
                 }
             }
         }
+        else {
+            gross = qty * price;
+        }
     }
 
     /* INKJET */
@@ -1327,18 +1337,21 @@ else if (categoryText.includes("print out")) {
                 }
             }
         }
+        /* OTHER PRINT OUT TYPES */
+        else {
+            gross = qty * price;
+        }
     }
 
-    /* OTHER PRINT OUT TYPES */
+    
+}
+/* DEFAULT FOR ALL OTHER CATEGORIES */
     else {
         gross = qty * price;
     }
-}
 
-/* DEFAULT FOR ALL OTHER CATEGORIES */
-else {
-    gross = qty * price;
-}
+
+
 
 let shopDiscount =
     parseFloat(data.shop_discount || 0);

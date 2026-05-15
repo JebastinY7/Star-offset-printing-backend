@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pricing Table Management</title>
 
+    <link rel="icon" href="{% static 'images/favicon.png' %}" type="image/png">
     <link rel="stylesheet" href="{% static 'pricing/manage.css' %}">
 </head>
 <body>
@@ -157,7 +158,15 @@
 </div>
 
 </div>
+<script>
+document.querySelectorAll('input[type=number]').forEach(input => {
 
+    input.addEventListener('wheel', function(e) {
+        this.blur();
+    });
+
+});
+</script>
 
 </body>
 </html>

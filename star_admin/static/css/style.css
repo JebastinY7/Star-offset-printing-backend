@@ -4101,6 +4101,14 @@ input[type="number"] {
         display:block;
     }
 
+    .menu-toggle:hover,
+    .menu-toggle:focus,
+    .menu-toggle:active{
+        background: transparent !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+
     /* TOGGLE */
     .menu-toggle{
         background:none;
@@ -4328,6 +4336,36 @@ input[type="number"] {
 html, body {
     width: 100%;
     overflow-x: hidden;
+}
+
+@media (max-width:768px){
+
+    .staff-table{
+        width:100%;
+        display:block;
+        overflow-x:auto;
+    }
+
+    .staff-table table{
+        min-width:650px;
+    }
+
+    .staff-table td,
+    .staff-table th{
+        white-space:nowrap;
+    }
+
+    .staff-actions{
+        display:flex;
+        gap:8px;
+        flex-wrap:nowrap;
+    }
+
+    .staff-actions a,
+    .staff-actions button{
+        font-size:14px;
+        padding:8px 12px;
+    }
 }
 
 

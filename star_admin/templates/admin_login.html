@@ -1,0 +1,78 @@
+{% extends 'auth_base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content%}
+    <h2 class="login-title">
+        Admin Login
+    </h2>
+
+
+  {% if error %}
+  <div class="login-error">
+      {{ error }}
+  </div>
+  {% endif %}
+
+  {% if messages %}
+  {% for message in messages %}
+    <p class="success-msg">{{ message }}</p>
+  {% endfor %}
+{% endif %}
+  
+  <form method="POST"  autocomplete="off">
+    {% csrf_token %}
+    
+    <input type="hidden" name="login_type" value="admin">
+    <input type="email" name="email" placeholder="Email" autocomplete="off" required>
+    <div class="password-field">
+      <input type="password" name="password" id="adminPassword" placeholder="Password" autocomplete="off" required>
+      <span class="toggle-password" onclick="togglePassword('adminPassword', this)">
+        <i id="eye-icon" class="fa-solid fa-eye-slash"></i>
+      </span>
+    </div>
+
+    <div class="form-options">
+      <label class="remember">
+        <input type="checkbox" name='remember'> Remember me
+      </label>
+        <a href="/forgot-password/">Forgot Password?</a>
+    </div>
+    
+    <button type="submit">Admin Login</button>
+  </form>
+
+
+<script>
+
+  function togglePassword(inputId, el) {
+
+    const input = document.getElementById(inputId);
+
+    const icon = el.querySelector("i");
+
+    if (input.type === "password") {
+
+        input.type = "text";
+
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+
+    } else {
+
+        input.type = "password";
+
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+    }
+}
+</script>
+
+<script>
+window.addEventListener("pageshow", function (event) {
+  if (event.persisted || performance.getEntriesByType("navigation")[0].type === "back_forward") {
+    window.location.reload();
+  }
+});
+</script>
+{% endblock%}

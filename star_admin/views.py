@@ -86,86 +86,77 @@ def admin_login(request):
 
     if request.method == "POST":
 
-        login_type = request.POST.get("login_type")
+        email = request.POST.get("email", "").lower().strip()
 
         password = request.POST.get("password", "")
 
-        if login_type == "admin":
-
-            email = request.POST.get("email", "").lower().strip()
-
-            if not email or not password:
-                return render(request, 'login.html', {
-                    'error': 'Email and password required'
-                })
-
-            user = authenticate(
-                request,
-                username=email,
-                password=password
-            )
-
-            if user and user.is_superuser:
-
-                login(request, user)
-
-                if not request.POST.get('remember'):
-                    request.session.set_expiry(0)
-
-                return redirect('/dashboard/')
-
-            return render(request, 'login.html', {
-                'error': 'Invalid admin email or password'
+        if not email or not password:
+            return render(request, 'admin_login.html', {
+                'error': 'Email and password required'
             })
 
+        user = authenticate(request, username=email, password=password)
 
-        elif login_type == "staff":
+        if user and user.is_superuser:
 
-            username = request.POST.get("username", "").strip()
+            login(request, user)
 
-            if not username or not password:
-                return render(request, 'login.html', {
-                    'error': 'Username and password required'
-                })
-            
-            try:
-                existing_user = User.objects.get(username=username, is_staff=True)
+            if not request.POST.get('remember'):
+                request.session.set_expiry(0)
 
-                if not existing_user.is_active:
-                    return render(request, "login.html", {
-                        'error': 'Your account has been blocked by admin'
-                    })
-            
-            except User.DoesNotExist:
-                return render(request, 'login.html', {
-                    'error': 'Invalid staff username or password'
-                })
+            return redirect('/dashboard/')
 
-            user = authenticate(
-                request,
-                username=username,
-                password=password
-            )
+        return render(request, 'admin_login.html', {
+            'error': 'Invalid admin email or password'
+        })
 
-            
+    return render(request, 'admin_login.html')
 
+# Staff Login
+def staff_login(request):
+    if request.user.is_authenticated:
+        return redirect('/dashboard/')
+    
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "")
 
+        if not username or not password:
 
-            if user and user.is_staff and not user.is_superuser:
-
-                login(request, user)
-
-                if not request.POST.get('remember'):
-                    request.session.set_expiry(0)
-
-                return redirect('/dashboard/')
-
-            return render(request, 'login.html', {
-                'error': 'Invalid staff username or password'
+            return render(request, 'staff_login.html', {
+                'error': 'Username and password required'
             })
+        
+        try:
+            existing_user = User.objects.get(username=username, is_staff=True)
 
-    return render(request, 'login.html')
+            if not existing_user.is_active:
 
+                return render(request, "staff_login.html", {
+                    'error': 'Your account has been blocked by admin'
+                })
+        
+        except User.DoesNotExist:
+
+            return render(request, "staff_login.html", {
+                'error': 'Invalid username or password'
+            })
+        
+        user = authenticate(request, username=username, password=password)
+
+        if (user and user.is_staff and not user.is_superuser):
+            login(request, user)
+
+            if not request.POST.get('remember'):
+                request.session.set_expiry(0)
+
+            return redirect('/dashboard/')
+        
+        return render(request, "staff_login.html", {
+            'error': 'Invalid username or password'
+        })
+    
+    return render(request, "staff_login.html")
 
 # Forgot Password
 def forgot_password(request):
@@ -333,7 +324,7 @@ def resend_otp(request):
 def admin_logout(request):
     logout(request)
     request.session.flush()
-    return redirect('login')
+    return redirect('admin_login')
 
 # Dashboard
 @never_cache
@@ -1793,7 +1784,7 @@ def update_password(request):
         user.save()
 
         messages.success(request, "Password updated successfully")
-        return redirect('login')  # force re-login
+        return redirect('admin_login')  # force re-login
 
     return redirect('settings')
 

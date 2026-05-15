@@ -67,6 +67,7 @@
 
           <input type="date"
                  name="order_date"
+                 id="orderDate"
                  value="{{ order.order_date|date:'Y-m-d' }}"
                  required>
         </div>
@@ -77,6 +78,7 @@
 
           <input type="date"
                  name="delivery_date"
+                 id="deliveryDate"
                  value="{{ order.delivery_date|date:'Y-m-d' }}">
         </div>
       </div>
@@ -870,6 +872,10 @@ else if (
                 grossAmount = qty * price;
             }
         }
+        else {
+
+        grossAmount = qty * price;
+    }
     }
 }
 
@@ -1122,6 +1128,35 @@ window.onload = function () {
     });
 
 };
+
+</script>
+<script>
+document.querySelectorAll('input[type=number]').forEach(input => {
+
+    input.addEventListener('wheel', function(e) {
+        this.blur();
+    });
+
+});
+</script>
+
+<script>
+
+flatpickr("#orderDate", {
+
+    dateFormat: "d-m-Y",
+
+    defaultDate: "today",
+
+    allowInput: true
+});
+
+flatpickr("#deliveryDate", {
+
+    dateFormat: "d-m-Y",
+
+    allowInput: true
+});
 
 </script>
 

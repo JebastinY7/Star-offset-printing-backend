@@ -68,8 +68,9 @@
         <div class="form-group addx-form-group">
           <label>Order Date</label>
 
-          <input type="date"
+          <input type="text"
                  name="order_date"
+                 id="orderDate"
                  value="{{ today|date:'Y-m-d' }}"
                  required>
         </div>
@@ -78,7 +79,8 @@
         <div class="form-group addx-form-group">
           <label>Delivery Date</label>
 
-          <input type="date"
+          <input type="text"
+                  id="deliveryDate"
                  name="delivery_date">
         </div>
       </div>
@@ -824,6 +826,10 @@ else if (
                 grossAmount = qty * price;
             }
         }
+        else {
+
+    grossAmount = qty * price;
+  }
     }
 }
 
@@ -849,6 +855,35 @@ function clearItemFields() {
     document.getElementById("itemPrice").value = "";
     document.getElementById("itemTotal").value = "";
 }
+
+</script>
+<script>
+document.querySelectorAll('input[type=number]').forEach(input => {
+
+    input.addEventListener('wheel', function(e) {
+        this.blur();
+    });
+
+});
+</script>
+
+<script>
+
+flatpickr("#orderDate", {
+
+    dateFormat: "d-m-Y",
+
+    defaultDate: "today",
+
+    allowInput: true
+});
+
+flatpickr("#deliveryDate", {
+
+    dateFormat: "d-m-Y",
+
+    allowInput: true
+});
 
 </script>
 

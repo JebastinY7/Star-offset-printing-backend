@@ -1,0 +1,88 @@
+{% extends 'auth_base.html' %}
+
+{% block title %}Staff Login{% endblock %}
+
+{% block content %}
+
+<h2 class="login-title">
+    Staff Login
+</h2>
+
+{% if error %}
+<div class="login-error">
+    {{ error }}
+</div>
+{% endif %}
+
+<form method="POST" autocomplete="off">
+
+    {% csrf_token %}
+
+    <input type="hidden"
+           name="login_type"
+           value="staff">
+
+    <input type="text"
+           name="username"
+           placeholder="Username"
+           autocomplete="off"
+           required>
+
+    <div class="password-field">
+
+        <input type="password"
+               name="password"
+               id="staffPassword"
+               placeholder="Password"
+               autocomplete="off"
+               required>
+
+        <span class="toggle-password"
+              onclick="togglePassword('staffPassword', this)">
+
+            <i class="fa-solid fa-eye-slash"></i>
+
+        </span>
+
+    </div>
+
+    <div class="form-options">
+
+        <label class="remember">
+            <input type="checkbox" name="remember">
+            Remember me
+        </label>
+
+    </div>
+
+    <button type="submit">
+        Staff Login
+    </button>
+
+</form>
+
+<script>
+function togglePassword(inputId, el) {
+
+    const input = document.getElementById(inputId);
+
+    const icon = el.querySelector("i");
+
+    if (input.type === "password") {
+
+        input.type = "text";
+
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+
+    } else {
+
+        input.type = "password";
+
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+    }
+}
+</script>
+
+{% endblock %}
