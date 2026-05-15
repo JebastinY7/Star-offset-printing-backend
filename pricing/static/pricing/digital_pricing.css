@@ -1,0 +1,163 @@
+.digital-page{
+    padding:28px;
+}
+
+/* HEADER */
+
+.digital-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:24px;
+    gap:15px;
+    flex-wrap:wrap;
+}
+
+.digital-header h1{
+    font-size:32px;
+    font-weight:700;
+    color:#0b1739;
+}
+
+.digital-actions{
+    display:flex;
+    gap:12px;
+}
+
+.back-btn,
+.table-btn{
+    padding:12px 20px;
+    border-radius:14px;
+    text-decoration:none;
+    font-weight:600;
+    font-size:15px;
+}
+
+.back-btn{
+    background:#e5e7eb;
+    color:#111827;
+}
+
+.table-btn{
+    background:#d4af37;
+    color:#000;
+}
+
+/* GRID */
+
+.digital-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    align-items:start;
+}
+
+/* CARD */
+
+.digital-card{
+    background:#fff;
+    border-radius:22px;
+    padding:28px;
+    box-shadow:0 3px 12px rgba(0,0,0,0.05);
+    height: 100%;
+}
+
+.digital-card h2{
+    font-size:20px;
+    margin-bottom:14px;
+    padding-bottom: 8px;
+    color:#0b1739;
+    border-bottom: 2px solid var(--gold);
+}
+
+/* FORM */
+
+.form-group{
+    margin-bottom:18px;
+}
+
+.form-group label{
+    display:block;
+    margin-bottom:8px;
+    font-weight:600;
+    color:#24324a;
+    font-size:15px;
+}
+
+.form-group input,
+.form-group select{
+    width:100%;
+    height:56px;
+    border:1px solid #d9dce3;
+    border-radius:16px;
+    padding:0 18px;
+    font-size:16px;
+    background:#fff;
+}
+
+.form-group input:focus,
+.form-group select:focus{
+    outline:none;
+    border-color:#d4af37;
+}
+
+.form-group textarea{
+    width:100%;
+    min-height:140px;
+    border:1px solid #d9dce3;
+    border-radius:16px;
+    padding:16px 18px;
+    font-size:16px;
+    background:#fff;
+    resize:vertical;
+    font-family:inherit;
+}
+
+.form-group textarea:focus{
+    outline:none;
+    border-color:#d4af37;
+}
+
+/* BUTTON */
+
+.save-btn{
+    width:100%;
+    height:36px;
+    border:none;
+    border-radius:16px;
+    background:#d4af37;
+    color:#000;
+    font-size:17px;
+    font-weight:700;
+    cursor:pointer;
+    margin-top:6px;
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+    .digital-page{
+        padding:15px;
+    }
+
+    .digital-grid{
+        grid-template-columns:1fr;
+    }
+
+    .digital-header{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+    .digital-actions{
+        width:100%;
+    }
+
+    .back-btn,
+    .table-btn{
+        flex:1;
+        text-align:center;
+    }
+
+}

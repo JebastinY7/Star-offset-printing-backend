@@ -10,4 +10,9 @@ urlpatterns = [
     path('delete-category/<int:category_id>/', views.delete_category, name='delete_category'),
     path("get-sizes/", views.get_sizes, name="get_sizes"),
     path('get-variants/', views.get_variants, name='get_variants'),
+    path("digital-price-setup/", views.digital_price_setup, name='digital_price_setup'),
+    path("digital-price-table", views.digital_price_table, name='digital_price_table'),
+    path("edit-digital-price/<int:id>/", views.edit_digital_price,name="edit_digital_price"),
+    path("delete-digital-price/<int:id>/", views.delete_digital_price,name="delete_digital_price"),
+
 ]

@@ -13,9 +13,14 @@
 
     <div class="page-header">
         <h1>Pricing Setup Dashboard</h1>
-        <a href="{% url 'manage_pricing' %}" class="manage-btn">
-            Open Pricing Management
-        </a>
+        <div class="header-buttons">
+            <a href="{% url 'manage_pricing' %}" class="manage-btn">
+                Open Pricing Management
+            </a>
+            <a href="{% url 'digital_price_setup' %}" class="digital-btn">
+                Digital Price Setup
+            </a>
+        </div>
     </div>
 
     <!-- TOP GRID -->

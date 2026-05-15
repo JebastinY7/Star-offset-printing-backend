@@ -2024,8 +2024,22 @@ def edit_order(request, id):
         order.work_name = request.POST.get("work_name")
         order.notes = request.POST.get("notes")
 
-        order.order_date = request.POST.get("order_date")
-        order.delivery_date = request.POST.get("delivery_date")
+        order_date = request.POST.get("order_date")
+        delivery_date = request.POST.get("delivery_date")
+
+        if order_date:
+            order.order_date = datetime.strptime(
+                order_date,
+                "%d-%m-%Y"
+            ).date()
+            
+        if delivery_date:
+            order.delivery_date = datetime.strptime(
+                delivery_date,
+                "%d-%m-%Y"
+            ).date()
+        else:
+            order.delivery_date = None
 
         order.total_amount = Decimal(request.POST.get("total_amount") or 0)
         order.advance_paid = Decimal(request.POST.get("advance_paid") or 0)
@@ -2114,6 +2128,20 @@ def add_order(request):
 
             order_date = request.POST.get("order_date")
             delivery_date = request.POST.get("delivery_date")
+
+            if order_date:
+                order_date = datetime.strptime(
+                    order_date,
+                    "%d-%m-%Y"
+                ).date()
+            
+            if delivery_date:
+                delivery_date = datetime.strptime(
+                    delivery_date,
+                    "%d-%m-%Y"
+                ).date()
+            else:
+                delivery_date = None
 
             total_amount = Decimal(request.POST.get("total_amount") or 0)
             advance_paid = Decimal(request.POST.get("advance_paid") or 0)

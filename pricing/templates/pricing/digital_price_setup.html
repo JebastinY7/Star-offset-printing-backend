@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Digital Price Setup{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet"
+      href="{% static 'pricing/digital_pricing.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="digital-page">
+
+    <!-- HEADER -->
+    <div class="digital-header">
+
+        <h1>Digital Price Setup</h1>
+
+        <div class="digital-actions">
+
+            <a href="{% url 'pricing_setup' %}"
+               class="back-btn">
+                ← Back
+            </a>
+
+            <a href="{% url 'digital_price_table' %}"
+               class="table-btn">
+                Open Digital Price Table
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- GRID -->
+    <div class="digital-grid">
+
+        <!-- ADD CATEGORY -->
+        <div class="digital-card">
+
+            <h2>Add Category</h2>
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                <input type="hidden"
+                       name="form_type"
+                       value="add_digital_category">
+
+                <div class="form-group">
+
+                    <label>Category Name</label>
+
+                    <input type="text"
+                           name="category_name"
+                           placeholder="ART PAPER"
+                           required>
+
+                </div>
+
+                <button type="submit"
+                        class="save-btn">
+                    Add Category
+                </button>
+
+            </form>
+
+        </div>
+
+        <!-- ADD GSM -->
+        <div class="digital-card">
+
+            <h2>Add GSM</h2>
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                <input type="hidden"
+                       name="form_type"
+                       value="add_digital_gsm">
+
+                <div class="form-group">
+
+                    <label>Category</label>
+
+                    <select name="category"
+                            required>
+
+                        <option value="">
+                            Select Category
+                        </option>
+
+                        {% for category in categories %}
+
+                        <option value="{{ category.id }}">
+                            {{ category.name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>GSM</label>
+
+                    <textarea name="gsm_list"
+                            placeholder="Enter one GSM per line
+Example:
+100 GSM
+130 GSM
+170 GSM"
+                            required></textarea>
+
+                </div>
+
+                <button type="submit"
+                        class="save-btn">
+                    Add GSM
+                </button>
+
+            </form>
+
+        </div>
+
+        <!-- ADD PRODUCT -->
+        <div class="digital-card">
+
+            <h2>Add Product Type</h2>
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                <input type="hidden"
+                       name="form_type"
+                       value="add_digital_product">
+
+                <div class="form-group">
+
+                    <label>GSM</label>
+
+                    <select name="gsm"
+                            required>
+
+                        <option value="">
+                            Select GSM
+                        </option>
+
+                        {% for gsm in gsms %}
+
+                        <option value="{{ gsm.id }}">
+                            {{ gsm.category.name }} -
+                            {{ gsm.name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Side</label>
+
+                    <select name="side"
+                            required>
+
+                        <option value="single">
+                            1 SIDE
+                        </option>
+
+                        <option value="double">
+                            2 SIDE
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Product Type</label>
+
+                    <input type="text"
+                           name="product_name"
+                           placeholder="A4"
+                           required>
+
+                </div>
+
+                
+
+                <button type="submit"
+                        class="save-btn">
+                    Add Product
+                </button>
+
+            </form>
+
+        </div>
+
+        <!-- ADD DIGITAL PRICE -->
+        <div class="digital-card">
+
+            <h2>Add Price Rule</h2>
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                <input type="hidden"
+                       name="form_type"
+                       value="add_digital_price">
+
+                <div class="form-group">
+
+                    <label>Product</label>
+
+                    <select name="product"
+                            required>
+
+                        <option value="">
+                            Select Product
+                        </option>
+
+                        {% for product in products %}
+
+                        <option value="{{ product.id }}">
+
+                            {{ product.gsm.category.name }}
+                            -
+                            {{ product.gsm.name }}
+                            -
+                            {{ product.name }}
+                            -
+                            {{ product.side }}
+
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div class="price-grid">
+
+                    <div class="form-group">
+
+                        <label>Qty</label>
+
+                        <input type="number"
+                               name="qty"
+                               required>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>1 Day Rate</label>
+
+                        <input type="number"
+                               step="0.01"
+                               name="one_day_rate">
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Shop Rate</label>
+
+                        <input type="number"
+                               step="0.01"
+                               name="shop_rate">
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Customer Rate</label>
+
+                        <input type="number"
+                               step="0.01"
+                               name="customer_rate">
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Customer Discount %</label>
+
+                        <input type="number"
+                               step="0.01"
+                               name="customer_discount"
+                               placeholder="10">
+
+                    </div>
+
+                </div>
+
+                <button type="submit"
+                        class="save-btn">
+                    Save Price Rule
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

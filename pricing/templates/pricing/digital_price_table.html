@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet"
+      href="{% static 'css/digital_pricing.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="pricing-table-page">
+
+    <div class="pricing-table-header">
+
+        <h1>Digital Price Table</h1>
+
+        <a href="{% url 'digital_price_setup' %}"
+           class="back-btn">
+            ← Back
+        </a>
+
+    </div>
+
+    <div class="table-wrapper">
+
+        <table class="digital-table">
+
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>GSM</th>
+                    <th>Product</th>
+                    <th>Side</th>
+                    <th>Qty</th>
+                    <th>1 Day</th>
+                    <th>Shop</th>
+                    <th>Customer</th>
+                    <th>Cust. Discount</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for item in prices %}
+
+                <tr>
+
+                    <td>{{ item.category }}</td>
+
+                    <td>{{ item.gsm }}</td>
+
+                    <td>{{ item.product_type }}</td>
+
+                    <td>{{ item.side }}</td>
+
+                    <td>{{ item.qty }}</td>
+
+                    <td>₹{{ item.one_day_rate }}</td>
+
+                    <td>₹{{ item.shop_rate }}</td>
+
+                    <td>₹{{ item.customer_rate }}</td>
+
+                    <td>{{ item.customer_discount }}%</td>
+
+                    <td class="action-buttons">
+
+                        <a href="{% url 'edit_digital_price' item.id %}"
+                           class="edit-btn">
+                            Edit
+                        </a>
+
+                        <a href="#"
+                           class="delete-btn"
+                           onclick="openDeleteModal(
+                            '{% url "delete_digital_price" item.id %}'
+                        )">
+                            Delete
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+                    <td colspan="10">
+                        No digital prices added
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+    <div class="delete-modal" id="deleteModal">
+
+    <div class="delete-modal-content">
+
+        <h3>Delete Digital Price</h3>
+
+        <p>
+            Are you sure you want to delete this price?
+        </p>
+
+        <div class="delete-modal-actions">
+
+            <a href="#"
+               id="confirmDeleteBtn"
+               class="delete-btn">
+                Delete
+            </a>
+
+            <button type="button"
+                    class="cancel-btn"
+                    onclick="closeDeleteModal()">
+                Cancel
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+<script>
+
+function openDeleteModal(deleteUrl) {
+
+    document
+        .getElementById("deleteModal")
+        .classList.add("show");
+
+    document
+        .getElementById("confirmDeleteBtn")
+        .href = deleteUrl;
+}
+
+function closeDeleteModal() {
+
+    document
+        .getElementById("deleteModal")
+        .classList.remove("show");
+}
+
+</script>
+
+{% endblock %}
