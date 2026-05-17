@@ -1,0 +1,78 @@
+.digital-page {
+    max-width: 1200px;
+    margin: auto;
+    padding: 30px;
+}
+
+.digital-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.digital-header h1 {
+    font-size: 48px;
+    color: #07153f;
+}
+
+.digital-card {
+    background: white;
+    padding: 35px;
+    border-radius: 28px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 10px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.form-group input,
+.form-group select {
+    height: 60px;
+    border-radius: 18px;
+    border: 1px solid #d9dee8;
+    padding: 0 20px;
+    font-size: 18px;
+    outline: none;
+}
+
+.save-btn {
+    margin-top: 30px;
+    height: 62px;
+    width: 100%;
+    border: none;
+    border-radius: 18px;
+    background: #d4af37;
+    font-size: 22px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.back-btn {
+    background: #eef0f4;
+    padding: 16px 24px;
+    border-radius: 16px;
+    text-decoration: none;
+    color: black;
+    font-weight: 700;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

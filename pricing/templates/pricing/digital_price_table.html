@@ -1,104 +1,260 @@
-{% extends "base.html" %}
 {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
-{% block extra_css %}
-<link rel="stylesheet"
-      href="{% static 'css/digital_pricing.css' %}">
-{% endblock %}
+    <title>Digital Price Table</title>
 
-{% block content %}
+    <link rel="icon" href="{% static 'images/favicon.png' %}" type="image/png">
+    <link rel="stylesheet" href="{% static 'pricing/digital_price_manage.css' %}">
+</head>
+<body>
 
-<div class="pricing-table-page">
+<div class="manage-page">
 
-    <div class="pricing-table-header">
+    <!-- HEADER -->
+    <div class="manage-header-card">
 
-        <h1>Digital Price Table</h1>
+        <h1 class="manage-title">
+            Digital Price Table
+        </h1>
 
-        <a href="{% url 'digital_price_setup' %}"
-           class="back-btn">
-            ← Back
-        </a>
+        <form method="GET"
+              class="manage-toolbar">
 
-    </div>
+            <!-- SEARCH -->
+            <input type="text"
+                   name="search"
+                   value="{{ request.GET.search }}"
+                   placeholder="Search category..."
+                   class="manage-search-input">
 
-    <div class="table-wrapper">
+            <!-- CATEGORY -->
+            <select name="category"
+                    class="manage-category-filter">
 
-        <table class="digital-table">
+                <option value="">
+                    All Categories
+                </option>
 
-            <thead>
-                <tr>
-                    <th>Category</th>
-                    <th>GSM</th>
-                    <th>Product</th>
-                    <th>Side</th>
-                    <th>Qty</th>
-                    <th>1 Day</th>
-                    <th>Shop</th>
-                    <th>Customer</th>
-                    <th>Cust. Discount</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
+                {% for category in categories %}
 
-            <tbody>
+                <option value="{{ category.id }}"
+                    {% if request.GET.category == category.id|stringformat:"s" %}
+                        selected
+                    {% endif %}>
 
-                {% for item in prices %}
+                    {{ category.name }}
 
-                <tr>
-
-                    <td>{{ item.category }}</td>
-
-                    <td>{{ item.gsm }}</td>
-
-                    <td>{{ item.product_type }}</td>
-
-                    <td>{{ item.side }}</td>
-
-                    <td>{{ item.qty }}</td>
-
-                    <td>₹{{ item.one_day_rate }}</td>
-
-                    <td>₹{{ item.shop_rate }}</td>
-
-                    <td>₹{{ item.customer_rate }}</td>
-
-                    <td>{{ item.customer_discount }}%</td>
-
-                    <td class="action-buttons">
-
-                        <a href="{% url 'edit_digital_price' item.id %}"
-                           class="edit-btn">
-                            Edit
-                        </a>
-
-                        <a href="#"
-                           class="delete-btn"
-                           onclick="openDeleteModal(
-                            '{% url "delete_digital_price" item.id %}'
-                        )">
-                            Delete
-                        </a>
-
-                    </td>
-
-                </tr>
-
-                {% empty %}
-
-                <tr>
-                    <td colspan="10">
-                        No digital prices added
-                    </td>
-                </tr>
+                </option>
 
                 {% endfor %}
 
-            </tbody>
+            </select>
 
-        </table>
+            <!-- SEARCH -->
+            <button type="submit"
+                    class="manage-search-btn">
+
+                Search
+
+            </button>
+
+            <!-- RESET -->
+            <a href="{% url 'digital_price_table' %}"
+               class="manage-reset-btn">
+
+                Reset
+
+            </a>
+
+            <!-- BACK -->
+            <a href="{% url 'digital_price_setup' %}"
+               class="manage-back-btn">
+
+                Back
+
+            </a>
+
+        </form>
 
     </div>
-    <div class="delete-modal" id="deleteModal">
+
+    <!-- TABLE CARD -->
+    <div class="manage-category-card">
+
+        <div class="manage-category-top">
+
+            <h2 class="manage-category-title">
+
+                {% if request.GET.category %}
+
+                    {% for category in categories %}
+
+                        {% if request.GET.category == category.id|stringformat:"s" %}
+
+                            {{ category.name }} Rules
+
+                        {% endif %}
+
+                    {% endfor %}
+
+                {% else %}
+
+                    Digital Pricing Rules
+
+                {% endif %}
+
+            </h2>
+
+            {% if request.GET.category %}
+
+            <a href="{% url 'delete_digital_category' request.GET.category %}"
+            class="manage-delete-table-btn"
+            onclick="return confirm(
+            'Delete full category table?'
+            )">
+
+                Delete Full Table
+
+            </a>
+
+            {% endif %}
+
+        </div>
+
+        <div class="manage-table-wrap">
+
+            <table class="manage-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Category</th>
+                        <th>GSM</th>
+                        <th>Product</th>
+                        <th>Side</th>
+                        <th>Qty</th>
+                        <th>1 Day</th>
+                        <th>Shop</th>
+                        <th>Customer</th>
+                        <th>Discount</th>
+                        <th>Actions</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for item in prices %}
+
+                    <tr>
+
+                        <td>
+                            {{ item.product.gsm.category.name }}
+                        </td>
+
+                        <td>
+                            {{ item.product.gsm.name }}
+                        </td>
+
+                        <td>
+                            {{ item.product.name }}
+                        </td>
+
+                        <td>
+                            {{ item.product.side }}
+                        </td>
+
+                        <td>
+
+                            {{ item.min_qty }}
+
+                            {% if item.max_qty %}
+                                - {{ item.max_qty }}
+                            {% else %}
+                                +
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+                            ₹{{ item.one_day_rate }}
+                        </td>
+
+                        <td>
+                            ₹{{ item.shop_rate }}
+                        </td>
+
+                        <td>
+                            ₹{{ item.customer_rate }}
+                        </td>
+
+                        <td>
+                            {{ item.customer_discount }}%
+                        </td>
+
+                        <td>
+
+                            <div class="manage-action-group">
+
+                                <a href="{% url 'edit_digital_price' item.id %}"
+                                   class="manage-edit-btn">
+
+                                    Edit
+
+                                </a>
+
+                                <a href="#"
+                                   class="manage-delete-btn"
+                                   onclick="openDeleteModal(
+                                   '{% url "delete_digital_price" item.id %}'
+                                   )">
+
+                                    Delete
+
+                                </a>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td colspan="10"
+                            class="manage-empty">
+
+                            No digital prices added
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- DELETE MODAL -->
+
+<div class="delete-modal"
+     id="deleteModal">
 
     <div class="delete-modal-content">
 
@@ -110,23 +266,27 @@
 
         <div class="delete-modal-actions">
 
-            <a href="#"
-               id="confirmDeleteBtn"
-               class="delete-btn">
+            <button 
+                type="button"
+                href="#"
+                id="confirmDeleteBtn"
+                class="manage-delete-btn">
+
                 Delete
-            </a>
+
+            </button>
 
             <button type="button"
-                    class="cancel-btn"
+                    class="manage-reset-btn"
                     onclick="closeDeleteModal()">
+
                 Cancel
+
             </button>
 
         </div>
 
     </div>
-
-</div>
 
 </div>
 
@@ -152,4 +312,15 @@ function closeDeleteModal() {
 
 </script>
 
-{% endblock %}
+<script>
+document.querySelectorAll('input[type=number]').forEach(input => {
+
+    input.addEventListener('wheel', function(e) {
+        this.blur();
+    });
+
+});
+</script>
+
+</body>
+</html>

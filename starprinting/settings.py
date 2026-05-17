@@ -36,6 +36,7 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 ALLOWED_HOSTS = [
     '127.0.0.1',
     "admin.starprinting.in",
+    "staff.starprinting.in",
     "web-production-d87ac.up.railway.app",
 ]
 
@@ -67,7 +68,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'star_admin.middleware.StaffLastSeenMiddleware'
+    'star_admin.middleware.StaffLastSeenMiddleware',
+    'star_admin.middleware.SubdomainMiddleware',
 ]
 
 ROOT_URLCONF = 'starprinting.urls'

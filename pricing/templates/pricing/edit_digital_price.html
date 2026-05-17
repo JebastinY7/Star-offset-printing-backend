@@ -1,0 +1,226 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Edit Digital Price</title>
+
+    <link rel="stylesheet"
+          href="{% static 'pricing/edit_digital_price.css' %}">
+
+</head>
+<body>
+
+<div class="digital-page">
+
+    <div class="digital-header">
+
+        <h1>Edit Digital Price</h1>
+
+        <a href="{% url 'digital_price_table' %}"
+           class="back-btn">
+
+            ← Back
+
+        </a>
+
+    </div>
+
+    <div class="digital-card">
+
+        <form method="POST">
+
+            {% csrf_token %}
+
+            <div class="form-grid">
+
+                <!-- CATEGORY -->
+                <div class="form-group">
+
+                    <label>Category</label>
+
+                    <select name="category" required>
+
+                        {% for category in categories %}
+
+                        <option value="{{ category.id }}"
+                            {% if item.product.gsm.category.id == category.id %}
+                                selected
+                            {% endif %}>
+
+                            {{ category.name }}
+
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <!-- GSM -->
+                <div class="form-group">
+
+                    <label>GSM</label>
+
+                    <select name="gsm" required>
+
+                        {% for gsm in gsms %}
+
+                        <option value="{{ gsm.id }}"
+                            {% if item.product.gsm.id == gsm.id %}
+                                selected
+                            {% endif %}>
+
+                            {{ gsm.name }}
+
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <!-- PRODUCT -->
+                <div class="form-group">
+
+                    <label>Product</label>
+
+                    <input type="text"
+                           name="product_name"
+                           value="{{ item.product.name }}"
+                           required>
+
+                </div>
+
+                <!-- SIDE -->
+                <div class="form-group">
+
+                    <label>Side</label>
+
+                    <select name="side">
+
+                        <option value="single"
+                            {% if item.product.side == "single" %}
+                                selected
+                            {% endif %}>
+
+                            1 SIDE
+
+                        </option>
+
+                        <option value="double"
+                            {% if item.product.side == "double" %}
+                                selected
+                            {% endif %}>
+
+                            2 SIDE
+
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <!-- MIN QTY -->
+                <div class="form-group">
+
+                    <label>Min Qty</label>
+
+                    <input type="number"
+                           name="min_qty"
+                           value="{{ item.min_qty }}"
+                           required>
+
+                </div>
+
+                <!-- MAX QTY -->
+                <div class="form-group">
+
+                    <label>Max Qty</label>
+
+                    <input type="number"
+                           name="max_qty"
+                           value="{{ item.max_qty }}">
+
+                </div>
+
+                <!-- ONE DAY -->
+                <div class="form-group">
+
+                    <label>1 Day Rate</label>
+
+                    <input type="number"
+                           step="0.01"
+                           name="one_day_rate"
+                           value="{{ item.one_day_rate }}">
+
+                </div>
+
+                <!-- SHOP -->
+                <div class="form-group">
+
+                    <label>Shop Rate</label>
+
+                    <input type="number"
+                           step="0.01"
+                           name="shop_rate"
+                           value="{{ item.shop_rate }}">
+
+                </div>
+
+                <!-- CUSTOMER -->
+                <div class="form-group">
+
+                    <label>Customer Rate</label>
+
+                    <input type="number"
+                           step="0.01"
+                           name="customer_rate"
+                           value="{{ item.customer_rate }}">
+
+                </div>
+
+                <!-- DISCOUNT -->
+                <div class="form-group">
+
+                    <label>Customer Discount %</label>
+
+                    <input type="number"
+                           step="0.01"
+                           name="customer_discount"
+                           value="{{ item.customer_discount }}">
+
+                </div>
+
+            </div>
+
+            <button type="submit"
+                    class="save-btn">
+
+                Update Price
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+<script>
+document.querySelectorAll('input[type=number]').forEach(input => {
+
+    input.addEventListener('wheel', function(e) {
+        this.blur();
+    });
+
+});
+</script>
+</body>
+</html>

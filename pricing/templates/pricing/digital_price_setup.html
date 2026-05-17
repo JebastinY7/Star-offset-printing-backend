@@ -167,6 +167,17 @@ Example:
 
                 <div class="form-group">
 
+                    <label>Product Type</label>
+
+                    <input type="text"
+                           name="product_name"
+                           placeholder="A4"
+                           required>
+
+                </div>
+
+                <div class="form-group">
+
                     <label>Side</label>
 
                     <select name="side"
@@ -184,16 +195,7 @@ Example:
 
                 </div>
 
-                <div class="form-group">
-
-                    <label>Product Type</label>
-
-                    <input type="text"
-                           name="product_name"
-                           placeholder="A4"
-                           required>
-
-                </div>
+                
 
                 
 
@@ -207,6 +209,7 @@ Example:
         </div>
 
         <!-- ADD DIGITAL PRICE -->
+        <!-- ADD DIGITAL PRICE -->
         <div class="digital-card">
 
             <h2>Add Price Rule</h2>
@@ -216,90 +219,154 @@ Example:
                 {% csrf_token %}
 
                 <input type="hidden"
-                       name="form_type"
-                       value="add_digital_price">
-
-                <div class="form-group">
-
-                    <label>Product</label>
-
-                    <select name="product"
-                            required>
-
-                        <option value="">
-                            Select Product
-                        </option>
-
-                        {% for product in products %}
-
-                        <option value="{{ product.id }}">
-
-                            {{ product.gsm.category.name }}
-                            -
-                            {{ product.gsm.name }}
-                            -
-                            {{ product.name }}
-                            -
-                            {{ product.side }}
-
-                        </option>
-
-                        {% endfor %}
-
-                    </select>
-
-                </div>
+                    name="form_type"
+                    value="add_digital_price">
 
                 <div class="price-grid">
 
+                    <!-- CATEGORY -->
                     <div class="form-group">
 
-                        <label>Qty</label>
+                        <label>Category</label>
 
-                        <input type="number"
-                               name="qty"
-                               required>
+                        <select id="priceCategory">
+
+                            <option value="">
+                                Select Category
+                            </option>
+
+                            {% for category in categories %}
+
+                            <option value="{{ category.id }}">
+                                {{ category.name }}
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
 
                     </div>
 
+                    <!-- GSM -->
+                    <div class="form-group">
+
+                        <label>GSM</label>
+
+                        <select id="priceGsm">
+
+                            <option value="">
+                                Select GSM
+                            </option>
+
+                            {% for gsm in gsms %}
+
+                            <option value="{{ gsm.id }}"
+                                    data-category="{{ gsm.category.id }}">
+
+                                {{ gsm.name }}
+
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+                    <!-- PRODUCT -->
+                    <div class="form-group">
+
+                        <label>Product</label>
+
+                        <select name="product"
+                                id="priceProduct"
+                                required>
+
+                            <option value="">
+                                Select Product
+                            </option>
+
+                            {% for product in products %}
+
+                            <option value="{{ product.id }}"
+                                    data-gsm="{{ product.gsm.id }}">
+
+                                {{ product.name }}
+                                -
+                                {{ product.side }}
+
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+                    <!-- MIN QTY -->
+                    <div class="form-group">
+
+                        <label>Min Qty</label>
+
+                        <input type="number"
+                            name="min_qty"
+                            required>
+
+                    </div>
+
+                    <!-- MAX QTY -->
+                    <div class="form-group">
+
+                        <label>Max Qty</label>
+
+                        <input type="number"
+                            name="max_qty"
+                            placeholder="Leave empty for above">
+
+                    </div>
+
+                    <!-- 1 DAY -->
                     <div class="form-group">
 
                         <label>1 Day Rate</label>
 
                         <input type="number"
-                               step="0.01"
-                               name="one_day_rate">
+                            step="0.01"
+                            name="one_day_rate">
 
                     </div>
 
+                    <!-- SHOP -->
                     <div class="form-group">
 
                         <label>Shop Rate</label>
 
                         <input type="number"
-                               step="0.01"
-                               name="shop_rate">
+                            step="0.01"
+                            name="shop_rate">
 
                     </div>
 
+                    <!-- CUSTOMER -->
                     <div class="form-group">
 
                         <label>Customer Rate</label>
 
                         <input type="number"
-                               step="0.01"
-                               name="customer_rate">
+                            step="0.01"
+                            name="customer_rate">
 
                     </div>
 
+                    <!-- DISCOUNT -->
                     <div class="form-group">
 
                         <label>Customer Discount %</label>
 
                         <input type="number"
-                               step="0.01"
-                               name="customer_discount"
-                               placeholder="10">
+                            step="0.01"
+                            name="customer_discount"
+                            placeholder="10">
 
                     </div>
 
@@ -317,5 +384,58 @@ Example:
     </div>
 
 </div>
+
+<script>
+
+const categorySelect = document.getElementById("priceCategory");
+const gsmSelect = document.getElementById("priceGsm");
+const productSelect = document.getElementById("priceProduct");
+
+categorySelect.addEventListener("change", function () {
+
+    const categoryId = this.value;
+
+    Array.from(gsmSelect.options).forEach(option => {
+
+        if (!option.value) return;
+
+        option.style.display =
+            option.dataset.category === categoryId
+            ? "block"
+            : "none";
+    });
+
+    gsmSelect.value = "";
+    productSelect.value = "";
+});
+
+gsmSelect.addEventListener("change", function () {
+
+    const gsmId = this.value;
+
+    Array.from(productSelect.options).forEach(option => {
+
+        if (!option.value) return;
+
+        option.style.display =
+            option.dataset.gsm === gsmId
+            ? "block"
+            : "none";
+    });
+
+    productSelect.value = "";
+});
+
+</script>
+
+<script>
+document.querySelectorAll('input[type=number]').forEach(input => {
+
+    input.addEventListener('wheel', function(e) {
+        this.blur();
+    });
+
+});
+</script>
 
 {% endblock %}

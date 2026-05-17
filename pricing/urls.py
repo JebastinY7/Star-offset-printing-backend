@@ -14,5 +14,6 @@ urlpatterns = [
     path("digital-price-table", views.digital_price_table, name='digital_price_table'),
     path("edit-digital-price/<int:id>/", views.edit_digital_price,name="edit_digital_price"),
     path("delete-digital-price/<int:id>/", views.delete_digital_price,name="delete_digital_price"),
+    path("delete-digital-category/<int:id>/", views.delete_digital_category, name="delete_digital_category"),
 
 ]

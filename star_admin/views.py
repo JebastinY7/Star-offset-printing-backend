@@ -28,7 +28,7 @@ from openpyxl.utils import get_column_letter
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
-from pricing.models import Category, Size, PriceRule, CategoryDiscount, Variant
+from pricing.models import Category, Size, PriceRule, CategoryDiscount, Variant, DigitalCategory, DigitalPrice, DigitalGSM, DigitalProduct
 
 # Create your views here.
 # Admin Login
@@ -81,6 +81,9 @@ BLOCK_MINUTES = 10
 
 def admin_login(request):
 
+    if request.is_staff_subdomain:
+        return redirect('/staff-login/')
+
     if request.user.is_authenticated:
         return redirect('/dashboard/')
 
@@ -114,6 +117,8 @@ def admin_login(request):
 
 # Staff Login
 def staff_login(request):
+    if request.is_admin_subdomain:
+        return redirect('/')
     if request.user.is_authenticated:
         return redirect('/dashboard/')
     
@@ -330,6 +335,15 @@ def admin_logout(request):
 @never_cache
 @login_required(login_url='/')
 def dashboard(request):
+    if request.is_staff_subdomain:
+        if not request.user.is_staff or request.user.is_superuser:
+            logout(request)
+            return redirect('/staff-login/')
+    else:
+        if not request.user.is_superuser:
+            logout(request)
+            return redirect('/')
+        
     today = timezone.now().date()
 
     total_customers = Customer.objects.count()
@@ -668,6 +682,8 @@ def billing_system(request):
 
     categories = Category.objects.all()
 
+    digital_categories = DigitalCategory.objects.all()
+
     advance_paid = 0
 
     if selected_order:
@@ -687,40 +703,66 @@ def billing_system(request):
 
             discount = Decimal('0')
 
-            rule = PriceRule.objects.filter(
-                category=item.category,
-                size=item.size,
-                variant=item.variant,
-                min_qty__lte=item.qty
-            ).order_by('-min_qty').first()
+            if item.category:
 
-            if rule:
+                rule = PriceRule.objects.filter(
+                    category=item.category,
+                    size=item.size,
+                    variant=item.variant,
+                    min_qty__lte=item.qty
+                ).order_by('-min_qty').first()
 
-                # Shop discount
-                if customer.category.lower() == "shop":
+                if rule:
 
-                    discount = (
-                        item.total *
-                        Decimal(str(rule.shop_discount or 0))
-                    ) / 100
+                    # Shop discount
+                    if customer.category.lower() == "shop":
 
-                # Customer member discount
-                elif customer.category.lower() == "customer" and customer.is_member:
+                        discount = (
+                            item.total *
+                            Decimal(str(rule.shop_discount or 0))
+                        ) / 100
 
-                    discount = (
-                        item.total *
-                        Decimal(str(rule.cs_discount or 0))
-                    ) / 100
+                    # Customer member discount
+                    elif customer.category.lower() == "customer" and customer.is_member:
+
+                        discount = (
+                            item.total *
+                            Decimal(str(rule.cs_discount or 0))
+                        ) / 100
+            
+            else:
+                digital_rule = DigitalPrice.objects.filter(
+                    product=item.digital_product,
+                    min_qty__lte=item.qty
+                ).order_by('-min_qty').first()
+
+                if digital_rule:
+                    if (customer.category.lower() == "customer" and customer.is_member):
+
+                        discount = (
+                            item.total *
+                            Decimal(
+                                str(
+                                    digital_rule.customer_discount or 0
+                                )
+                            )
+                        ) / 100
+
+                    else:
+                        discount = Decimal('0')
 
             final_total = item.total - discount
 
             prepared_items.append({
-                "category": item.category.name,
-                "size": item.size.name,
-                "variant": item.variant.name,
-                "category_id": item.category.id,
-                "size_id": item.size.id,
-                "variant_id": item.variant.id if item.variant else "",
+                "billing_type": ("digital print" if item.digital_category else "normal print"),
+                "category": item.category.name if item.category else item.digital_category.name,
+                "size": item.size.name if item.size else item.digital_gsm.name,
+                "side": item.side,
+                "side_name": item.side_name,
+                "variant": item.variant.name if item.variant else item.digital_product.name,
+                "category_id": item.category.id if item.category else item.digital_category.id,
+                "size_id": item.size.id if item.size else item.digital_gsm.id,
+                "variant_id": item.variant.id if item.variant else item.digital_product.id,
                 "qty": item.qty,
                 "price": item.price,
                 "discount": discount,
@@ -735,8 +777,82 @@ def billing_system(request):
         'order_items': order_items,
         'prepared_items': prepared_items,
         'advance_paid': advance_paid,
-        'categories': categories
+        'categories': categories,
+        'digital_categories': digital_categories,
     })
+
+def get_digital_price(request):
+
+    product_id = request.GET.get("product_id")
+
+    qty = int(request.GET.get("qty", 0))
+
+    price = DigitalPrice.objects.filter(
+        product_id=product_id,
+        min_qty__lte=qty
+    ).filter(
+        Q(max_qty__gte=qty) |
+        Q(max_qty__isnull=True)
+    ).first()
+
+    if not price:
+        return JsonResponse({
+            "success": False
+        })
+
+    return JsonResponse({
+
+        "success": True,
+
+        "one_day_rate": float(price.one_day_rate),
+
+        "shop_rate": float(price.shop_rate),
+
+        "customer_rate": float(price.customer_rate),
+
+        "customer_discount": float(price.customer_discount),
+    })
+
+
+@login_required
+def get_digital_gsm(request):
+
+    category_id = request.GET.get("category_id")
+
+    # prevent crash
+    if not category_id or category_id == "undefined":
+        return JsonResponse({
+            "gsms": []
+        })
+
+    gsms = DigitalGSM.objects.filter(
+        category_id=category_id
+    ).values("id", "name")
+
+    return JsonResponse({
+        "gsms": list(gsms)
+    })
+
+@login_required
+def get_digital_products(request):
+
+    gsm_id = request.GET.get("gsm_id")
+    side = request.GET.get("side")
+
+    if not gsm_id or gsm_id == "undefined":
+        return JsonResponse({
+            "products": []
+        })
+
+    products = DigitalProduct.objects.filter(
+        gsm_id=gsm_id,
+        side=side
+    ).values("id", "name")
+
+    return JsonResponse({
+        "products": list(products)
+    })
+
 
 @login_required
 def bill_history(request):
@@ -1490,19 +1606,75 @@ def save_bill(request):
         # customer.due_amount = max(customer.due_amount - old_due_payment, Decimal('0'))
 
         for item in items:
-            BillItem.objects.create(
-                bill=bill,
-                service_name=item['name'],
-                category_id=item.get('categoryId') or None,
-                size_id=item.get('sizeId') or None,
-                variant_id=item.get('variantId') or None,
-                qty=item['qty'],
-                price=item['price'],
-                discount=item['discount'],
-                extra_charge=item.get("extraCharge", 0),
-                extra_purpose=item.get("extraPurpose", ""),
-                total=item['total'],
-            )
+            print("ITEM:", item)
+            billing_type = item.get("billingType")
+            print("TYPE:", billing_type)
+
+            # =========================
+            # NORMAL PRINT
+            # =========================
+            if billing_type == "normal print":
+
+                BillItem.objects.create(
+
+                    bill=bill,
+
+                    service_name=item['name'],
+
+                    category_id=item.get('categoryId') or None,
+
+                    size_id=item.get('sizeId') or None,
+
+                    variant_id=item.get('variantId') or None,
+
+                    qty=item['qty'],
+
+                    price=item['price'],
+
+                    discount=item['discount'],
+
+                    extra_charge=item.get("extraCharge", 0),
+
+                    extra_purpose=item.get("extraPurpose", ""),
+
+                    total=item['total'],
+                )
+
+            # =========================
+            # DIGITAL PRINT
+            # =========================
+            elif billing_type == "digital print":
+                service_name = item.get('name', '')
+
+                service_name = " - ".join(
+                    service_name.split(" - ")[:-1]
+                )
+
+                BillItem.objects.create(
+
+                    bill=bill,
+                    
+
+                    service_name=service_name,
+
+                    digital_category_id=item.get('categoryId') or None,
+
+                    digital_gsm_id=item.get('sizeId') or None,
+
+                    digital_product_id=item.get('variantId') or None,
+
+                    qty=item['qty'],
+
+                    price=item['price'],
+
+                    discount=item['discount'],
+
+                    extra_charge=item.get("extraCharge", 0),
+
+                    extra_purpose=item.get("extraPurpose", ""),
+
+                    total=item['total'],
+                )
 
         # customer.points = max(customer.points - points, 0)
 
@@ -1794,6 +1966,11 @@ def update_password(request):
 def get_sizes(request):
     category_id = request.GET.get("category_id")
 
+    if not category_id or category_id == "None":
+        return JsonResponse({
+            "sizes": []
+        })
+
     sizes = Size.objects.filter(category_id=category_id)
 
     data = {
@@ -2019,6 +2196,7 @@ def update_order_status(request, id, new_status):
 @login_required
 def edit_order(request, id):
     order = get_object_or_404(Order, id=id)
+    digital_categories = DigitalCategory.objects.all()
 
     if request.method == "POST":
         order.work_name = request.POST.get("work_name")
@@ -2069,24 +2247,65 @@ def edit_order(request, id):
         totals = request.POST.getlist("item_total[]")
 
         # SAVE AGAIN
+        billing_types = request.POST.getlist("billing_type[]")
+        customer_types = request.POST.getlist("customer_type[]")
+        work_types = request.POST.getlist("work_type[]")
+        sides = request.POST.getlist("item_side[]")
+        side_names = request.POST.getlist("item_side_name[]")
+
         for i in range(len(categories)):
 
-            OrderItem.objects.create(
+            billing_type = billing_types[i]
 
-                order=order,
+            if billing_type == "digital":
 
-                category_id=categories[i],
+                OrderItem.objects.create(
 
-                size_id=sizes[i],
+                    order=order,
 
-                variant_id=variants[i],
+                    billing_type="digital",
 
-                qty=qtys[i],
+                    digital_category_id=categories[i] if categories[i] else None,
 
-                price=prices[i],
+                    digital_gsm_id=sizes[i] if sizes[i] else None,
 
-                total=totals[i]
-            )
+                    digital_product_id=variants[i] if variants[i] else None,
+
+                    customer_type=customer_types[i] if i < len(customer_types) else "",
+
+                    work_type=work_types[i] if i < len(work_types) else "",
+                    
+                    side=sides[i] if i < len(sides) else "",
+
+                    side_name=side_names[i] if i < len(side_names) else "",
+
+                    qty=qtys[i],
+
+                    price=prices[i],
+
+                    total=totals[i]
+                )
+
+            else:
+
+                OrderItem.objects.create(
+
+                    order=order,
+
+                    billing_type="normal",
+
+                    category_id=categories[i] if categories[i] else None,
+
+                    size_id=sizes[i] if sizes[i] else None,
+
+                    variant_id=variants[i] if variants[i] else None,
+
+                    qty=qtys[i],
+
+                    price=prices[i],
+
+                    total=totals[i]
+                )
 
         order.save()
 
@@ -2100,7 +2319,8 @@ def edit_order(request, id):
     return render(request, 'edit_order.html', {
         'order': order,
         'customers': customers,
-        'categories': categories
+        'categories': categories,
+        'digital_categories': digital_categories,
     })
 
 from .models import (Customer, Category, Order, OrderItem)
@@ -2108,6 +2328,7 @@ from .models import (Customer, Category, Order, OrderItem)
 def add_order(request):
     customers = Customer.objects.all().order_by("name")
     categories = Category.objects.all().order_by("name")
+    digital_categories = DigitalCategory.objects.all()
 
     if request.method == "POST":
         
@@ -2171,6 +2392,9 @@ def add_order(request):
             sizes = request.POST.getlist("item_size[]")
             variants = request.POST.getlist("item_variant[]")
 
+            sides = request.POST.getlist("item_side[]")
+            side_names = request.POST.getlist("item_side_name[]")
+
             qtys = request.POST.getlist("item_qty[]")
             prices = request.POST.getlist("item_price[]")
             totals = request.POST.getlist("item_total[]")
@@ -2193,29 +2417,67 @@ def add_order(request):
                     "today": date.today(),
                 })
 
+            billing_types = request.POST.getlist("billing_type[]")
+            customer_types = request.POST.getlist("customer_type[]")
+
+            work_types = request.POST.getlist("work_type[]")
+
             for i in range(item_count):
 
                 if not categories_ids[i]:
                     continue
 
-                OrderItem.objects.create(
-                    order=order,
+                # DIGITAL PRINT
+                if billing_types[i] == "digital":
 
-                    category_id=categories_ids[i],
+                    OrderItem.objects.create(
 
-                    # size_id=sizes[i] or None,
+                        order=order,
 
-                    # variant_id=variants[i] or None,
-                    size_id=sizes[i] if i < len(sizes) and sizes[i] else None,
+                        billing_type="digital",
 
-                    variant_id=variants[i] if i < len(variants) and variants[i] else None,
+                        digital_category_id=categories_ids[i],
 
-                    qty=Decimal(str(qtys[i] or 0)),
+                        digital_gsm_id=sizes[i] if sizes[i] else None,
 
-                    price=Decimal(str(prices[i] or 0)),
+                        digital_product_id=variants[i] if variants[i] else None,
 
-                    total=Decimal(str(totals[i] or 0))
-                )
+                        customer_type=customer_types[i] if i < len(customer_types) else "",
+
+                        work_type=work_types[i] if i < len(work_types) else "",
+
+                        side=sides[i] if i < len(sides) else "",
+
+                        side_name=side_names[i] if i < len(side_names) else "",
+
+                        qty=Decimal(str(qtys[i] or 0)),
+
+                        price=Decimal(str(prices[i] or 0)),
+
+                        total=Decimal(str(totals[i] or 0))
+                    )
+
+                # NORMAL PRINT
+                else:
+
+                    OrderItem.objects.create(
+
+                        order=order,
+
+                        billing_type="normal",
+
+                        category_id=categories_ids[i],
+
+                        size_id=sizes[i] if sizes[i] else None,
+
+                        variant_id=variants[i] if variants[i] else None,
+
+                        qty=Decimal(str(qtys[i] or 0)),
+
+                        price=Decimal(str(prices[i] or 0)),
+
+                        total=Decimal(str(totals[i] or 0))
+                    )
 
             messages.success(request, "Order added successfully")
             return redirect("orders_page")
@@ -2230,6 +2492,7 @@ def add_order(request):
     return render(request,"add_order.html", {
         "customers": customers,
         "today": date.today(),
+        "digital_categories": digital_categories,
         "categories":categories,
     })
 

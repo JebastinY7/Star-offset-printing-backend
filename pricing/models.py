@@ -142,33 +142,16 @@ class DigitalProduct(models.Model):
 
 class DigitalPrice(models.Model):
 
-    product = models.ForeignKey(
-        DigitalProduct,
-        on_delete=models.CASCADE
-    )
+    product = models.ForeignKey(DigitalProduct, on_delete=models.CASCADE)
 
-    qty = models.IntegerField()
+    min_qty = models.PositiveIntegerField()
 
-    one_day_rate = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0
-    )
+    max_qty = models.PositiveIntegerField(null=True, blank=True)
 
-    shop_rate = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0
-    )
+    one_day_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
-    customer_rate = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0
-    )
+    shop_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
-    customer_discount = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        default=0
-    )
+    customer_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    customer_discount = models.DecimalField(max_digits=5, decimal_places=2, default=0)

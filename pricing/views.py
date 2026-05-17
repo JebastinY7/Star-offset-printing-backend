@@ -358,18 +358,20 @@ def digital_price_setup(request):
         
         elif form_type == "add_digital_price":
             product_id = request.POST.get("product")
-            qty = request.POST.get("qty")
+            min_qty = request.POST.get("min_qty")
+            max_qty = request.POST.get("max_qty") or None
             one_day_rate = request.POST.get("one_day_rate") or 0
             shop_rate = request.POST.get("shop_rate") or 0
             customer_rate = request.POST.get("customer_rate") or 0
             customer_discount = request.POST.get("customer_discount") or 0
 
-            if product_id and qty:
+            if product_id and min_qty:
                 product = DigitalProduct.objects.get(id=product_id)
 
                 DigitalPrice.objects.create(
                     product=product,
-                    qty=qty,
+                    min_qty=min_qty,
+                    max_qty=max_qty,
                     one_day_rate=one_day_rate,
                     shop_rate=shop_rate,
                     customer_rate=customer_rate,
@@ -393,46 +395,108 @@ def digital_price_setup(request):
 # Digital Price Table View
 def digital_price_table(request):
 
-    prices = DigitalPrice.objects.all().order_by(
-        "category",
-        "gsm",
-        "qty"
+    prices = DigitalPrice.objects.select_related(
+        "product",
+        "product__gsm",
+        "product__gsm__category"
     )
 
-    return render(request, "pricing/digital_price_table.html", {
-        "prices": prices
-    })
+    search = request.GET.get("search")
+    category = request.GET.get("category")
+
+    if search:
+        prices = prices.filter(
+            product__gsm__category__name__icontains=search
+        )
+
+    if category:
+        prices = prices.filter(
+            product__gsm__category_id=category
+        )
+
+    prices = prices.order_by(
+        "product__gsm__category__name"
+    )
+
+    categories = DigitalCategory.objects.all()
+
+    return render(request,
+        "pricing/digital_price_table.html",
+        {
+            "prices": prices,
+            "categories": categories,
+        }
+    )
 
 # Edit Digital
 def edit_digital_price(request, id):
 
-    price = get_object_or_404(DigitalPrice, id=id)
+    item = get_object_or_404(DigitalPrice, id=id)
+
+    categories = DigitalCategory.objects.all()
+
+    gsms = DigitalGSM.objects.all()
 
     if request.method == "POST":
 
-        price.category = request.POST.get("category")
-        price.gsm = request.POST.get("gsm")
-        price.product_type = request.POST.get("product_type")
-        price.side = request.POST.get("side")
-        price.qty = request.POST.get("qty")
+        # category_id = request.POST.get("category")
 
-        price.one_day_rate = request.POST.get("one_day_rate") or 0
+        gsm_id = request.POST.get("gsm")
 
-        price.shop_rate = request.POST.get("shop_rate") or 0
+        product_name = request.POST.get("product_name")
 
-        price.customer_rate = request.POST.get("customer_rate") or 0
+        side = request.POST.get("side")
 
-        price.customer_discount = (
-            request.POST.get("customer_discount") or 0
+        min_qty = request.POST.get("min_qty")
+
+        max_qty = request.POST.get("max_qty") or None
+
+        one_day_rate = request.POST.get("one_day_rate") or 0
+
+        shop_rate = request.POST.get("shop_rate") or 0
+
+        customer_rate = request.POST.get("customer_rate") or 0
+
+        customer_discount = request.POST.get("customer_discount") or 0
+
+        # UPDATE GSM
+        gsm = get_object_or_404(DigitalGSM, id=gsm_id)
+
+        # UPDATE PRODUCT
+        item.product.gsm = gsm
+        item.product.name = product_name
+        item.product.side = side
+
+        item.product.save()
+
+        # UPDATE PRICE
+        item.min_qty = min_qty
+        item.max_qty = max_qty
+
+        item.one_day_rate = one_day_rate
+
+        item.shop_rate = shop_rate
+
+        item.customer_rate = customer_rate
+
+        item.customer_discount = customer_discount
+
+        item.save()
+
+        messages.success(
+            request,
+            "Digital price updated successfully"
         )
-
-        price.save()
 
         return redirect("digital_price_table")
 
-    return render(request, "pricing/edit_digital_price.html", {
-        "price": price
-    })
+    context = {
+        "item": item,
+        "categories": categories,
+        "gsms": gsms,
+    }
+
+    return render(request, "pricing/edit_digital_price.html", context)
 
 
 # Delete
@@ -441,5 +505,38 @@ def delete_digital_price(request, id):
     price = get_object_or_404(DigitalPrice, id=id)
 
     price.delete()
+
+    return redirect("digital_price_table")
+
+
+def delete_digital_category(request, id):
+
+    category = get_object_or_404(
+        DigitalCategory,
+        id=id
+    )
+
+    # DELETE PRICES
+    DigitalPrice.objects.filter(
+        product__gsm__category=category
+    ).delete()
+
+    # DELETE PRODUCTS
+    DigitalProduct.objects.filter(
+        gsm__category=category
+    ).delete()
+
+    # DELETE GSM
+    DigitalGSM.objects.filter(
+        category=category
+    ).delete()
+
+    # DELETE CATEGORY
+    category.delete()
+
+    messages.success(
+        request,
+        "Full digital category deleted successfully"
+    )
 
     return redirect("digital_price_table")

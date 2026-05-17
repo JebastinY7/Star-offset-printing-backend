@@ -51,4 +51,7 @@ urlpatterns = [
     path("orders/<int:order_id>/bill/", views.generate_bill_from_order, name="generate_bill_from_order"),
     path("get-order-price/", views.get_order_price, name="get_order_price"),
     path('order-history/', views.order_history, name='order_history'),
+    path("get-digital-price/", views.get_digital_price, name="get_digital_price"),
+    path("get-digital-gsm/", views.get_digital_gsm, name="get_digital_gsm"),
+    path("get-digital-products/", views.get_digital_products, name="get_digital_products"),
 ]

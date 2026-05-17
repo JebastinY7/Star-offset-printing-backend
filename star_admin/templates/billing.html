@@ -44,43 +44,149 @@
 
   <!-- Items -->
   <div class="bill-card">
-    <h3>Items</h3>
 
     <div class="bill-item-input">
-      <select id="itemCategory">
-        <option value="">Select Category</option>
-        {% for category in categories %}
-          <option value="{{ category.id }}">
-            {{ category.name }}
-          </option>
-        {% endfor %}
-      </select>
 
-      <select id="itemSize">
-        <option value="">Select Size</option>
-      </select>
+    <!-- Billing Type -->
+    <div class="bill-field-title">
+        <label>Select Billing Type</label>
 
-      <select id="itemVariant">
-        <option value="">Select Variant</option>
-      </select>
-
-      <input type="number" id="itemQty" placeholder="Qty">
-
-      <div class="auto-bill-box">
-        <input type="text" id="itemPrice" placeholder="Price per page" readonly>
-        <input type="text" id="itemDiscountValue" placeholder="Discount ₹" readonly>
-        <input type="text" id="itemTotalPreview" placeholder="Total" readonly/>
-      </div>
-      <input type="hidden" id="itemDiscount" value="0">
-
-
-      <div class="extra-charge-box">
-        <input type="text" id="extraPurpose" placeholder="Enter a Purpose of Extra Charge (Binding, Editing)">
-        <input type="number" id="itemExtraCharge" placeholder="Extra Charge ₹">
-      </div> 
-
-      <button type="button" class="bill-add-btn" onclick="addItem()">Add</button>
+        <div class="billing-mode-box">
+            <select id="billingMode">
+                <option value="normal">Normal print</option>
+                <option value="digital">Digital print</option>
+            </select>
+        </div>
     </div>
+
+    <!-- Items -->
+    <div class="bill-field-title">
+        <h3>Items</h3>
+    </div>
+
+    <!-- NORMAL -->
+    <div id="normalBillingFields" class="billing-grid-normal">
+
+        <select id="itemCategory">
+            <option value="">Select Category</option>
+
+            {% for category in categories %}
+            <option value="{{ category.id }}">
+                {{ category.name }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <select id="itemSize">
+            <option value="">Select Size</option>
+        </select>
+
+        <select id="itemVariant">
+            <option value="">Select Variant</option>
+        </select>
+
+        <input type="number"
+               id="itemQty"
+               placeholder="Qty">
+
+    </div>
+
+    <!-- DIGITAL -->
+    <div id="digitalBillingFields"
+         class="billing-grid-digital"
+         style="display:none;">
+
+        <select id="digitalCategory">
+            <option value="">
+                Select Category
+            </option>
+
+            {% for category in digital_categories %}
+            <option value="{{ category.id }}">
+                {{ category.name }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <select id="digitalGsm">
+            <option value="">
+                Select GSM
+            </option>
+        </select>
+
+        <select id="digitalSide">
+            <option value="">Select Side</option>
+            <option value="single">Single Side</option>
+            <option value="double">Double Side</option>
+        </select>
+
+        <select id="digitalProduct">
+            <option value="">
+                Select Product
+            </option>
+        </select>
+
+        <select id="digitalDeliveryType">
+            <option value="one_day">
+                1 Day
+            </option>
+
+            <option value="three_five">
+                3-5 Days
+            </option>
+        </select>
+
+        <input type="number"
+               id="digitalQty"
+               placeholder="Qty">
+
+    </div>
+
+    <!-- PRICE -->
+    <div class="auto-bill-box">
+
+        <input type="text"
+               id="itemPrice"
+               placeholder="Price"
+               readonly>
+
+        <input type="text"
+               id="itemDiscountValue"
+               placeholder="Discount ₹"
+               readonly>
+
+        <input type="text"
+               id="itemTotalPreview"
+               placeholder="Total"
+               readonly>
+
+    </div>
+
+    <input type="hidden"
+           id="itemDiscount"
+           value="0">
+
+    <!-- EXTRA -->
+    <div class="extra-charge-box">
+
+        <input type="text"
+               id="extraPurpose"
+               placeholder="Purpose of Extra Charge">
+
+        <input type="number"
+               id="itemExtraCharge"
+               placeholder="Extra Charge ₹">
+
+    </div>
+
+    <!-- BUTTON -->
+    <button type="button"
+            class="bill-add-btn"
+            onclick="addItem()">
+        Add
+    </button>
+
+</div>
 
     <table class="bill-table">
       <thead>
@@ -395,6 +501,118 @@ function addItem() {
   let extraPurpose = document.getElementById("extraPurpose").value.trim() || "";
   let extraCharge = parseFloat(document.getElementById("itemExtraCharge").value) || 0;
 
+  let billingMode = document.getElementById("billingMode").value;
+
+  /* =========================================
+   DIGITAL BILLING ADD ITEM
+========================================= */
+
+if (billingMode === "digital") {
+
+    let categoryDropdown =
+        document.getElementById("digitalCategory");
+
+    let gsmDropdown =
+        document.getElementById("digitalGsm");
+
+    let productDropdown =
+        document.getElementById("digitalProduct");
+
+    let deliveryDropdown =
+        document.getElementById("digitalDeliveryType");
+
+    let qty =
+        parseFloat(document.getElementById("digitalQty").value);
+
+    let price =
+        parseFloat(document.getElementById("itemPrice").value || 0);
+
+    let discount =
+        parseFloat(document.getElementById("itemDiscountValue").value || 0);
+
+    let total =
+        parseFloat(document.getElementById("itemTotalPreview").value || 0);
+
+    let extraCharge =
+        parseFloat(document.getElementById("itemExtraCharge").value || 0);
+
+    let extraPurpose =
+        document.getElementById("extraPurpose").value || "";
+
+    if (
+        !categoryDropdown.value ||
+        !gsmDropdown.value ||
+        !productDropdown.value ||
+        !qty
+    ) {
+
+        showToast("Select digital print details");
+
+        return;
+    }
+
+    let sideDropdown =
+    document.getElementById("digitalSide");
+
+let sideValue =
+    sideDropdown.value;
+
+let sideText =
+    sideDropdown.options[
+        sideDropdown.selectedIndex
+    ].text;
+
+let itemName =
+    `${categoryDropdown.options[categoryDropdown.selectedIndex].text}
+    - ${gsmDropdown.options[gsmDropdown.selectedIndex].text}
+    - ${sideText}
+    - ${productDropdown.options[productDropdown.selectedIndex].text}
+    - ${deliveryDropdown.options[deliveryDropdown.selectedIndex].text}`;
+
+    items.push({
+
+        billingType: "digital print",
+        name: itemName,
+        categoryId: categoryDropdown.value,
+        sizeId: gsmDropdown.value,
+        variantId: productDropdown.value,
+
+        side: sideValue,
+
+        sideName: sideText,
+
+        qty: qty,
+
+        price: price,
+
+        gross: price,
+
+        discount: discount,
+
+        extraCharge: extraCharge,
+
+        extraPurpose: extraPurpose,
+
+        total: total
+    });
+
+    renderItems();
+
+    calculateTotal();
+
+    document.getElementById("digitalQty").value = "";
+
+    document.getElementById("itemPrice").value = "";
+
+    document.getElementById("itemDiscountValue").value = "";
+
+    document.getElementById("itemTotalPreview").value = "";
+
+    document.getElementById("itemExtraCharge").value = "";
+
+    return;
+}
+
   if (!categoryId || !sizeId || !variantId || !qty) {
     showToast("Select category, size, variant and qty");
     return;
@@ -607,6 +825,7 @@ if (remainingOldDue > 0) {
       let itemName = `${categoryName} - ${sizeName} - ${variantName}`;
 
       items.push({
+        billingType: "normal print",
         name: itemName,
         categoryId,
         sizeId,
@@ -678,6 +897,121 @@ function renderItems() {
 
 function editItem(index) {
   let item = items[index];
+
+  /* =========================================
+   DIGITAL ITEM EDIT
+========================================= */
+
+if (item.billingType === "digital print") {
+
+    document.getElementById("billingMode").value = "digital";
+
+    document.getElementById("normalBillingFields").style.display = "none";
+
+    document.getElementById("digitalBillingFields").style.display = "grid";
+
+    // CATEGORY
+    document.getElementById("digitalCategory").value =
+        item.categoryId;
+
+    // LOAD GSM
+    fetch(`/get-digital-gsm/?category_id=${item.categoryId}`)
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        let gsmDropdown =
+            document.getElementById("digitalGsm");
+
+        gsmDropdown.innerHTML =
+            '<option value="">Select GSM</option>';
+
+        data.gsms.forEach(gsm => {
+
+            gsmDropdown.innerHTML += `
+                <option value="${gsm.id}">
+                    ${gsm.name}
+                </option>
+            `;
+        });
+
+        gsmDropdown.value = item.sizeId;
+
+        // AUTO SIDE DETECT
+        document.getElementById("digitalSide").value =
+    item.side || "";
+
+        return fetch(
+            `/get-digital-products/?gsm_id=${item.sizeId}&side=${document.getElementById("digitalSide").value}`
+        );
+    })
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        let productDropdown =
+            document.getElementById("digitalProduct");
+
+        productDropdown.innerHTML =
+            '<option value="">Select Product</option>';
+
+        data.products.forEach(product => {
+
+            productDropdown.innerHTML += `
+                <option value="${product.id}">
+                    ${product.name}
+                </option>
+            `;
+        });
+
+        productDropdown.value = item.variantId;
+
+        // DELIVERY TYPE
+        if (
+            item.name.toLowerCase().includes("3-5")
+        ) {
+
+            document.getElementById("digitalDeliveryType").value =
+                "three_five";
+        }
+
+        else {
+
+            document.getElementById("digitalDeliveryType").value =
+                "one_day";
+        }
+
+        // PREFILL
+        document.getElementById("digitalQty").value =
+            item.qty;
+
+        document.getElementById("itemPrice").value =
+            parseFloat(item.price || 0).toFixed(2);
+
+        document.getElementById("itemDiscountValue").value =
+            parseFloat(item.discount || 0).toFixed(2);
+
+        document.getElementById("itemExtraCharge").value =
+            parseFloat(item.extraCharge || 0).toFixed(2);
+
+        document.getElementById("extraPurpose").value =
+            item.extraPurpose || "";
+
+        document.getElementById("itemTotalPreview").value =
+            parseFloat(item.total || 0).toFixed(2);
+    });
+
+    // REMOVE TEMP
+    items.splice(index, 1);
+
+    renderItems();
+
+    calculateTotal();
+
+    return;
+}
 
   // SAFETY CHECK FOR OLD ITEMS WITHOUT CATEGORY/SIZE
   if (!item.categoryId || !item.sizeId) {
@@ -773,6 +1107,8 @@ function editItem(index) {
   renderItems();
   calculateTotal();
 }
+
+
 
 /* REMOVE */
 function removeItem(index) {
@@ -1125,6 +1461,110 @@ PASTE INSIDE YOUR updatePrice() FUNCTION
 
 function updatePrice() {
 
+    let billingMode = document.getElementById("billingMode").value;
+
+    /* Digital Billing */
+
+    if (billingMode === "digital") {
+
+      let categoryId = document.getElementById("digitalCategory").value;
+      let gsmId = document.getElementById("digitalGsm").value;
+      let productId = document.getElementById("digitalProduct").value;
+      let deliveryType = document.getElementById("digitalDeliveryType").value;
+      let qty = parseFloat(document.getElementById("digitalQty").value || 0);
+
+      if (!categoryId || !gsmId || !productId || qty <= 0) {
+        document.getElementById("itemPrice").value = "";
+        document.getElementById("itemDiscountValue").value = "";
+        document.getElementById("itemTotalPreview").value = "";
+
+        return;
+      }
+      fetch(`/get-digital-price/?product_id=${productId}&qty=${qty}`)
+
+      .then(res => res.json())
+
+      .then(data => {
+        if (!data.success) {
+          showToast("No digital price found");
+          return;
+    }
+    let customerType =
+            (window.selectedCustomerType || "").toLowerCase();
+
+        let basePrice = 0;
+
+        let discountPercent = 0;
+
+        /* =========================
+           1 DAY
+        ========================= */
+
+        if (deliveryType === "one_day") {
+
+            basePrice =
+                parseFloat(data.one_day_rate || 0);
+        }
+
+        /* =========================
+           3-5 DAYS
+        ========================= */
+
+        else {
+
+            if (customerType === "shop") {
+
+                basePrice =
+                    parseFloat(data.shop_rate || 0);
+            }
+
+            else {
+
+                basePrice =
+                    parseFloat(data.customer_rate || 0);
+
+                if (customerType === "member") {
+
+                    discountPercent =
+                        parseFloat(
+                            data.customer_discount || 0
+                        );
+                }
+            }
+        }
+
+        /* =================================
+           DIGITAL = SLAB PRICE
+           NO qty * price
+        ================================= */
+
+        let gross = basePrice;
+
+        let discount =
+            gross * (discountPercent / 100);
+
+        let extraCharge =
+            parseFloat(
+                document.getElementById("itemExtraCharge").value || 0
+            );
+
+        let finalTotal =
+            gross - discount + extraCharge;
+
+        document.getElementById("itemPrice").value =
+            basePrice.toFixed(2);
+
+        document.getElementById("itemDiscountValue").value =
+            discount.toFixed(2);
+
+        document.getElementById("itemTotalPreview").value =
+            finalTotal.toFixed(2);
+
+        return;
+    });
+
+    return;
+}
     let categoryDropdown = document.getElementById("itemCategory");
     let sizeDropdown = document.getElementById("itemSize");
     let variantDropdown = document.getElementById("itemVariant");
@@ -1184,15 +1624,15 @@ if (
 
             
             
-            let isBlackSingle = variantText.includes("black s");
+  let isBlackSingle = variantText.includes("black s");
 
-            let isBlackDouble = variantText.includes("black d");
+  let isBlackDouble = variantText.includes("black d");
 
-            let isInkjetSingle = variantText.includes("color inkjet s");
+  let isInkjetSingle = variantText.includes("color inkjet s");
 
-            let isInkjetDouble = variantText.includes("color inkjet d");
+  let isInkjetDouble = variantText.includes("color inkjet d");
 
-            let gross = 0;
+  let gross = 0;
 
 /* FIXED PRICE ITEMS */
 if (
@@ -1483,14 +1923,21 @@ window.addEventListener("DOMContentLoaded", function () {
 
     items.push({
 
-        name:
-          "{{ item.category|escapejs }} - " +
-          "{{ item.size|escapejs }} - " +
-          "{{ item.variant|escapejs }}",
+        billingType: "{{ item.billing_type|default:'normal print' }}",
+
+        name: [
+            "{{ item.category|escapejs }}",
+            "{{ item.size|escapejs }}",
+            "{{ item.side_name|default:''|escapejs }}",
+            "{{ item.variant|escapejs }}"
+        ].filter(Boolean).join(" - "),
 
         categoryId: "{{ item.category_id }}",
         sizeId: "{{ item.size_id }}",
         variantId: "{{ item.variant_id }}",
+
+        side: "{{ item.side|default:''|escapejs }}",
+        sideName: "{{ item.side_name|default:''|escapejs }}",
 
         qty: parseFloat("{{ item.qty }}"),
 
@@ -1600,6 +2047,165 @@ window.addEventListener("DOMContentLoaded", function () {
 
     {% endif %}
 });
+</script>
+
+
+<script>
+
+const billingMode =
+    document.getElementById("billingMode");
+
+const normalFields =
+    document.getElementById("normalBillingFields");
+
+const digitalFields =
+    document.getElementById("digitalBillingFields");
+
+/* PAGE LOAD */
+window.addEventListener("DOMContentLoaded", () => {
+
+    if (billingMode.value === "digital") {
+
+        normalFields.style.display = "none";
+        digitalFields.style.display = "grid";
+
+    } else {
+
+        normalFields.style.display = "grid";
+        digitalFields.style.display = "none";
+    }
+});
+
+/* SWITCH */
+billingMode.addEventListener("change", function () {
+
+    if (this.value === "digital") {
+
+        normalFields.style.display = "none";
+
+        digitalFields.style.display = "grid";
+
+    } else {
+
+        normalFields.style.display = "grid";
+
+        digitalFields.style.display = "none";
+    }
+});
+
+
+/* =========================================
+   DIGITAL CATEGORY -> GSM
+========================================= */
+
+document.getElementById("digitalCategory")
+.addEventListener("change", function () {
+
+    let categoryId = this.value;
+
+    let gsmDropdown =
+        document.getElementById("digitalGsm");
+
+    let productDropdown =
+        document.getElementById("digitalProduct");
+
+    gsmDropdown.innerHTML =
+        '<option value="">Select GSM</option>';
+
+    productDropdown.innerHTML =
+        '<option value="">Select Product</option>';
+
+    if (!categoryId) return;
+
+    fetch(`/get-digital-gsm/?category_id=${categoryId}`)
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        data.gsms.forEach(gsm => {
+
+            gsmDropdown.innerHTML += `
+                <option value="${gsm.id}">
+                    ${gsm.name}
+                </option>
+            `;
+        });
+    });
+});
+
+
+/* =========================================
+   GSM -> PRODUCT
+========================================= */
+
+document.getElementById("digitalSide")
+.addEventListener("change", loadDigitalProducts);
+
+    /* =========================================
+   LOAD DIGITAL PRODUCTS
+========================================= */
+
+function loadDigitalProducts() {
+
+    let gsmId =
+        document.getElementById("digitalGsm").value;
+
+    let side =
+        document.getElementById("digitalSide").value;
+
+    let productDropdown =
+        document.getElementById("digitalProduct");
+
+    productDropdown.innerHTML =
+        '<option value="">Select Product</option>';
+
+    if (!gsmId || !side) return;
+
+    fetch(`/get-digital-products/?gsm_id=${gsmId}&side=${side}`)
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        data.products.forEach(product => {
+
+            productDropdown.innerHTML += `
+                <option value="${product.id}">
+                    ${product.name}
+                </option>
+            `;
+        });
+    });
+}
+
+
+/* GSM CHANGE */
+document.getElementById("digitalGsm")
+.addEventListener("change", loadDigitalProducts);
+
+
+/* SIDE CHANGE */
+document.getElementById("digitalSide")
+.addEventListener("change", loadDigitalProducts);
+
+
+/* =========================================
+   AUTO PRICE UPDATE
+========================================= */
+
+document.getElementById("digitalProduct")
+.addEventListener("change", updatePrice);
+
+document.getElementById("digitalDeliveryType")
+.addEventListener("change", updatePrice);
+
+document.getElementById("digitalGsm")
+.addEventListener("change", updatePrice);
+
+document.getElementById("digitalQty")
+.addEventListener("input", updatePrice);
+
 </script>
 
 
