@@ -200,7 +200,7 @@ def forgot_password(request):
                 fail_silently=False
             )
         except Exception as e:
-            print("Email Error:", e)
+            return HttpResponse(f"ERROR: {str(e)}")
 
         request.session['reset_email'] = email
 
