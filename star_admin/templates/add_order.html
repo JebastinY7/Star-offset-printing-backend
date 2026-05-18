@@ -147,6 +147,11 @@
            id="itemQty"
            placeholder="Qty">
 
+    <input type="number"
+       id="itemJob"
+       placeholder="Job"
+       value="1">
+
 </div>
 
 
@@ -192,6 +197,11 @@
            id="digitalQty"
            placeholder="Qty">
 
+    <input type="number"
+       id="digitalJob"
+       placeholder="Job"
+       value="1">
+
 </div>
 
 
@@ -225,6 +235,7 @@
             <tr>
               <th>Item</th>
               <th>Qty</th>
+              <th>Job</th>
               <th>Price</th>
               <th>Total</th>
               <th>Action</th>
@@ -329,6 +340,8 @@ function addOrderItem() {
       billingType.value === "digital";
 
     let category, size, variant, qty;
+    let job = 1;
+let digitalJob = 1;
 
     /* NORMAL */
     if (!isDigital) {
@@ -346,6 +359,11 @@ function addOrderItem() {
           parseFloat(
             document.getElementById("itemQty").value
           ) || 0;
+        
+        job =
+    parseFloat(
+        document.getElementById("itemJob").value
+    ) || 1;
     }
 
     /* DIGITAL */
@@ -364,6 +382,11 @@ function addOrderItem() {
           parseFloat(
             document.getElementById("digitalQty").value
           ) || 0;
+
+          digitalJob =
+    parseFloat(
+        document.getElementById("digitalJob").value
+    ) || 1;
     }
 
     let price =
@@ -420,6 +443,7 @@ delivery:
     document.getElementById("digitalDelivery").value,
 
         qty: qty,
+        job: isDigital ? digitalJob : job,
         price: price,
         total: total,
 
@@ -470,9 +494,12 @@ function renderItems() {
             <input type="hidden" name="billing_type[]" value="${item.billing_type}">
             <input type="hidden" name="item_side[]" value="${item.side || ''}">
             <input type="hidden" name="item_side_name[]" value="${item.side_name || ''}">
+            <input type="hidden" name="item_job[]" value="${item.job}">
           </td>
 
           <td>${item.qty}</td>
+
+          <td>${item.job || 1}</td>
 
           <td>₹${item.price.toFixed(2)}</td>
 
@@ -545,6 +572,9 @@ function editItem(index) {
     document.getElementById("digitalDelivery").value =
       item.delivery;
 
+      document.getElementById("digitalJob").value =
+  item.job || 1;
+
     fetch(`/get-digital-gsm/?category_id=${item.category_id}`)
 
     .then(res => res.json())
@@ -596,6 +626,84 @@ function editItem(index) {
         }, 100);
 
         document.getElementById("digitalQty").value =
+          item.qty;
+
+          document.getElementById("itemJob").value =
+  item.job || 1;
+
+        document.getElementById("itemPrice").value =
+          item.price;
+
+        document.getElementById("itemTotal").value =
+          item.total;
+
+ });
+}
+
+/* NORMAL */
+else {
+
+    billingType.value = "normal";
+
+    updateBillingView();
+
+    document.getElementById("itemCategory").value =
+      item.category_id;
+
+    document.getElementById("itemJob").value =
+      item.job || 1;
+
+    fetch(`/get-sizes/?category_id=${item.category_id}`)
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        itemSize.innerHTML =
+          '<option value="">Select Size</option>';
+
+        data.sizes.forEach(size => {
+
+            itemSize.innerHTML += `
+                <option value="${size.id}">
+                    ${size.name}
+                </option>
+            `;
+        });
+
+        document.getElementById("itemSize").value =
+          item.size_id;
+
+        return fetch(
+          `/get-variants/?size_id=${item.size_id}`
+        );
+
+    })
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        itemVariant.innerHTML =
+          '<option value="">Select Variant</option>';
+
+        data.variants.forEach(variant => {
+
+            itemVariant.innerHTML += `
+                <option value="${variant.id}">
+                    ${variant.name}
+                </option>
+            `;
+        });
+
+        setTimeout(() => {
+
+            document.getElementById("itemVariant").value =
+              item.variant_id;
+
+        }, 100);
+
+        document.getElementById("itemQty").value =
           item.qty;
 
         document.getElementById("itemPrice").value =
@@ -856,7 +964,10 @@ function fetchDigitalPrice() {
     const delivery =
       digitalDelivery.value;
     
-    
+    const digitalJob =
+    parseFloat(
+        document.getElementById("digitalJob").value
+    ) || 1;
 
     const customerType =
       document.getElementById("customerType").value;
@@ -914,7 +1025,7 @@ function fetchDigitalPrice() {
           finalPrice.toFixed(2);
 
         document.getElementById("itemTotal").value =
-          finalPrice.toFixed(2);
+  (finalPrice * digitalJob).toFixed(2);
 
     });
 
@@ -978,6 +1089,18 @@ qtyInput.addEventListener(
     fetchPrice
 );
 
+document.getElementById("itemJob")
+.addEventListener(
+    "input",
+    calculateItemTotal
+);
+
+document.getElementById("digitalJob")
+.addEventListener(
+    "input",
+    fetchDigitalPrice
+);
+
 sizeSelect.addEventListener(
     "change",
     fetchPrice
@@ -994,6 +1117,11 @@ function calculateItemTotal() {
     let qty = parseFloat(qtyInput.value) || 0;
 
     let price = parseFloat(priceInput.value) || 0;
+
+    let job =
+    parseFloat(
+        document.getElementById("itemJob").value
+    ) || 1;
 
     let categoryName = "";
 
@@ -1013,10 +1141,11 @@ function calculateItemTotal() {
         categoryName.includes("notice") ||
         categoryName.includes("banner") ||
         categoryName.includes("bill book") ||
-        categoryName.includes("poster")
+        categoryName.includes("poster") ||
+        categoryName.includes("printing")
     ) {
 
-        grossAmount = price;
+        grossAmount = price * job;
 
     }
 
@@ -1092,7 +1221,7 @@ else if (
 
     } else {
 
-        grossAmount = qty * price;
+        grossAmount = qty * price * job;
     }
 }
 /* PRINT OUT */
@@ -1157,7 +1286,7 @@ else if (
 
             else {
 
-                grossAmount = qty * price;
+                grossAmount = qty * price * job;
             }
         }
 
@@ -1171,7 +1300,7 @@ else if (
 
             else {
 
-                grossAmount = qty * price;
+                grossAmount = qty * price * job;
             }
         }
 
@@ -1184,7 +1313,7 @@ else if (
 
             else {
 
-                grossAmount = qty * price;
+                grossAmount = qty * price * job;
             }
         }
     }
@@ -1203,7 +1332,7 @@ else if (
 
             else {
 
-                grossAmount = qty * price;
+                grossAmount = qty * price * job;
             }
         }
 
@@ -1217,17 +1346,17 @@ else if (
 
             else {
 
-                grossAmount = qty * price;
+                grossAmount = qty * price * job;
             }
         }
         else {
 
-    grossAmount = qty * price;
+    grossAmount = qty * price * job;
   }
     }
     else {
 
-    grossAmount = qty * price;
+    grossAmount = qty * price * job;
 }
 
 }
@@ -1235,7 +1364,7 @@ else if (
 /* NORMAL ITEMS */
 else {
 
-    grossAmount = qty * price;
+    grossAmount = qty * price * job;
 }
 
 
@@ -1251,6 +1380,8 @@ function clearItemFields() {
     document.getElementById("itemVariant").innerHTML =
       '<option value="">Select Variant</option>';
     document.getElementById("itemQty").value = "";
+    document.getElementById("itemJob").value = 1;
+document.getElementById("digitalJob").value = 1;
     document.getElementById("itemPrice").value = "";
     document.getElementById("itemTotal").value = "";
 }

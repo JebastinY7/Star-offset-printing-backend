@@ -64,6 +64,7 @@ class BillItem(models.Model):
     digital_product = models.ForeignKey(DigitalProduct, on_delete=models.SET_NULL, null=True, blank=True)
 
     qty = models.IntegerField()
+    job = models.PositiveIntegerField(default=1)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     discount = models.DecimalField(max_digits=10, decimal_places=2)
     extra_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -215,6 +216,7 @@ class OrderItem(models.Model):
     side_name = models.CharField(max_length=50, null=True, blank=True)
 
     qty = models.IntegerField(default=1)
+    job = models.PositiveIntegerField(default=1)
 
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 

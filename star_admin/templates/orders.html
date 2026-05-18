@@ -163,27 +163,74 @@
 
 
     {% if orders.paginator.num_pages > 1 %}
-    <div class="ordx-pagination">
-        {% if orders.has_previous %}
-            <a href="?page={{ orders.previous_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}"
-               class="nav-btn prev">‹ Prev</a>
-        {% else %}
-            <span class="nav-btn disabled">‹ Prev</span>
-        {% endif %}
+<div class="pagination">
 
-        <span class="page-info">
-            Page {{ orders.number }} of {{ orders.paginator.num_pages }}
-        </span>
-
-        {% if orders.has_next %}
-            <a href="?page={{ orders.next_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}"
-               class="nav-btn next">Next ›</a>
-        {% else %}
-            <span class="nav-btn disabled">Next ›</span>
-        {% endif %}
-
-    </div>
+    <!-- FIRST PAGE -->
+    {% if orders.has_previous %}
+        <a href="?{{ query_string }}&page=1"
+           class="nav-btn">
+           «
+        </a>
+    {% else %}
+        <span class="nav-btn disabled">«</span>
     {% endif %}
+
+
+    <!-- PREVIOUS PAGE -->
+    {% if orders.has_previous %}
+        <a href="?{{ query_string }}&page={{ orders.previous_page_number }}"
+           class="nav-btn">
+           ‹
+        </a>
+    {% else %}
+        <span class="nav-btn disabled">‹</span>
+    {% endif %}
+
+
+    <!-- PAGE NUMBERS -->
+    {% for num in orders.paginator.page_range %}
+
+        {% if num == orders.number %}
+
+            <span class="page-number active">
+                {{ num }}
+            </span>
+
+        {% elif num > orders.number|add:'-3' and num < orders.number|add:'3' %}
+
+            <a href="?{{ query_string }}&page={{ num }}"
+               class="page-number">
+               {{ num }}
+            </a>
+
+        {% endif %}
+
+    {% endfor %}
+
+
+    <!-- NEXT PAGE -->
+    {% if orders.has_next %}
+        <a href="?{{ query_string }}&page={{ orders.next_page_number }}"
+           class="nav-btn">
+           ›
+        </a>
+    {% else %}
+        <span class="nav-btn disabled">›</span>
+    {% endif %}
+
+
+    <!-- LAST PAGE -->
+    {% if orders.has_next %}
+        <a href="?{{ query_string }}&page={{ orders.paginator.num_pages }}"
+           class="nav-btn">
+           »
+        </a>
+    {% else %}
+        <span class="nav-btn disabled">»</span>
+    {% endif %}
+
+</div>
+{% endif %}
 <div id="deleteOrderModal" class="ordx-modal">
     <div class="ordx-modal-content">
         <h3>Delete Order</h3>

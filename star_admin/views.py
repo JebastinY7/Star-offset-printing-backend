@@ -338,14 +338,15 @@ def admin_logout(request):
 @never_cache
 @login_required(login_url='/')
 def dashboard(request):
-    if request.is_staff_subdomain:
-        if not request.user.is_staff or request.user.is_superuser:
-            logout(request)
-            return redirect('/staff-login/')
+    if request.user.is_staff and not request.user.is_superuser:
+        pass
+
+    elif request.user.is_superuser:
+        pass
+
     else:
-        if not request.user.is_superuser:
-            logout(request)
-            return redirect('/')
+        logout(request)
+        return redirect('/')
         
     today = timezone.now().date()
 
@@ -1630,6 +1631,8 @@ def save_bill(request):
 
                     qty=item['qty'],
 
+                    job=item.get('job', 1),
+
                     price=item['price'],
 
                     discount=item['discount'],
@@ -1665,6 +1668,8 @@ def save_bill(request):
                     digital_product_id=item.get('variantId') or None,
 
                     qty=item['qty'],
+
+                    job=item.get('job', 1),
 
                     price=item['price'],
 
@@ -2123,7 +2128,7 @@ def orders_page(request):
         orders_list = orders_list.filter(status=status_filter)
 
     # PAGINATION
-    paginator = Paginator(orders_list, 7)  # 10 orders per page
+    paginator = Paginator(orders_list, 7)  
     page_number = request.GET.get("page")
     orders = paginator.get_page(page_number)
 
@@ -2397,6 +2402,7 @@ def add_order(request):
             side_names = request.POST.getlist("item_side_name[]")
 
             qtys = request.POST.getlist("item_qty[]")
+            jobs = request.POST.getlist("item_job[]")
             prices = request.POST.getlist("item_price[]")
             totals = request.POST.getlist("item_total[]")
 
@@ -2453,6 +2459,8 @@ def add_order(request):
 
                         qty=Decimal(str(qtys[i] or 0)),
 
+                        job=jobs[i] if i < len(jobs) else 1,
+
                         price=Decimal(str(prices[i] or 0)),
 
                         total=Decimal(str(totals[i] or 0))
@@ -2474,6 +2482,8 @@ def add_order(request):
                         variant_id=variants[i] if variants[i] else None,
 
                         qty=Decimal(str(qtys[i] or 0)),
+
+                        job=jobs[i] if i < len(jobs) else 1,
 
                         price=Decimal(str(prices[i] or 0)),
 

@@ -33,6 +33,7 @@
                 </select>
             </div>
             
+            {% if request.user.is_superuser %}
             <div class="ac-group checkbox-group">
                 <label>
                     <input type="checkbox" name="is_member" id="hasCard"> Has Membership Card
@@ -55,6 +56,7 @@
                     <input type="text" id="expiry_date" name="expiry_date" placeholder="Auto generated" readonly>
                 </div>
             </div>
+            {% endif %}
             
             <button type="submit" class="ac-submit-btn">Save Customer</button>
         </form>

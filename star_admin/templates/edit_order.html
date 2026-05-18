@@ -153,6 +153,12 @@
                placeholder="Qty"
                min="1">
 
+        <input type="number"
+            id="itemJob"
+            placeholder="Job"
+            value="1"
+            min="1">
+
     </div>
 
 
@@ -218,6 +224,12 @@
                placeholder="Qty"
                min="1">
 
+        <input type="number"
+       id="digitalJob"
+       placeholder="Job"
+       value="1"
+       min="1">
+
     </div>
 
 
@@ -253,6 +265,7 @@
             <tr>
               <th>Item</th>
               <th>Qty</th>
+              <th>Job</th>
               <th>Price</th>
               <th>Total</th>
               <th>Action</th>
@@ -372,6 +385,8 @@ side_name: "{{ item.side_name|default:'' }}",
 
     qty: parseFloat("{{ item.qty|default:0 }}"),
 
+    job: parseFloat("{{ item.job|default:1 }}"),
+
     price: parseFloat("{{ item.price|default:0 }}"),
 
     total: parseFloat("{{ item.total|default:0 }}")
@@ -386,6 +401,8 @@ side_name: "{{ item.side_name|default:'' }}",
 
 let orderItems = [];
 let editIndex = -1;
+let job = 1;
+let digitalJob = 1;
 
 
 /* ADD ITEM */
@@ -427,6 +444,11 @@ function addOrderItem() {
         parseFloat(
             document.getElementById("digitalQty").value
         ) || 0;
+
+       let digitalJob =
+  parseFloat(
+    document.getElementById("digitalJob").value
+  ) || 1;
 
     let price =
         parseFloat(
@@ -479,6 +501,7 @@ side_name:
             ].text,
 
         qty: qty,
+        job: digitalJob,
         price: price,
         total: total
     });
@@ -505,6 +528,7 @@ side_name:
         variant: variant.options[variant.selectedIndex].text,
 
         qty: qty,
+        job: job,
         price: price,
         total: total
     };
@@ -682,8 +706,13 @@ else {
         document.getElementById("itemPrice").value =
             price.toFixed(2);
 
-        document.getElementById("itemTotal").value =
-            price.toFixed(2);
+        const digitalJob =
+    parseFloat(
+        document.getElementById("digitalJob").value
+    ) || 1;
+
+document.getElementById("itemTotal").value =
+    (price * digitalJob).toFixed(2);
 
     });
 }
@@ -694,6 +723,12 @@ digitalProduct.addEventListener(
 );
 
 digitalQty.addEventListener(
+    "input",
+    loadDigitalPrice
+);
+
+document.getElementById("digitalJob")
+.addEventListener(
     "input",
     loadDigitalPrice
 );
@@ -766,9 +801,13 @@ function renderItems() {
             <input type="hidden" name="item_side[]" value="${item.side || ''}">
 
             <input type="hidden" name="item_side_name[]" value="${item.side_name || ''}">
+
+            <input type="hidden" name="item_job[]" value="${item.job || 1}">
         </td>
 
           <td>${item.qty}</td>
+
+          <td>${item.job || 1}</td>
 
           <td>₹${parseFloat(item.price || 0).toFixed(2)}</td>
 
@@ -915,6 +954,9 @@ return fetch(
 document.getElementById("digitalQty").value =
     item.qty || "";
 
+    document.getElementById("digitalJob").value =
+    item.job || 1;
+
 document.getElementById("itemPrice").value =
     item.price || "";
 
@@ -995,6 +1037,9 @@ document.getElementById("customerType").value =
 
         document.getElementById("itemQty").value =
             item.qty;
+        
+        document.getElementById("itemJob").value =
+    item.job || 1;
 
         document.getElementById("itemPrice").value =
             item.price;
@@ -1126,6 +1171,12 @@ qtyInput.addEventListener(
     fetchPrice
 );
 
+document.getElementById("itemJob")
+.addEventListener(
+    "input",
+    calculateItemTotal
+);
+
 sizeSelect.addEventListener(
     "change",
     fetchPrice
@@ -1145,6 +1196,11 @@ function calculateItemTotal() {
     let price =
       parseFloat(priceInput.value) || 0;
 
+      let job =
+  parseFloat(
+    document.getElementById("itemJob").value
+  ) || 1;
+
     let categoryName = "";
 
     if (categorySelect.selectedIndex >= 0) {
@@ -1163,10 +1219,11 @@ function calculateItemTotal() {
         categoryName.includes("notice") ||
         categoryName.includes("banner") ||
         categoryName.includes("bill book") ||
-        categoryName.includes("poster")
+        categoryName.includes("poster") ||
+        categoryName.includes("printing")
     ) {
 
-        grossAmount = price;
+        grossAmount = price * job;
 
     }
 
@@ -1250,7 +1307,7 @@ else if (
 
     } else {
 
-        grossAmount = qty * price;
+        grossAmount = qty * price * job;
     }
 }else if (
     categoryName.includes("print out")
@@ -1313,7 +1370,7 @@ else if (
 
             else {
 
-                grossAmount = qty * price;
+                grossAmount = qty * price * job;
             }
         }
 
@@ -1327,7 +1384,7 @@ else if (
 
             else {
 
-                grossAmount = qty * price;
+                grossAmount = qty * price * job;
             }
         }
 
@@ -1340,7 +1397,7 @@ else if (
 
             else {
 
-                grossAmount = qty * price;
+                grossAmount = qty * price * job;
             }
         }
     }
@@ -1359,7 +1416,7 @@ else if (
 
             else {
 
-                grossAmount = qty * price;
+                grossAmount = qty * price * job;
             }
         }
 
@@ -1373,24 +1430,24 @@ else if (
 
             else {
 
-                grossAmount = qty * price;
+                grossAmount = qty * price * job;
             }
         }
         else {
 
-        grossAmount = qty * price;
+        grossAmount = qty * price * job;
     }
     }
     else {
 
-    grossAmount = qty * price;
+    grossAmount = qty * price * job;
 }
 }
 
 /* NORMAL ITEMS */
 else {
 
-    grossAmount = qty * price;
+    grossAmount = qty * price * job;
 }
 
     totalInput.value =
@@ -1409,6 +1466,9 @@ function clearItemFields() {
       '<option value="">Select Variant</option>';
 
     document.getElementById("itemQty").value = "";
+    document.getElementById("itemJob").value = 1;
+
+document.getElementById("digitalJob").value = 1;
     document.getElementById("itemPrice").value = "";
     document.getElementById("itemTotal").value = "";
 }

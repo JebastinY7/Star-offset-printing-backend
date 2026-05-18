@@ -88,6 +88,11 @@
         <input type="number"
                id="itemQty"
                placeholder="Qty">
+        
+        <input type="number"
+                id="itemJob"
+                placeholder="Job"
+                value="1">
 
     </div>
 
@@ -140,6 +145,10 @@
                id="digitalQty"
                placeholder="Qty">
 
+        <input type="number"
+                id="digitalJob"
+                placeholder="Job"
+                value="1">
     </div>
 
     <!-- PRICE -->
@@ -193,6 +202,7 @@
         <tr>
           <th>Item</th>
           <th>Qty</th>
+          <th>Job</th>
           <th>Price</th>
           <th>Discount</th>
           <th>Extra Charge</th>
@@ -491,6 +501,8 @@ function addItem() {
   let sizeName = sizeDropdown.options[sizeDropdown.selectedIndex].text;
 
   let qty = parseFloat(document.getElementById("itemQty").value);
+  let job = parseFloat(document.getElementById("itemJob").value || 1);
+
   let variantDropdown = document.getElementById("itemVariant");
   let variantId = variantDropdown.value;
   let variantName = variantDropdown.options[variantDropdown.selectedIndex].text;
@@ -610,6 +622,8 @@ let itemName =
 
     document.getElementById("itemExtraCharge").value = "";
 
+    document.getElementById("digitalJob").value = 1;
+
     return;
 }
 
@@ -651,9 +665,10 @@ let itemName =
           categoryName.toLowerCase().includes("notice") ||
           categoryName.toLowerCase().includes("banner") ||
           categoryName.toLowerCase().includes("bill book") ||
-          categoryName.toLowerCase().includes("poster")
+          categoryName.toLowerCase().includes("poster") ||
+          categoryName.toLowerCase().includes("printing")
         ) {
-          grossAmount = price;
+          grossAmount = price * job;
         }
         else if (categoryName.toLowerCase().includes("train ticket")) {
           let sizeText = sizeName.toLowerCase();
@@ -684,7 +699,7 @@ let itemName =
             }
           }
           else {
-            grossAmount = qty * price;
+            grossAmount = qty * price * job;
           }
         }
         else if (
@@ -714,7 +729,7 @@ let itemName =
                   }
                   else {
 
-                    grossAmount = qty * price;
+                    grossAmount = qty * price * job;
                   }
                 }
                 else if (
@@ -728,7 +743,7 @@ let itemName =
                         price = grossAmount;
                       }
                       else {
-                        grossAmount = qty * price;
+                        grossAmount = qty * price * job;
                       }
                     }
                     
@@ -739,13 +754,13 @@ let itemName =
                         price = grossAmount
                       }
                       else {
-                        grossAmount = qty * price;
+                        grossAmount = qty * price * job;
                       }
                     }
                   }
                   else {
 
-                    grossAmount = qty * price;
+                    grossAmount = qty * price * job;
                   }
                 }
 
@@ -769,7 +784,7 @@ let itemName =
                         }
 
                         else {
-                          grossAmount = qty * price;
+                          grossAmount = qty * price * job;
                         }
                       }
                       else if (isInkjetDouble) {
@@ -780,22 +795,22 @@ let itemName =
                         }
 
                         else {
-                          grossAmount = qty * price;
+                          grossAmount = qty * price * job;
                         }
                       }
                     }
 
                     else {
-                      grossAmount = qty * price;
+                      grossAmount = qty * price * job;
                     }
                   }
                   
                 else {
-                    grossAmount = qty * price;
+                    grossAmount = qty * price * job;
                 }
               }
               else {
-                grossAmount = qty * price;
+                grossAmount = qty * price * job;
               }
 
 let previousDue =
@@ -831,6 +846,7 @@ if (remainingOldDue > 0) {
         sizeId,
         variantId,
         qty,
+        job,
         price,
         gross: grossAmount,
         discount,
@@ -848,6 +864,7 @@ if (remainingOldDue > 0) {
       document.getElementById("itemPrice").value = "";
       document.getElementById("itemTotalPreview").value = "";
       document.getElementById("itemExtraCharge").value = "";
+      document.getElementById("itemJob").value = 1;
     });
 }
 
@@ -874,6 +891,7 @@ function renderItems() {
           }
         </td>
         <td>${item.qty}</td>
+        <td>${item.job || 1}</td>
         <td>₹${item.price.toFixed(2)}</td>
         <td>₹${item.discount.toFixed(2)}</td>
         <td>₹${item.extraCharge.toFixed(2)}</td>
@@ -909,6 +927,9 @@ if (item.billingType === "digital print") {
     document.getElementById("normalBillingFields").style.display = "none";
 
     document.getElementById("digitalBillingFields").style.display = "grid";
+
+    document.getElementById("itemJob").value =
+    item.job || 1;
 
     // CATEGORY
     document.getElementById("digitalCategory").value =
@@ -1081,6 +1102,7 @@ if (item.billingType === "digital print") {
 
       // PREFILL
       document.getElementById("itemQty").value = item.qty || "";
+      document.getElementById("itemJob").value = item.job || 1;
       document.getElementById("itemPrice").value = parseFloat(item.price || 0).toFixed(2);
       document.getElementById("itemDiscountValue").value = parseFloat(item.discount || 0).toFixed(2);
       document.getElementById("itemExtraCharge").value = parseFloat(item.extraCharge || 0).toFixed(2);
@@ -1434,6 +1456,7 @@ document.addEventListener("DOMContentLoaded", function () {
       sizeId: "{{ i.size_id|default:'' }}",
       variantId: "{{ i.variant_id|default:'' }}",
       qty: parseFloat("{{ i.qty|default:0 }}"),
+      job: parseFloat("{{ i.job|default:1 }}"),
       price: parseFloat("{{ i.price|default:0 }}"),
       discount: parseFloat("{{ i.discount|default:0 }}"),
       gross: parseFloat("{{ i.total|default:0 }}") + parseFloat("{{ i.discount|default:0 }}") - parseFloat("{{ i.extra_charge|default:0 }}"),
@@ -1574,6 +1597,7 @@ function updatePrice() {
     let variantId = variantDropdown.value;
 
     let qty = parseFloat(document.getElementById("itemQty").value) || 0;
+    let job = parseFloat(document.getElementById("itemJob").value) || 1;
 
     let categoryText = categoryDropdown.selectedOptions[0]?.textContent.trim().toLowerCase() || "";
     let sizeText = sizeDropdown.selectedOptions[0]?.textContent.trim().toLowerCase() || "";
@@ -1639,9 +1663,10 @@ if (
     categoryText.includes("notice") ||
     categoryText.includes("banner") ||
     categoryText.includes("bill book") ||
-    categoryText.includes("poster")
+    categoryText.includes("poster") ||
+    categoryText.includes("printing")
 ) {
-    gross = price;
+    gross = price * job;
 }
 
 /* TRAIN TICKET */
@@ -1678,7 +1703,7 @@ else if (categoryText.includes("online application")) {
         }
     }
     else {
-        gross = qty * price;
+        gross = qty * price * job;
     }
 }
 
@@ -1711,7 +1736,7 @@ else if (categoryText.includes("print out")) {
                 price = gross;
             }
             else {
-                gross = qty * price;
+                gross = qty * price * job;
             }
         }
 
@@ -1724,7 +1749,7 @@ else if (categoryText.includes("print out")) {
                     price = gross;
                 }
                 else {
-                    gross = qty * price;
+                    gross = qty * price * job;
                 }
             }
 
@@ -1735,12 +1760,12 @@ else if (categoryText.includes("print out")) {
                     price = gross;
                 }
                 else {
-                    gross = qty * price;
+                    gross = qty * price * job;
                 }
             }
         }
         else {
-            gross = qty * price;
+            gross = qty * price * job;
         }
     }
 
@@ -1762,7 +1787,7 @@ else if (categoryText.includes("print out")) {
                     price = gross;
                 }
                 else {
-                    gross = qty * price;
+                    gross = qty * price * job;
                 }
             }
 
@@ -1773,13 +1798,13 @@ else if (categoryText.includes("print out")) {
                     price = gross;
                 }
                 else {
-                    gross = qty * price;
+                    gross = qty * price * job;
                 }
             }
         }
         /* OTHER PRINT OUT TYPES */
         else {
-            gross = qty * price;
+            gross = qty * price * job;
         }
     }
 
@@ -1787,7 +1812,7 @@ else if (categoryText.includes("print out")) {
 }
 /* DEFAULT FOR ALL OTHER CATEGORIES */
     else {
-        gross = qty * price;
+        gross = qty * price * job;
     }
 
 
@@ -1859,6 +1884,7 @@ if (remainingOldDue <= 0) {
 }
 
 document.getElementById("itemQty").addEventListener("input", updatePrice);
+document.getElementById("itemJob").addEventListener("input", updatePrice);
 document.getElementById("itemVariant").addEventListener("change", updatePrice);
 document.getElementById("itemSize").addEventListener("change", updatePrice);
 document.getElementById("itemCategory").addEventListener("change", updatePrice);

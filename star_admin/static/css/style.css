@@ -4869,7 +4869,7 @@ html, body {
 /* NORMAL = 4 columns */
 .billing-grid-normal{
     display:grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap:20px;
     margin-top:20px;
 }
@@ -4877,7 +4877,7 @@ html, body {
 /* DIGITAL = 5 columns */
 .billing-grid-digital{
     display:grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(7, 1fr);
     gap:20px;
     margin-top:20px;
 }
