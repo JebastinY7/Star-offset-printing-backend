@@ -90,8 +90,9 @@
 
     <h2>Items</h2>
 
-    <div class="items-grid">
+    <div class="items-grid edit">
 
+        <div><h5>Select Billing Type</h5>
         <!-- BILLING TYPE -->
         <select id="billingMode">
 
@@ -103,11 +104,12 @@
                 Digital Print
             </option>
 
-        </select>
+        </select></div>
 
         <!-- CUSTOMER TYPE -->
         <div id="customerTypeWrapper" style="display:none;">
 
+            <h5>Customer Type</h5>
             <select id="customerType">
 
                 <option value="customer">
@@ -487,7 +489,7 @@ side_name:
 }
 
     if (!category.value || !size.value || !variant.value || qty <= 0) {
-        alert("Fill all item fields");
+        showToast("Fill all item fields");
         return;
     }
 
@@ -815,7 +817,6 @@ function removeItem(index) {
 function editItem(index) {
 
     let item = orderItems[index];
-    console.log(item);
 
     orderItems.splice(index, 1);
 
@@ -1096,7 +1097,7 @@ function fetchPrice() {
     const variantId = variantSelect.value;
     const qty = qtyInput.value || 1;
 
-    console.log(categoryId, sizeId, variantId, qty);
+    // console.log(categoryId, sizeId, variantId, qty);
     if (!categoryId || !sizeId || !variantId) {
         return;
     }
@@ -1106,7 +1107,7 @@ function fetchPrice() {
     )
     .then(response => response.json())
     .then(data => {
-      console.log(data);
+      //console.log(data);
 
         priceInput.value = data.price || 0;
 
@@ -1472,8 +1473,8 @@ row.querySelector('input[name="item_category[]"]').value
 categoryDropdown.value = categoryId;
     
 
-    console.log("CATEGORY ID:", categoryId);
-console.log("DROPDOWN VALUE:", categoryDropdown.value);
+    //console.log("CATEGORY ID:", categoryId);
+//console.log("DROPDOWN VALUE:", categoryDropdown.value);
 
 
     
@@ -1650,10 +1651,10 @@ updateBillingMode();
 
 
 window.onload = function () {
-    console.log(window.existingOrderItems);
+    //console.log(window.existingOrderItems);
 
     orderItems = window.existingOrderItems || [];
-console.log(orderItems);
+//console.log(orderItems);
     renderItems();
 };
 </script>

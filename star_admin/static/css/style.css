@@ -1372,7 +1372,7 @@ input[type=number]::-webkit-outer-spin-button {
 ========================= */
 
 select {
-    width: 100%;
+    width: 50%;
     padding: 12px 42px 12px 14px;
     font-size: 15px;
     font-weight: 500;
@@ -4963,7 +4963,7 @@ html, body {
 /* DIGITAL */
 .items-grid-digital{
     display:grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap:20px;
     margin-bottom:20px;
 }
@@ -5025,15 +5025,43 @@ html, body {
 
 
 .billing-top-row{
-    display:flex;
-    gap:20px;
+    display:grid;
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    gap:30px;
     align-items:end;
-    margin-bottom:25px;
+    margin-bottom:20px;
 }
 
-.billing-top-row div{
-    flex:1;
+.billing-top-row > div{
+    width:100%;
 }
+
+.billing-top-row label{
+    display:block;
+    margin-bottom:8px;
+    font-weight:600;
+}
+
+.billing-top-row select{
+    width:100%;
+}
+
+.items-grid.edit{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    gap:30px;
+    align-items:end;
+    margin-bottom:20px;
+    width: 50% !important;
+}
+
+.items-grid.edit{
+    display:grid;
+    grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+    gap:15px;
+}
+
+
 
 
 .items-grid{
@@ -5080,7 +5108,7 @@ html, body {
 
 /* DIGITAL PRINT */
 #digitalFields{
-    grid-template-columns:repeat(5,1fr);
+    grid-template-columns:repeat(6,1fr);
 }
 
 .top-grid{

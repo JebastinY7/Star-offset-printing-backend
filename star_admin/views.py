@@ -191,13 +191,16 @@ def forgot_password(request):
         otp = str(random.randint(100000, 999999))
         PasswordResetOTP.objects.create(user=user, otp=otp)
 
-        send_mail (
-            'Your OTP Code',
-            f'Your OTP is {otp}',
-            'staroffsets@gmail.com',
-            [email],
-            fail_silently=False
-        )
+        try:
+            send_mail (
+                'Your OTP Code',
+                f'Your OTP is {otp}',
+                'EMAIL_HOST_USER',
+                [email],
+                fail_silently=False
+            )
+        except Exception as e:
+            print("Email Error:", e)
 
         request.session['reset_email'] = email
 
@@ -610,11 +613,9 @@ def delete_customer(request, id):
 @login_required
 def search_customer(request):
     phone = request.GET.get("phone")
-    print("input:", phone)
 
     try:
         customer = Customer.objects.get(phone=phone)
-        print("found:", customer.name)
 
         return JsonResponse  ({
             "id": customer.id,
