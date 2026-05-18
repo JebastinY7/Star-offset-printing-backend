@@ -199,6 +199,7 @@ def forgot_password(request):
                 [email],
                 fail_silently=False
             )
+            return HttpResponse("MAIL SENT SUCCESS")
         except Exception as e:
             return HttpResponse(f"ERROR: {str(e)}")
 
