@@ -193,13 +193,17 @@ def forgot_password(request):
         PasswordResetOTP.objects.create(user=user, otp=otp)
 
     
-        send_mail (
-            'Your OTP Code',
-            f'Your OTP is {otp}',
-            django_settings.EMAIL_HOST_USER,
-            [email],
-            fail_silently=False
-        )
+        try:
+            send_mail (
+                'Your OTP Code',
+                f'Your OTP is {otp}',
+                django_settings.EMAIL_HOST_USER,
+                [email],
+                fail_silently=False
+            )
+        except Exception as e:
+
+            return HttpResponse(str(e))
             
 
         request.session['reset_email'] = email
