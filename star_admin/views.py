@@ -4,6 +4,7 @@ import time
 import traceback
 from decimal import Decimal, InvalidOperation
 from django.utils.timezone import now
+from django.conf import settings
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
 from django.contrib.auth import update_session_auth_hash
@@ -195,7 +196,7 @@ def forgot_password(request):
             send_mail (
                 'Your OTP Code',
                 f'Your OTP is {otp}',
-                'EMAIL_HOST_USER',
+                settings.EMAIL_HOST_USER,
                 [email],
                 fail_silently=False
             )
