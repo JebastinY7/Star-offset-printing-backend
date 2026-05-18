@@ -167,7 +167,7 @@ def staff_login(request):
 # Forgot Password
 def forgot_password(request):
     if request.method == "POST":
-        email = request.POST.get("email").lower().strip()
+        email = (request.POST.get("email") or "").lower().strip()
 
         if not email:
             return render(request, 'forgot.html', {
@@ -175,7 +175,7 @@ def forgot_password(request):
             })
 
         try:
-            user = User.objects.get(username=email)
+            user = User.objects.get(email=email)
         except User.DoesNotExist:
             return render(request, 'forgot.html', {
                 'success': 'Enter a registered email'
@@ -192,17 +192,15 @@ def forgot_password(request):
         otp = str(random.randint(100000, 999999))
         PasswordResetOTP.objects.create(user=user, otp=otp)
 
-        try:
-            send_mail (
-                'Your OTP Code',
-                f'Your OTP is {otp}',
-                django_settings.EMAIL_HOST_USER,
-                [email],
-                fail_silently=False
-            )
-            return HttpResponse("MAIL SENT SUCCESS")
-        except Exception as e:
-            return HttpResponse(f"ERROR: {str(e)}")
+    
+        send_mail (
+            'Your OTP Code',
+            f'Your OTP is {otp}',
+            django_settings.EMAIL_HOST_USER,
+            [email],
+            fail_silently=False
+        )
+            
 
         request.session['reset_email'] = email
 
