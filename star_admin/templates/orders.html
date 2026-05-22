@@ -119,7 +119,7 @@
 
                             {% if request.user.is_superuser %}
                             <div class="tooltip">
-                                <a href="{% url 'edit_order' order.id %}" class="icon edit">
+                                <a href="{% url 'edit_order' order.id %}?page={{ orders.number }}" class="icon edit">
                                     ✏️
                                     </a>
                                     <span class="tooltip-text">Edit</span>
@@ -250,7 +250,7 @@ function openDeleteModal(orderId) {
     const modal = document.getElementById("deleteOrderModal");
     const form = document.getElementById("deleteOrderForm");
 
-    form.action = `/delete-order/${orderId}/`;
+    form.action = `/delete-order/${orderId}/?page={{ orders.number }}`;
 
     modal.style.display = "flex";
 }

@@ -893,7 +893,8 @@ def delete_bill(request, id):
     bill = get_object_or_404(Bill, id=id)
     bill.delete()
     messages.success(request, "Bill deleted successfully")
-    return redirect('/history/')
+    page = request.GET.get("page", 1)
+    return redirect(f'/history/?page={page}')
 
 @login_required
 def reports(request):
@@ -1716,8 +1717,10 @@ def save_bill(request):
             earned_points = 0
 
         customer.save()
+        
+        page = request.GET.get("page", 1)
 
-        return redirect(f'/invoice/{bill.id}/')
+        return redirect(f'/invoice/{bill.id}/?page={page}')
 
     return redirect('/billing/')
 
@@ -2316,7 +2319,8 @@ def edit_order(request, id):
         order.save()
 
         messages.success(request, "Order updated successfully")
-        return redirect('/orders/')
+        page = request.GET.get("page", 1)
+        return redirect(f'/orders/?page={page}')
 
     customers = Customer.objects.all().order_by('name')
 
@@ -2519,7 +2523,8 @@ def delete_order(request, id):
     order.delete()
 
     messages.success(request, "Order deleted successfully")
-    return redirect('/orders/')
+    page = request.GET.get("page", 1)
+    return redirect(f'/orders/?page={page}')
 
 #Due
 @login_required

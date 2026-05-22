@@ -1818,11 +1818,36 @@ else if (categoryText.includes("print out")) {
 
 
 
-let shopDiscount =
-    parseFloat(data.shop_discount || 0);
 
-let memberDiscount =
-    parseFloat(data.cs_discount || 0);
+
+    let shopDiscount = 0;
+let memberDiscount = 0;
+
+/* PRINT OUT SPECIAL DISCOUNT */
+if (categoryText.includes("print out")) {
+
+    if (qty <= 1) {
+
+        shopDiscount = 40;
+        memberDiscount = 25;
+
+    } else {
+
+        shopDiscount = 25;
+        memberDiscount = 10;
+    }
+
+}
+
+/* NORMAL DB DISCOUNT */
+else {
+
+    shopDiscount =
+        parseFloat(data.shop_discount || 0);
+
+    memberDiscount =
+        parseFloat(data.cs_discount || 0);
+}
 
             let discountPercent = 0;
 

@@ -31,7 +31,7 @@
 
         <tbody>
           {% for b in page_obj %}
-          <tr>
+          <tr id="bill-{{ b.id }}">
             <td>{{ b.bill_no }}</td>
             <td>{{ b.customer.name }}</td>
             <td>{{ b.customer.phone }}</td>
@@ -47,7 +47,7 @@
 
               {% if request.user.is_superuser %}
               <div class="tooltip">
-                <a href="{% url 'billing' %}?bill_id={{ b.id }}" class="icon edit">✏️</a>
+                <a href="{% url 'billing' %}?bill_id={{ b.id }}&return_page={{ page_obj.number }}" class="icon edit">✏️</a>
                 <span class="tooltip-text">Edit</span>
               </div>
               <div class="tooltip">
@@ -159,7 +159,7 @@
   function openDeleteModal(id) {
     const form = document.getElementById("deleteForm");
 
-    form.action = `/delete-bill/${id}/`;
+    form.action = `/delete-bill/${id}/?page={{ page_obj.number }}`;
 
     modal.classList.add("show");
   }
@@ -167,5 +167,35 @@
   function closeDeleteModal() {
     modal.classList.remove("show");
   }
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const params = new URLSearchParams(window.location.search);
+
+    const highlightId = params.get("highlight");
+
+    if (highlightId) {
+
+        const row = document.getElementById(
+            `bill-${highlightId}`
+        );
+
+        if (row) {
+
+            row.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+
+            row.style.background = "#fff3cd";
+
+            setTimeout(() => {
+                row.style.background = "";
+            }, 3000);
+        }
+    }
+});
 </script>
 {% endblock %}
