@@ -151,12 +151,12 @@
 </div>
 
 <script>
-  const modal = document.getElementById("deleteModal");  // ✅ ADD THIS
+  const modal = document.getElementById("deleteModal");  
 
   function openDeleteModal(id) {
     const form = document.getElementById("deleteForm");
 
-    form.action = `/delete-bill/${id}/`;
+    form.action = `/delete-order-history/${id}/?page={{ page_obj.number }}`;
 
     modal.classList.add("show");
   }

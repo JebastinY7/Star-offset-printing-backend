@@ -178,7 +178,7 @@ const modal = document.getElementById("deleteModal");
 
 function openDeleteModal(id) {
     const form = document.getElementById("deleteForm");
-    form.action = `/delete-membership/${id}/`;
+    form.action = `/delete-membership/${id}/?page={{ page_obj.number }}`;
     modal.classList.add("show");
 }
 

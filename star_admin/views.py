@@ -897,6 +897,23 @@ def delete_bill(request, id):
     return redirect(f'/history/?page={page}')
 
 @login_required
+@require_POST
+def delete_order_history(request, id):
+
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+    
+    bill = get_object_or_404(Bill, id=id)
+
+    bill.delete()
+
+    messages.success(request, "Order history deleted successfully")
+
+    page = request.GET.get("page", 1)
+
+    return redirect(f'/order-history/?page={page}')
+
+@login_required
 def reports(request):
     if not request.user.is_superuser:
         return render(request, '403.html', status=403)
@@ -1091,7 +1108,8 @@ def delete_membership(request, id):
 
         messages.success(request, "Membership deleted and customer membership removed successfully")
     
-    return redirect('membership_history')
+    page = request.GET.get("page", 1)
+    return redirect(f'/membership-history/?page={page}')
 
 @login_required
 def offers(request):
@@ -1216,7 +1234,9 @@ def delete_offer(request, id):
     offer = get_object_or_404(OffersHistory, id=id)
     offer.delete()
     messages.success(request, "Offer deleted successfully")
-    return redirect('offer_history')
+
+    page = request.GET.get("page", 1)
+    return redirect(f'/offer-history/?page={page}')
 
 @login_required
 def settings(request):
@@ -1718,9 +1738,26 @@ def save_bill(request):
 
         customer.save()
         
-        page = request.GET.get("page", 1)
+        page = request.POST.get("return_page", "")
+        from_history = request.POST.get("from_history", "")
 
-        return redirect(f'/invoice/{bill.id}/?page={page}')
+        redirect_url = f"/invoice/{bill.id}/"
+
+        params = []
+
+        if page:
+            params.append(f"return_page={page}")
+
+        if from_history:
+            params.append("from_history=1")
+
+        params.append(f"highlight={bill.id}")
+
+        if params:
+            redirect_url += "?" + "&".join(params)
+
+        return redirect(redirect_url)
+        
 
     return redirect('/billing/')
 
@@ -2123,6 +2160,7 @@ def orders_page(request):
     if query:
         orders_list = orders_list.filter(
             Q(customer__name__icontains=query) |
+            Q(customer__phone__icontains=query) |
             Q(work_name__icontains=query)
         )
 
@@ -2199,7 +2237,8 @@ def update_order_status(request, id, new_status):
         order.status = new_status
         order.save()
 
-    return redirect('/orders/')
+    page = request.GET.get("page", 1)
+    return redirect(f'/orders/?page={page}')
 
 # Edit Order
 @login_required

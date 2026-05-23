@@ -151,9 +151,9 @@
 
                 <tbody>
 
-                    {% for item in prices %}
+                    {% for item in page_obj %}
 
-                    <tr>
+                    <tr id="digital-rule-{{ item.id }}">
 
                         <td>
                             {{ item.product.gsm.category.name }}
@@ -203,8 +203,9 @@
 
                             <div class="manage-action-group">
 
-                                <a href="{% url 'edit_digital_price' item.id %}"
-                                   class="manage-edit-btn">
+                                <a href="{% url 'edit_digital_price' item.id %}?page={{ page_obj.number }}&category={{ request.GET.category }}&search={{ request.GET.search }}"
+                                   class="manage-edit-btn"
+                                   onclick="localStorage.setItem('digitalRuleId', 'digital-rule-{{ item.id }}')">
 
                                     Edit
 
@@ -251,10 +252,50 @@
 
 </div>
 
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="pagination">
+
+    {% if page_obj.has_previous %}
+        <a href="?page=1&category={{ request.GET.category }}&search={{ request.GET.search }}"
+           class="nav-btn">«</a>
+
+        <a href="?page={{ page_obj.previous_page_number }}&category={{ request.GET.category }}&search={{ request.GET.search }}"
+           class="nav-btn">‹</a>
+    {% endif %}
+
+    {% for num in page_obj.paginator.page_range %}
+
+        {% if num == page_obj.number %}
+
+            <span class="page-number active">
+                {{ num }}
+            </span>
+
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+
+            <a href="?page={{ num }}&category={{ request.GET.category }}&search={{ request.GET.search }}"
+               class="page-number">
+               {{ num }}
+            </a>
+
+        {% endif %}
+
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&category={{ request.GET.category }}&search={{ request.GET.search }}"
+           class="nav-btn">›</a>
+
+        <a href="?page={{ page_obj.paginator.num_pages }}&category={{ request.GET.category }}&search={{ request.GET.search }}"
+           class="nav-btn">»</a>
+    {% endif %}
+
+</div>
+{% endif %}
+
 <!-- DELETE MODAL -->
 
-<div class="delete-modal"
-     id="deleteModal">
+<div class="delete-modal" id="deleteModal">
 
     <div class="delete-modal-content">
 
@@ -320,6 +361,28 @@ document.querySelectorAll('input[type=number]').forEach(input => {
     });
 
 });
+</script>
+
+<script>
+window.onload = function () {
+
+    const rowId = localStorage.getItem("digitalRuleId");
+
+    if (rowId) {
+
+        const row = document.getElementById(rowId);
+
+        if (row) {
+
+            row.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+        }
+
+        localStorage.removeItem("digitalRuleId");
+    }
+};
 </script>
 
 </body>

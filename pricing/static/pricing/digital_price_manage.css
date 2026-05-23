@@ -419,3 +419,52 @@ input[type=number]::-webkit-outer-spin-button {
 .delete-modal .manage-reset-btn {
     min-width: 120px;
 }
+
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.nav-btn {
+  background: var(--gold); /* your red */
+  color: black;
+  padding: 6px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: 0.2s ease;
+}
+
+/* Hover */
+.nav-btn:hover {
+  background: #a07622d3;
+}
+
+/* Disabled */
+.nav-btn.disabled {
+  background: #555;
+  color: #ccc;
+  pointer-events: none;
+}
+
+.page-number{
+    padding:10px 16px;
+    background:#f1f1f1;
+    border-radius:10px;
+    text-decoration:none;
+    color:#111;
+    font-weight:600;
+}
+
+.page-number.active{
+    background:#111;
+    color:#fff;
+}
+
+.page-number:hover {
+  background: gray;
+}

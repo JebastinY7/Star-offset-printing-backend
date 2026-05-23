@@ -54,4 +54,5 @@ urlpatterns = [
     path("get-digital-price/", views.get_digital_price, name="get_digital_price"),
     path("get-digital-gsm/", views.get_digital_gsm, name="get_digital_gsm"),
     path("get-digital-products/", views.get_digital_products, name="get_digital_products"),
+    path('delete-order-history/<int:id>/', views.delete_order_history, name='delete_order_history'),
 ]

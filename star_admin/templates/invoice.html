@@ -179,8 +179,8 @@
 
     <!-- ACTIONS -->
     <div class="bill-actions">
-      {% if request.GET.page %}
-      <a href="/history/?page={{ request.GET.page }}&highlight={{ request.GET.highlight }}" class="back-btn">Back</a>
+      {% if request.GET.from_history %}
+      <a href="/history/?page={{ request.GET.return_page }}&highlight={{ bill.id }}" class="back-btn">Back</a>
       {% else %}
       <a href="/billing/" class="back-btn">Back</a>
       {% endif %}

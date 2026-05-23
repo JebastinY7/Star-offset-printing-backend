@@ -158,7 +158,7 @@
   function openDeleteModal(id) {
     const form = document.getElementById("deleteForm");
 
-    form.action = `/delete-offer/${id}/`;
+    form.action = `/delete-offer/${id}/?page={{ page_obj.number }}`;
 
     modal.classList.add("show");
   }

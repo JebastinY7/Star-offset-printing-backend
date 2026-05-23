@@ -82,13 +82,13 @@
 
                     <td>
                         {% if order.status == "pending" %}
-                            <a href="{% url 'update_order_status' order.id 'progress' %}" class="ordx-status pending">Pending</a>
+                            <a href="{% url 'update_order_status' order.id 'progress' %}?page={{ orders.number }}" class="ordx-status pending">Pending</a>
 
                         {% elif order.status == "progress" %}
-                            <a href="{% url 'update_order_status' order.id 'completed' %}" class="ordx-status progress">In Progress</a>
+                            <a href="{% url 'update_order_status' order.id 'completed' %}?page={{ orders.number }}" class="ordx-status progress">In Progress</a>
 
                         {% elif order.status == "completed" %}
-                            <a href="{% url 'update_order_status' order.id 'delivered' %}" class="ordx-status completed">Completed</a>
+                            <a href="{% url 'update_order_status' order.id 'delivered' %}?page={{ orders.number }}" class="ordx-status completed">Completed</a>
 
                         {% elif order.status == "delivered" %}
                             <span class="ordx-status delivered">Delivered</span>

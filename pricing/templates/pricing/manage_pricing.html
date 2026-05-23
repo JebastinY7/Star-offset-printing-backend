@@ -99,7 +99,7 @@
 
             <tbody>
                 {% for rule in page_obj %}
-                <tr>
+                <tr id="rule-{{ rule.id }}">
                     <td>{{ rule.category.name }}</td>
                     <td>{{ rule.size.name }}</td>
                     <td>{{ rule.variant.name }}</td>
@@ -111,7 +111,10 @@
                     <td>
                         <div class="manage-action-group">
                             <a href="{% url 'edit_price_rule' rule.id %}?page={{ page_obj.number }}&category={{ selected_category }}&search={{ search_query }}"
-                             class="manage-edit-btn">Edit</a>
+                             class="manage-edit-btn"
+                             onclick="localStorage.setItem('editRuleId', 'rule-{{ rule.id }}')">
+                             Edit
+                            </a>
                             <a href="{% url 'delete_price_rule' rule.id %}"
                                class="manage-delete-btn"
                                onclick="return confirm('Delete this rule?')">
@@ -135,27 +138,46 @@
 
 
 <!-- PAGINATION -->
-<div class="manage-pagination">
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="pagination">
 
     {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}&category={{ selected_category }}"
-           class="manage-page-btn">
-           Previous
-        </a>
+        <a href="?page=1&category={{ request.GET.category }}&search={{ request.GET.search }}"
+           class="nav-btn">«</a>
+
+        <a href="?page={{ page_obj.previous_page_number }}&category={{ request.GET.category }}&search={{ request.GET.search }}"
+           class="nav-btn">‹</a>
     {% endif %}
 
-    <span class="manage-page-info">
-        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-    </span>
+    {% for num in page_obj.paginator.page_range %}
+
+        {% if num == page_obj.number %}
+
+            <span class="page-number active">
+                {{ num }}
+            </span>
+
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+
+            <a href="?page={{ num }}&category={{ request.GET.category }}&search={{ request.GET.search }}"
+               class="page-number">
+               {{ num }}
+            </a>
+
+        {% endif %}
+
+    {% endfor %}
 
     {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}&search={{ search_query }}&category={{ selected_category }}"
-           class="manage-page-btn">
-           Next
-        </a>
+        <a href="?page={{ page_obj.next_page_number }}&category={{ request.GET.category }}&search={{ request.GET.search }}"
+           class="nav-btn">›</a>
+
+        <a href="?page={{ page_obj.paginator.num_pages }}&category={{ request.GET.category }}&search={{ request.GET.search }}"
+           class="nav-btn">»</a>
     {% endif %}
 
 </div>
+{% endif %}
 
 </div>
 <script>
@@ -166,6 +188,27 @@ document.querySelectorAll('input[type=number]').forEach(input => {
     });
 
 });
+</script>
+
+<script>
+window.onload = function () {
+
+    const rowId = localStorage.getItem("editRuleId");
+
+    if (rowId) {
+
+        const row = document.getElementById(rowId);
+
+        if (row) {
+            row.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+        }
+
+        localStorage.removeItem("editRuleId");
+    }
+};
 </script>
 
 </body>

@@ -17,6 +17,8 @@
   <form method="POST" action="{% url 'save_bill' %}">
     {% csrf_token %}
     <input type="hidden" name="bill_id" value="{{ bill.id }}">
+    <input type="hidden" name="return_page" value="{{ request.GET.return_page }}">
+    <input type="hidden" name="from_history" value="{{ request.GET.from_history }}">
     <input type="hidden" name="items_data" id="itemsData">
     <input type="hidden" name="customer_id" id="customerId">
 
@@ -666,6 +668,7 @@ let itemName =
           categoryName.toLowerCase().includes("banner") ||
           categoryName.toLowerCase().includes("bill book") ||
           categoryName.toLowerCase().includes("poster") ||
+          categoryName.toLowerCase().includes("letter pad") ||
           categoryName.toLowerCase().includes("printing")
         ) {
           grossAmount = price * job;
@@ -1664,6 +1667,7 @@ if (
     categoryText.includes("banner") ||
     categoryText.includes("bill book") ||
     categoryText.includes("poster") ||
+    categoryText.includes("letter pad") ||
     categoryText.includes("printing")
 ) {
     gross = price * job;

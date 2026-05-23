@@ -261,7 +261,7 @@ def manage_pricing(request):
         except ValueError:
             pass
 
-    paginator = Paginator(rules, 15)
+    paginator = Paginator(rules, 18)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
@@ -418,12 +418,16 @@ def digital_price_table(request):
         "product__gsm__category__name"
     )
 
+    paginator = Paginator(prices, 18)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
     categories = DigitalCategory.objects.all()
 
     return render(request,
         "pricing/digital_price_table.html",
         {
-            "prices": prices,
+            "page_obj": page_obj,
             "categories": categories,
         }
     )
@@ -488,7 +492,13 @@ def edit_digital_price(request, id):
             "Digital price updated successfully"
         )
 
-        return redirect("digital_price_table")
+        page = request.GET.get("page", "")
+        category = request.GET.get("category", "")
+        search = request.GET.get("search", "")
+
+        url = reverse("digital_price_table")
+
+        return redirect(f"{url}?page={page}&category={category}&search={search}")
 
     context = {
         "item": item,
