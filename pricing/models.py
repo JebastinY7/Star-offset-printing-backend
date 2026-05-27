@@ -121,28 +121,44 @@ class ShopSettings(models.Model):
 class DigitalCategory(models.Model):
     name = models.CharField(max_length=200)
 
+    def __str__(self):
+        return self.name
+
 class DigitalGSM(models.Model):
-    category = models.ForeignKey(
-        DigitalCategory,
-        on_delete=models.CASCADE
-    )
+    category = models.ForeignKey(DigitalCategory, on_delete=models.CASCADE, related_name="gsms")
 
     name = models.CharField(max_length=100)
 
+    def __str__(self):
+        return f"{self.category.name} - {self.name}"
+
 class DigitalProduct(models.Model):
 
-    gsm = models.ForeignKey(
-        DigitalGSM,
-        on_delete=models.CASCADE
-    )
-
+    gsm = models.ForeignKey(DigitalGSM, on_delete=models.CASCADE, related_name="products")
     name = models.CharField(max_length=200)
 
-    side = models.CharField(max_length=20)
+    def __str__(self):
+        return f"{self.gsm.name} - {self.name}"
+
+class DigitalLamination(models.Model):
+
+    product = models.ForeignKey(DigitalProduct, on_delete=models.CASCADE, related_name="laminations")
+
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.product.name} - {self.name}"
+
 
 class DigitalPrice(models.Model):
 
-    product = models.ForeignKey(DigitalProduct, on_delete=models.CASCADE)
+    SIDE_CHOICES = [
+        ("single", "Single Side"),
+        ("double", "Double Side"),
+    ]
+
+    lamination = models.ForeignKey(DigitalLamination, on_delete=models.CASCADE, related_name="prices", null=True, blank=True)
+    side = models.CharField(max_length=20, choices=SIDE_CHOICES, null=True, blank=True)
 
     min_qty = models.PositiveIntegerField()
 
@@ -155,3 +171,11 @@ class DigitalPrice(models.Model):
     customer_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     customer_discount = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+
+    def __str__(self):
+
+        return (
+            f"{self.lamination.product.name} - "
+            f"{self.lamination.name} - "
+            f"{self.side}"
+        )

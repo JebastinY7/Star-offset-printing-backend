@@ -178,14 +178,20 @@
         <option value="">Select GSM</option>
     </select>
 
+    <select id="digitalProduct">
+        <option value="">Select Product</option>
+    </select>
+
+    <select id="digitalLamination">
+        <option value="">
+            Select Lamination
+        </option>
+    </select>
+
     <select id="digitalSide">
         <option value="">Select Side</option>
         <option value="single">Single Side</option>
         <option value="double">Double Side</option>
-    </select>
-
-    <select id="digitalProduct">
-        <option value="">Select Product</option>
     </select>
 
     <select id="digitalDelivery">
@@ -339,7 +345,7 @@ function addOrderItem() {
     const isDigital =
       billingType.value === "digital";
 
-    let category, size, variant, qty;
+    let category, size, variant, qty, lamination;
     let job = 1;
 let digitalJob = 1;
 
@@ -377,6 +383,9 @@ let digitalJob = 1;
 
         variant =
           document.getElementById("digitalProduct");
+
+        lamination =
+          document.getElementById("digitalLamination");
 
         qty =
           parseFloat(
@@ -430,6 +439,16 @@ let digitalJob = 1;
             variant.selectedIndex
           ].text,
 
+        lamination_id:
+            isDigital ? lamination.value : "",
+
+        lamination:
+            isDigital
+            ? lamination.options[
+                lamination.selectedIndex
+              ].text
+            : "",
+
         side:
     document.getElementById("digitalSide").value,
 
@@ -481,10 +500,10 @@ function renderItems() {
             ${item.category}
             -
             ${item.size}
-
-             ${item.side_name ? "- " + item.side_name : ""}
             -
             ${item.variant}
+            ${item.lamination ? " - " + item.lamination : ""}
+            ${item.side_name ? "- " + item.side_name : ""}
             <input type="hidden" name="item_category[]" value="${item.category_id}">
             <input type="hidden" name="item_size[]" value="${item.size_id}">
             <input type="hidden" name="item_variant[]" value="${item.variant_id}">
@@ -495,6 +514,7 @@ function renderItems() {
             <input type="hidden" name="item_side[]" value="${item.side || ''}">
             <input type="hidden" name="item_side_name[]" value="${item.side_name || ''}">
             <input type="hidden" name="item_job[]" value="${item.job}">
+            <input type="hidden" name="item_lamination[]" value="${item.lamination_id || ''}">
           </td>
 
           <td>${item.qty}</td>
@@ -890,34 +910,27 @@ digitalCategory.addEventListener("change", function () {
 
 });
 
+const digitalLamination =
+document.getElementById("digitalLamination");
 
-/* GSM -> PRODUCT */
 const digitalSide =
 document.getElementById("digitalSide");
 
 
 function loadDigitalProducts() {
 
-    let gsmId =
-      digitalGsm.value;
+    let gsmId = digitalGsm.value;
 
-    let side =
-      digitalSide.value;
+    if (!gsmId) return;
 
-    if (!gsmId || !side) {
-        return;
-    }
-
-    fetch(
-      `/get-digital-products/?gsm_id=${gsmId}&side=${side}`
-    )
+    fetch(`/get-digital-products/?gsm_id=${gsmId}`)
 
     .then(res => res.json())
 
     .then(data => {
 
         digitalProduct.innerHTML =
-          '<option value="">Select Product</option>';
+            '<option value="">Select Product</option>';
 
         data.products.forEach(product => {
 
@@ -928,23 +941,42 @@ function loadDigitalProducts() {
             `;
         });
 
-        digitalProduct.dispatchEvent(
-            new Event("change")
-        );
-
     });
 
 }
+
+digitalProduct.addEventListener("change", function () {
+
+    fetch(
+        `/get-digital-laminations/?product_id=${this.value}`
+    )
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        digitalLamination.innerHTML =
+            '<option value="">Select Lamination</option>';
+
+        data.laminations.forEach(lamination => {
+
+            digitalLamination.innerHTML += `
+                <option value="${lamination.id}">
+                    ${lamination.name}
+                </option>
+            `;
+        });
+
+    });
+
+});
 
 digitalGsm.addEventListener(
     "change",
     loadDigitalProducts
 );
 
-digitalSide.addEventListener(
-    "change",
-    loadDigitalProducts
-);
+
 
 digitalSide.addEventListener(
     "change",
@@ -955,8 +987,8 @@ digitalSide.addEventListener(
 /* FETCH DIGITAL PRICE */
 function fetchDigitalPrice() {
 
-    const productId =
-      digitalProduct.value;
+    const laminationId =
+      digitalLamination.value;
 
     const qty =
       digitalQty.value;
@@ -972,12 +1004,12 @@ function fetchDigitalPrice() {
     const customerType =
       document.getElementById("customerType").value;
 
-    if (!productId || !qty) {
+    if (!laminationId || !qty) {
         return;
     }
 
     fetch(
-      `/get-digital-price/?product_id=${productId}&qty=${qty}`
+      `/get-digital-price/?lamination_id=${laminationId}&side=${digitalSide.value}&qty=${qty}`
     )
 
     .then(res => res.json())
@@ -1025,7 +1057,7 @@ function fetchDigitalPrice() {
           finalPrice.toFixed(2);
 
         document.getElementById("itemTotal").value =
-  (finalPrice * digitalJob).toFixed(2);
+  (finalPrice * qty * digitalJob).toFixed(2);
 
     });
 
@@ -1042,6 +1074,8 @@ digitalQty.addEventListener(
     "input",
     fetchDigitalPrice
 );
+
+
 
 digitalDelivery.addEventListener(
     "change",
@@ -1079,6 +1113,12 @@ function fetchPrice() {
     });
 
 }
+
+digitalLamination.addEventListener(
+    "change",
+    fetchDigitalPrice
+);
+
 variantSelect.addEventListener(
     "change",
     fetchPrice

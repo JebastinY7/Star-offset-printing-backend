@@ -1,4 +1,5 @@
 {% extends 'form_base.html' %}
+{% load static %}
 
 {% block content %}
 <div class="invoice-page">
@@ -10,10 +11,23 @@
 
    
     <div class="invoice-shop">
-      <h2>Star Offset Printing</h2>
-      <p>1/116, Puthanchanthai Jn, Maruthancode Post</p>
-      <p>K.K District - 629163</p>
-      <p>Mobile: +91 9488634058</p>
+
+      <div class="shop-left">
+        <img src="{% static 'images/logo.png' %}" class="shop-logo">
+      </div>
+
+      <div class="shop-right">
+        <h1>Star Offset Printing</h1>
+
+        <p>1/116, Puthanchanthai Jn, Maruthancode Post</p>
+
+        <p>K.K District - 629163</p>
+
+        <p>📞 +91 9488634058</p>
+
+        <p>✉ staroffsetprinting@gmail.com</p>
+      </div>
+
     </div>
 
     <div class="invoice-header">
@@ -173,6 +187,7 @@
       </div>
 
       <div class="sign-right">
+        <img src="{% static 'images/signature.png' %}" class="signature-img">
         <p>For <strong>STAR OFFSET PRINTING</strong></p>
       </div>
     </div>

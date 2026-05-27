@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from pricing.models import Category, Size, Variant, DigitalProduct, DigitalGSM, DigitalCategory
+from pricing.models import Category, Size, Variant, DigitalProduct, DigitalGSM, DigitalCategory, DigitalLamination
 
 # Create your models here.
     
@@ -62,6 +62,9 @@ class BillItem(models.Model):
     digital_category = models.ForeignKey(DigitalCategory, on_delete=models.SET_NULL, null=True, blank=True)
     digital_gsm = models.ForeignKey(DigitalGSM, on_delete=models.SET_NULL, null=True, blank=True)
     digital_product = models.ForeignKey(DigitalProduct, on_delete=models.SET_NULL, null=True, blank=True)
+    digital_lamination = models.ForeignKey(DigitalLamination, on_delete=models.SET_NULL, null=True, blank=True)
+    side = models.CharField(max_length=20, blank=True, null=True)
+    side_name = models.CharField(max_length=50, blank=True, null=True)
 
     qty = models.IntegerField()
     job = models.PositiveIntegerField(default=1)
@@ -206,6 +209,8 @@ class OrderItem(models.Model):
     digital_gsm = models.ForeignKey(DigitalGSM, on_delete=models.SET_NULL, null=True, blank=True)
 
     digital_product = models.ForeignKey(DigitalProduct, on_delete=models.SET_NULL, null=True, blank=True)
+
+    digital_lamination = models.ForeignKey(DigitalLamination, on_delete=models.SET_NULL, null=True, blank=True)
 
     customer_type = models.CharField(max_length=20, blank=True, null=True)
 

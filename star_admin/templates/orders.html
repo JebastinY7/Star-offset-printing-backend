@@ -10,11 +10,14 @@
 
         <form method="GET" class="ordex-filter-new">
             <!-- Search -->
-            <div class="filter-group ordex-select-wrapper">
+            <div class="filter-group ordex-select-wrapper" style="position:relative;">
               <input type="text"
                    name="q"
+                   id="searchInput"
+                   autocomplete="off"
                    value="{{ request.GET.q|default:'' }}"
-                   placeholder="🔍 Search by customer / work">
+                   placeholder="🔍 Search by customer / mobile">
+                   <div id="suggestions" class="suggestion-box"></div>
             </div>
 
             <div class="filter-group ordex-select-wrapper">
@@ -28,7 +31,10 @@
             </div>
 
             <button type="submit" class="ordex-filter-btn">Apply</button>
-            <button type="button" class="btn-clear">Clear</button>
+            
+            <a href="{% url 'orders_page' %}" class="btn-clear">
+                <button type="button" class="btn-clear">Clear</button>
+            </a>
 
         </form>
         
@@ -286,4 +292,75 @@ function toggleRow(id) {
     }
 }
 </script>
+
+<script>
+
+const searchInput = document.getElementById("searchInput");
+const suggestions = document.getElementById("suggestions");
+
+searchInput.addEventListener("keyup", function () {
+
+    let query = this.value;
+
+    if(query.length < 1){
+        suggestions.style.display = "none";
+        suggestions.innerHTML = "";
+        return;
+    }
+
+    fetch(`/live-search-customers/?q=${query}`)
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        suggestions.innerHTML = "";
+
+        if(data.customers.length > 0){
+
+            suggestions.style.display = "block";
+
+            data.customers.forEach(customer => {
+
+                suggestions.innerHTML += `
+
+                    <div class="suggestion-item"
+                         onclick="selectCustomer('${customer.name}')">
+
+                        <strong>${customer.name}</strong>
+
+                        <span>${customer.phone}</span>
+
+                    </div>
+                `;
+            });
+
+        } else {
+
+            suggestions.style.display = "none";
+        }
+    });
+
+});
+
+function selectCustomer(name){
+
+    searchInput.value = name;
+
+    suggestions.style.display = "none";
+
+    window.location.href = `?q=${name}`;
+}
+
+document.addEventListener("click", function(e){
+
+    if(!searchInput.contains(e.target) &&
+       !suggestions.contains(e.target)){
+
+        suggestions.style.display = "none";
+    }
+});
+
+</script>
+
 {% endblock %}

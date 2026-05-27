@@ -1,6 +1,6 @@
 {% load static %}
 
-<aside class="sidebar">
+<aside class="sidebar {% if not request.user.is_superuser %}staff-sidebar{% endif %}">
   
   <!-- <div class="logo">
     <div class="sidebar-logo">
@@ -63,11 +63,11 @@
 
     <li class="menu-item">
       <a href="javascript:void(0);" onclick="toggleMenu()"
-        class="{% if '/offer-history/' in request.path or '/history/' in request.path or '/membership-history/' in request.path %}active{% endif %}">
+        class="{% if '/offer-history/' in request.path or '/history/' in request.path or '/order-history/' in request.path or '/membership-history/' in request.path %}active{% endif %}">
         <i class="fas fa-clock-rotate-left"></i>
         <span>History</span>
         <i id="history-arrow" 
-          class="fas fa-chevron-down arrow {% if '/history/' in request.path or '/offer-history/' in request.path %}rotate{% endif %}">
+          class="fas fa-chevron-down arrow {% if '/history/' in request.path or '/order-history/' in request.path or '/membership-history/' in request.path or '/offer-history/' in request.path %}rotate{% endif %}">
         </i>
       </a>
 

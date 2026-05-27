@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Category, Size, Variant, PriceRule, MemberType, DigitalPrice, DigitalCategory, DigitalGSM, DigitalProduct
+from .models import Category, Size, Variant, PriceRule, MemberType, DigitalPrice, DigitalCategory, DigitalGSM, DigitalProduct, DigitalLamination
 from .forms import CategoryForm, BulkSizeForm,BulkVariantForm, PriceRuleForm, CategoryDiscountForm
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -309,7 +309,7 @@ def digital_price_setup(request):
 
     categories = DigitalCategory.objects.all()
     gsms = DigitalGSM.objects.select_related("category")
-    products = DigitalProduct.objects.select_related("gsm", "gsm__category")
+    products = DigitalProduct.objects.select_related("gsm", "gsm__category").prefetch_related("laminations")
 
     if request.method == "POST":
         form_type = request.POST.get("form_type")
@@ -345,19 +345,39 @@ def digital_price_setup(request):
         elif form_type == "add_digital_product":
             gsm_id = request.POST.get("gsm")
             product_name = request.POST.get("product_name", "").strip()
-            side = request.POST.get("side")
+            # side_lines = request.POST.get("side_list", "").splitlines()
+            lamination_lines = request.POST.get("lamination_list", "").splitlines()
 
             if gsm_id and product_name:
 
                 gsm = DigitalGSM.objects.get(id=gsm_id)
-                DigitalProduct.objects.create(gsm=gsm, name=product_name, side=side)
+
+                # CREATE PRODUCT
+                product, created = DigitalProduct.objects.get_or_create(
+                    gsm=gsm,
+                    name=product_name
+                )
+
+                # CREATE LAMINATIONS
+                for lamination_name in lamination_lines:
+
+                    lamination_name = lamination_name.strip()
+
+                    if not lamination_name:
+                        continue
+
+                    DigitalLamination.objects.get_or_create(
+                        product=product,
+                        name=lamination_name
+                    )
 
                 messages.success(request, "Product added successfully")
             
             return redirect("digital_price_setup")
         
         elif form_type == "add_digital_price":
-            product_id = request.POST.get("product")
+            lamination_id = request.POST.get("lamination")
+            side = request.POST.get("side")
             min_qty = request.POST.get("min_qty")
             max_qty = request.POST.get("max_qty") or None
             one_day_rate = request.POST.get("one_day_rate") or 0
@@ -365,11 +385,12 @@ def digital_price_setup(request):
             customer_rate = request.POST.get("customer_rate") or 0
             customer_discount = request.POST.get("customer_discount") or 0
 
-            if product_id and min_qty:
-                product = DigitalProduct.objects.get(id=product_id)
+            if lamination_id and side and min_qty:
+                lamination = DigitalLamination.objects.get(id=lamination_id)
 
                 DigitalPrice.objects.create(
-                    product=product,
+                    lamination=lamination,
+                    side=side,
                     min_qty=min_qty,
                     max_qty=max_qty,
                     one_day_rate=one_day_rate,
@@ -396,9 +417,10 @@ def digital_price_setup(request):
 def digital_price_table(request):
 
     prices = DigitalPrice.objects.select_related(
-        "product",
-        "product__gsm",
-        "product__gsm__category"
+        "lamination",
+        "lamination__product",
+        "lamination__product__gsm",
+        "lamination__product__gsm__category"
     )
 
     search = request.GET.get("search")
@@ -406,16 +428,16 @@ def digital_price_table(request):
 
     if search:
         prices = prices.filter(
-            product__gsm__category__name__icontains=search
+            lamination__product__gsm__category__name__icontains=search
         )
 
     if category:
         prices = prices.filter(
-            product__gsm__category_id=category
+            lamination__product__gsm__category_id=category
         )
 
     prices = prices.order_by(
-        "product__gsm__category__name"
+        "lamination__product__gsm__category__name"
     )
 
     paginator = Paginator(prices, 18)
@@ -433,21 +455,28 @@ def digital_price_table(request):
     )
 
 # Edit Digital
+# Edit Digital
 def edit_digital_price(request, id):
 
-    item = get_object_or_404(DigitalPrice, id=id)
+    item = get_object_or_404(
+        DigitalPrice,
+        id=id
+    )
 
     categories = DigitalCategory.objects.all()
 
-    gsms = DigitalGSM.objects.all()
+    gsms = DigitalGSM.objects.select_related(
+        "category"
+    )
+
+    products = DigitalProduct.objects.select_related(
+        "gsm",
+        "gsm__category"
+    )
 
     if request.method == "POST":
 
-        # category_id = request.POST.get("category")
-
-        gsm_id = request.POST.get("gsm")
-
-        product_name = request.POST.get("product_name")
+        lamination_id = request.POST.get("lamination")
 
         side = request.POST.get("side")
 
@@ -461,20 +490,22 @@ def edit_digital_price(request, id):
 
         customer_rate = request.POST.get("customer_rate") or 0
 
-        customer_discount = request.POST.get("customer_discount") or 0
+        customer_discount = request.POST.get(
+            "customer_discount"
+        ) or 0
 
-        # UPDATE GSM
-        gsm = get_object_or_404(DigitalGSM, id=gsm_id)
+        lamination = get_object_or_404(
+            DigitalLamination,
+            id=lamination_id
+        )
 
-        # UPDATE PRODUCT
-        item.product.gsm = gsm
-        item.product.name = product_name
-        item.product.side = side
+        item.lamination = lamination
 
-        item.product.save()
+        item.side = side
 
-        # UPDATE PRICE
+        # PRICE
         item.min_qty = min_qty
+
         item.max_qty = max_qty
 
         item.one_day_rate = one_day_rate
@@ -493,17 +524,35 @@ def edit_digital_price(request, id):
         )
 
         page = request.GET.get("page", "")
-        category = request.GET.get("category", "")
-        search = request.GET.get("search", "")
 
-        url = reverse("digital_price_table")
+        category = request.GET.get(
+            "category",
+            ""
+        )
 
-        return redirect(f"{url}?page={page}&category={category}&search={search}")
+        search = request.GET.get(
+            "search",
+            ""
+        )
+
+        url = reverse(
+            "digital_price_table"
+        )
+
+        return redirect(
+            f"{url}?page={page}&category={category}&search={search}"
+        )
 
     context = {
+
         "item": item,
+
         "categories": categories,
+
         "gsms": gsms,
+
+        "products": products,
+
     }
 
     return render(request, "pricing/edit_digital_price.html", context)
@@ -528,7 +577,7 @@ def delete_digital_category(request, id):
 
     # DELETE PRICES
     DigitalPrice.objects.filter(
-        product__gsm__category=category
+        lamination__product__gsm__category=category
     ).delete()
 
     # DELETE PRODUCTS

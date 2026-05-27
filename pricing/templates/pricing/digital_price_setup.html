@@ -143,10 +143,29 @@ Example:
 
                 <div class="form-group">
 
+                    <label>Category</label>
+                    <select id="productCategorySelect" required>
+
+                        <option value="">
+                            Select Category
+                        </option>
+
+                        {% for category in categories %}
+
+                        <option value="{{ category.id }}">
+                            {{ category.name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+                </div>
+
+                <div class="form-group">
+
                     <label>GSM</label>
 
-                    <select name="gsm"
-                            required>
+                    <select name="gsm" id="productGsmSelect" required>
 
                         <option value="">
                             Select GSM
@@ -154,9 +173,11 @@ Example:
 
                         {% for gsm in gsms %}
 
-                        <option value="{{ gsm.id }}">
-                            {{ gsm.category.name }} -
+                        <option value="{{ gsm.id }}"
+                                data-category="{{ gsm.category.id }}">
+
                             {{ gsm.name }}
+
                         </option>
 
                         {% endfor %}
@@ -178,25 +199,29 @@ Example:
 
                 <div class="form-group">
 
-                    <label>Side</label>
+                    <label>Lamination</label>
 
-                    <select name="side"
-                            required>
-
-                        <option value="single">
-                            1 SIDE
-                        </option>
-
-                        <option value="double">
-                            2 SIDE
-                        </option>
-
-                    </select>
+                    <textarea name="lamination_list"
+                        placeholder=
+"No Lamination
+Glossy
+Matt
+3D"
+                        required></textarea>
 
                 </div>
 
-                
+                {% comment %} <div class="form-group">
 
+                    <label>Side</label>
+
+                    <textarea name="side_list"
+placeholder=
+"single
+double"
+                            required></textarea>
+
+                </div> {% endcomment %}
                 
 
                 <button type="submit"
@@ -229,7 +254,7 @@ Example:
 
                         <label>Category</label>
 
-                        <select id="priceCategory">
+                        <select id="categorySelect">
 
                             <option value="">
                                 Select Category
@@ -248,11 +273,11 @@ Example:
                     </div>
 
                     <!-- GSM -->
-                    <div class="form-group">
+                    <div class="form-group" id="gsmWrapper" style="display:none;">
 
                         <label>GSM</label>
 
-                        <select id="priceGsm">
+                        <select name="gsm" id="gsmSelect" required>
 
                             <option value="">
                                 Select GSM
@@ -274,30 +299,60 @@ Example:
                     </div>
 
                     <!-- PRODUCT -->
-                    <div class="form-group">
+                    <div class="form-group" id="productWrapper" style="display:none;">
 
                         <label>Product</label>
 
                         <select name="product"
-                                id="priceProduct"
+                                id="productSelect"
                                 required>
 
                             <option value="">
                                 Select Product
                             </option>
 
-                            {% for product in products %}
+                            {% comment %} {% for product in products %}
 
                             <option value="{{ product.id }}"
                                     data-gsm="{{ product.gsm.id }}">
 
                                 {{ product.name }}
-                                -
-                                {{ product.side }}
 
                             </option>
 
-                            {% endfor %}
+                            {% endfor %} {% endcomment %}
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Lamination</label>
+
+                        <select name="lamination"
+                                id="laminationSelect"
+                                required>
+
+                            <option value="">
+                                Select Lamination
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Side</label>
+
+                        <select name="side"
+                                id="sideSelect"
+                                required>
+
+                            <option value="">
+                                Select Side
+                            </option>
 
                         </select>
 
@@ -385,48 +440,7 @@ Example:
 
 </div>
 
-<script>
 
-const categorySelect = document.getElementById("priceCategory");
-const gsmSelect = document.getElementById("priceGsm");
-const productSelect = document.getElementById("priceProduct");
-
-categorySelect.addEventListener("change", function () {
-
-    const categoryId = this.value;
-
-    Array.from(gsmSelect.options).forEach(option => {
-
-        if (!option.value) return;
-
-        option.style.display =
-            option.dataset.category === categoryId
-            ? "block"
-            : "none";
-    });
-
-    gsmSelect.value = "";
-    productSelect.value = "";
-});
-
-gsmSelect.addEventListener("change", function () {
-
-    const gsmId = this.value;
-
-    Array.from(productSelect.options).forEach(option => {
-
-        if (!option.value) return;
-
-        option.style.display =
-            option.dataset.gsm === gsmId
-            ? "block"
-            : "none";
-    });
-
-    productSelect.value = "";
-});
-
-</script>
 
 <script>
 document.querySelectorAll('input[type=number]').forEach(input => {
@@ -436,6 +450,254 @@ document.querySelectorAll('input[type=number]').forEach(input => {
     });
 
 });
+</script>
+
+<script>
+
+const category = document.getElementById("categorySelect");
+const gsm = document.getElementById("gsmSelect");
+const product = document.getElementById("productSelect");
+const lamination = document.getElementById("laminationSelect");
+
+const gsmWrapper = document.getElementById("gsmWrapper");
+const productWrapper = document.getElementById("productWrapper");
+const laminationWrapper = document.getElementById("laminationWrapper");
+
+category.addEventListener("change", function () {
+
+    const categoryId = this.value;
+
+    gsmWrapper.style.display =
+        categoryId ? "block" : "none";
+
+    productWrapper.style.display = "none";
+    laminationWrapper.style.display = "none";
+    sideWrapper.style.display = "none";
+
+    Array.from(gsm.options).forEach(option => {
+
+        if (!option.value) return;
+
+        option.style.display =
+            option.dataset.category === categoryId
+            ? "block"
+            : "none";
+    });
+
+    gsm.value = "";
+    product.value = "";
+});
+
+gsm.addEventListener("change", function () {
+
+    const gsmId = this.value;
+
+    productWrapper.style.display =
+        gsmId ? "block" : "none";
+
+    laminationWrapper.style.display = "none";
+    sideWrapper.style.display = "none";
+
+    Array.from(product.options).forEach(option => {
+
+        if (!option.value) return;
+
+        option.style.display =
+            option.dataset.gsm === gsmId
+            ? "block"
+            : "none";
+    });
+
+    product.value = "";
+});
+
+</script>
+
+<script>
+const categorySelect = document.getElementById("categorySelect");
+const gsmSelect = document.getElementById("gsmSelect");
+
+const gsmOptions = Array.from(gsmSelect.options);
+
+categorySelect.addEventListener("change", function () {
+
+    const categoryId = this.value;
+
+    gsmSelect.innerHTML =
+        '<option value="">Select GSM</option>';
+
+    gsmOptions.forEach(option => {
+
+        if (
+            option.dataset.category === categoryId
+        ) {
+            gsmSelect.appendChild(option);
+        }
+
+    });
+
+});
+
+const productSelect = document.getElementById("productSelect");
+
+</script>
+
+<script>
+
+const allProducts = [
+
+    {% for product in products %}
+
+    {
+        id: "{{ product.id }}",
+        name: "{{ product.name }}",
+        gsm: "{{ product.gsm.id }}"
+    },
+
+    {% endfor %}
+
+];
+
+const allLaminations = [
+
+    {% for product in products %}
+
+        {% for lamination in product.laminations.all %}
+
+        {
+            id: "{{ lamination.id }}",
+            name: "{{ lamination.name }}",
+            product: "{{ product.id }}"
+        },
+
+        {% endfor %}
+
+    {% endfor %}
+
+];
+
+gsmSelect.addEventListener("change", function () {
+
+    const gsmId = this.value;
+
+    // RESET
+    productSelect.innerHTML =
+        '<option value="">Select Product</option>';
+
+    laminationSelect.innerHTML =
+        '<option value="">Select Lamination</option>';
+
+    sideSelect.innerHTML =
+        '<option value="">Select Side</option>';
+
+    // REMOVE DUPLICATES
+    allProducts.forEach(product => {
+
+    if (product.gsm === gsmId) {
+
+        const option = document.createElement("option");
+
+        option.value = product.id;
+
+        option.textContent = product.name;
+
+        productSelect.appendChild(option);
+
+    }
+
+});
+
+});
+
+</script>
+
+<script>
+
+const productCategorySelect =
+    document.getElementById("productCategorySelect");
+
+const productGsmSelect =
+    document.getElementById("productGsmSelect");
+
+const productGsmOptions =
+    Array.from(productGsmSelect.options);
+
+productCategorySelect.addEventListener("change", function () {
+
+    const categoryId = this.value;
+
+    productGsmSelect.innerHTML =
+        '<option value="">Select GSM</option>';
+
+    productGsmOptions.forEach(option => {
+
+        if (!option.value) return;
+
+        if (option.dataset.category === categoryId) {
+
+            productGsmSelect.appendChild(option);
+
+        }
+
+    });
+
+});
+
+</script>
+
+<script>
+
+const laminationSelect =
+    document.getElementById("laminationSelect");
+
+const sideSelect =
+    document.getElementById("sideSelect");
+
+productSelect.addEventListener("change", function () {
+
+    const productId = this.value;
+
+    laminationSelect.innerHTML =
+        '<option value="">Select Lamination</option>';
+
+    sideSelect.innerHTML =
+        '<option value="">Select Side</option>';
+
+    let addedLaminations = [];
+
+    allLaminations.forEach(lamination => {
+
+        if (
+            lamination.product === productId &&
+            !addedLaminations.includes(lamination.name)
+        ) {
+
+            addedLaminations.push(lamination.name);
+
+            const option = document.createElement("option");
+
+            option.value = lamination.id;
+            option.textContent = lamination.name;
+
+            laminationSelect.appendChild(option);
+        }
+
+    });
+
+});
+
+
+// LAMINATION CHANGE
+laminationSelect.addEventListener("change", function () {
+
+    sideSelect.innerHTML = `
+        <option value="">Select Side</option>
+        <option value="single">Single</option>
+        <option value="double">Double</option>
+    `;
+
+});
+
 </script>
 
 {% endblock %}

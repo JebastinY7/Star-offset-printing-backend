@@ -29,7 +29,7 @@ from openpyxl.utils import get_column_letter
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
-from pricing.models import Category, Size, PriceRule, CategoryDiscount, Variant, DigitalCategory, DigitalPrice, DigitalGSM, DigitalProduct
+from pricing.models import Category, Size, PriceRule, CategoryDiscount, Variant, DigitalCategory, DigitalPrice, DigitalGSM, DigitalProduct, DigitalLamination
 
 # Create your views here.
 # Admin Login
@@ -734,8 +734,12 @@ def billing_system(request):
             
             else:
                 digital_rule = DigitalPrice.objects.filter(
-                    product=item.digital_product,
+                    lamination=item.digital_lamination,
+                    side=item.side,
                     min_qty__lte=item.qty
+                ).filter(
+                    Q(max_qty__gte=item.qty) |
+                    Q(max_qty__isnull=True)
                 ).order_by('-min_qty').first()
 
                 if digital_rule:
@@ -785,12 +789,15 @@ def billing_system(request):
 
 def get_digital_price(request):
 
-    product_id = request.GET.get("product_id")
+    lamination_id = request.GET.get("lamination_id")
+
+    side = request.GET.get("side")
 
     qty = int(request.GET.get("qty", 0))
 
     price = DigitalPrice.objects.filter(
-        product_id=product_id,
+        lamination_id=lamination_id,
+        side=side,
         min_qty__lte=qty
     ).filter(
         Q(max_qty__gte=qty) |
@@ -839,20 +846,58 @@ def get_digital_gsm(request):
 def get_digital_products(request):
 
     gsm_id = request.GET.get("gsm_id")
-    side = request.GET.get("side")
-
-    if not gsm_id or gsm_id == "undefined":
-        return JsonResponse({
-            "products": []
-        })
 
     products = DigitalProduct.objects.filter(
-        gsm_id=gsm_id,
-        side=side
-    ).values("id", "name")
+        gsm_id=gsm_id
+    ).distinct()
+
+    product_data = []
+
+    for product in products:
+
+        laminations = DigitalLamination.objects.filter(
+            product=product
+        )
+
+        lamination_list = []
+
+        for lamination in laminations:
+
+            lamination_list.append({
+                "id": lamination.id,
+                "name": lamination.name
+            })
+
+        product_data.append({
+            "id": product.id,
+            "name": product.name,
+            "laminations": lamination_list
+        })
 
     return JsonResponse({
-        "products": list(products)
+        "products": product_data
+    })
+
+@login_required
+def get_digital_laminations(request):
+
+    product_id = request.GET.get("product_id")
+
+    laminations = DigitalLamination.objects.filter(
+        product_id=product_id
+    ).distinct()
+
+    data = []
+
+    for lamination in laminations:
+
+        data.append({
+            "id": lamination.id,
+            "name": lamination.name
+        })
+
+    return JsonResponse({
+        "laminations": data
     })
 
 
@@ -1503,33 +1548,6 @@ def save_bill(request):
             final = raw_final.quantize(Decimal('1'))
             current_due = max(final - paid_amount, Decimal('0'))
 
-        # remaining_old_due = max(previous_due - old_due_payment, Decimal('0'))
-
-        # current_due = max(final - paid_amount, Decimal('0'))
-
-        # # BLOCK DISCOUNT ONLY IF ANY DUE REMAINS
-        # discount_allowed = (remaining_old_due <= 0)
-
-        # if not discount_allowed:
-
-        #     for item in items:
-        #         original_total = (
-        #             Decimal(str(item['total'])) +
-        #             Decimal(str(item['discount']))
-        #         )
-
-        #         item['discount'] = 0
-
-        #         item['total'] = original_total
-
-        #     total_discount = extra_discount
-
-        #     raw_final = (gross_total - extra_discount + total_extra_charge)
-
-        #     final = raw_final.quantize(Decimal('1'))
-
-        #     current_due = max(final - paid_amount, Decimal('0'))
-
         due_amount = current_due + remaining_old_due
 
         customer.due_amount = due_amount
@@ -1622,20 +1640,14 @@ def save_bill(request):
 
                 order.save()
 
-        # due_amount = remaining_old_due + current_due
-
-        
-
-        # customer.due_amount = max(customer.due_amount - old_due_payment, Decimal('0'))
 
         for item in items:
             print("ITEM:", item)
             billing_type = item.get("billingType")
             print("TYPE:", billing_type)
 
-            # =========================
             # NORMAL PRINT
-            # =========================
+            
             if billing_type == "normal print":
 
                 BillItem.objects.create(
@@ -1665,9 +1677,9 @@ def save_bill(request):
                     total=item['total'],
                 )
 
-            # =========================
+           
             # DIGITAL PRINT
-            # =========================
+          
             elif billing_type == "digital print":
                 service_name = item.get('name', '')
 
@@ -1679,7 +1691,6 @@ def save_bill(request):
 
                     bill=bill,
                     
-
                     service_name=service_name,
 
                     digital_category_id=item.get('categoryId') or None,
@@ -1687,6 +1698,12 @@ def save_bill(request):
                     digital_gsm_id=item.get('sizeId') or None,
 
                     digital_product_id=item.get('variantId') or None,
+
+                    digital_lamination_id=item.get('laminationId') or None,
+
+                    side=item.get('side') or "",
+
+                    side_name=item.get('sideName') or "",
 
                     qty=item['qty'],
 
@@ -2290,6 +2307,7 @@ def edit_order(request, id):
         categories = request.POST.getlist("item_category[]")
         sizes = request.POST.getlist("item_size[]")
         variants = request.POST.getlist("item_variant[]")
+        laminations = request.POST.getlist("item_lamination[]")
         qtys = request.POST.getlist("item_qty[]")
         prices = request.POST.getlist("item_price[]")
         totals = request.POST.getlist("item_total[]")
@@ -2318,6 +2336,8 @@ def edit_order(request, id):
                     digital_gsm_id=sizes[i] if sizes[i] else None,
 
                     digital_product_id=variants[i] if variants[i] else None,
+
+                    digital_lamination_id=laminations[i] if i < len(laminations) else None,
 
                     customer_type=customer_types[i] if i < len(customer_types) else "",
 
@@ -2440,6 +2460,7 @@ def add_order(request):
             categories_ids = request.POST.getlist("item_category[]")
             sizes = request.POST.getlist("item_size[]")
             variants = request.POST.getlist("item_variant[]")
+            laminations = request.POST.getlist("item_lamination[]")
 
             sides = request.POST.getlist("item_side[]")
             side_names = request.POST.getlist("item_side_name[]")
@@ -2491,6 +2512,8 @@ def add_order(request):
                         digital_gsm_id=sizes[i] if sizes[i] else None,
 
                         digital_product_id=variants[i] if variants[i] else None,
+
+                        digital_lamination_id=laminations[i] if i < len(laminations) else None,
 
                         customer_type=customer_types[i] if i < len(customer_types) else "",
 

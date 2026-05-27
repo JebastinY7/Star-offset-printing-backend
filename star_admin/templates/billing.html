@@ -121,17 +121,25 @@
             </option>
         </select>
 
+        <select id="digitalProduct">
+            <option value="">
+                Select Product
+            </option>
+        </select>
+
+        <select id="digitalLamination">
+            <option value="">
+                Select Lamination
+            </option>
+        </select>
+
         <select id="digitalSide">
             <option value="">Select Side</option>
             <option value="single">Single Side</option>
             <option value="double">Double Side</option>
         </select>
 
-        <select id="digitalProduct">
-            <option value="">
-                Select Product
-            </option>
-        </select>
+        
 
         <select id="digitalDeliveryType">
             <option value="one_day">
@@ -531,6 +539,21 @@ if (billingMode === "digital") {
 
     let productDropdown =
         document.getElementById("digitalProduct");
+    
+    
+
+let laminationDropdown =
+    document.getElementById("digitalLamination");
+
+let laminationId =
+    laminationDropdown.value;
+
+let laminationName =
+    laminationDropdown.options[
+        laminationDropdown.selectedIndex
+    ].text;
+
+
 
     let deliveryDropdown =
         document.getElementById("digitalDeliveryType");
@@ -560,7 +583,7 @@ if (billingMode === "digital") {
         !qty
     ) {
 
-        showToast("Select digital print details");
+        alert("Select digital print details");
 
         return;
     }
@@ -579,8 +602,9 @@ let sideText =
 let itemName =
     `${categoryDropdown.options[categoryDropdown.selectedIndex].text}
     - ${gsmDropdown.options[gsmDropdown.selectedIndex].text}
-    - ${sideText}
     - ${productDropdown.options[productDropdown.selectedIndex].text}
+    - ${laminationName}
+    - ${sideText}
     - ${deliveryDropdown.options[deliveryDropdown.selectedIndex].text}`;
 
     items.push({
@@ -590,6 +614,8 @@ let itemName =
         categoryId: categoryDropdown.value,
         sizeId: gsmDropdown.value,
         variantId: productDropdown.value,
+        laminationId: laminationId,
+        laminationName: laminationName,
 
         side: sideValue,
 
@@ -967,7 +993,7 @@ if (item.billingType === "digital print") {
     item.side || "";
 
         return fetch(
-            `/get-digital-products/?gsm_id=${item.sizeId}&side=${document.getElementById("digitalSide").value}`
+            `/get-digital-products/?gsm_id=${item.sizeId}`
         );
     })
 
@@ -984,7 +1010,9 @@ if (item.billingType === "digital print") {
         data.products.forEach(product => {
 
             productDropdown.innerHTML += `
-                <option value="${product.id}">
+                <option 
+                    value="${product.id}"
+                    data-lamination="${product.lamination || ''}">
                     ${product.name}
                 </option>
             `;
@@ -1506,7 +1534,15 @@ function updatePrice() {
 
         return;
       }
-      fetch(`/get-digital-price/?product_id=${productId}&qty=${qty}`)
+      let laminationId =
+    document.getElementById("digitalLamination").value;
+
+let side =
+    document.getElementById("digitalSide").value;
+
+fetch(
+`/get-digital-price/?lamination_id=${laminationId}&side=${side}&qty=${qty}`
+)
 
       .then(res => res.json())
 
@@ -2194,8 +2230,7 @@ document.getElementById("digitalCategory")
    GSM -> PRODUCT
 ========================================= */
 
-document.getElementById("digitalSide")
-.addEventListener("change", loadDigitalProducts);
+
 
     /* =========================================
    LOAD DIGITAL PRODUCTS
@@ -2206,28 +2241,69 @@ function loadDigitalProducts() {
     let gsmId =
         document.getElementById("digitalGsm").value;
 
-    let side =
-        document.getElementById("digitalSide").value;
-
     let productDropdown =
         document.getElementById("digitalProduct");
 
+    /* RESET */
     productDropdown.innerHTML =
         '<option value="">Select Product</option>';
 
-    if (!gsmId || !side) return;
+    /* RESET LAMINATION */
+    document.getElementById("digitalLamination").innerHTML =
+        '<option value="">Select Lamination</option>';
 
-    fetch(`/get-digital-products/?gsm_id=${gsmId}&side=${side}`)
+    if (!gsmId) return;
+
+    fetch(`/get-digital-products/?gsm_id=${gsmId}`)
 
     .then(res => res.json())
 
     .then(data => {
 
+        /* IMPORTANT */
+        let addedProducts = [];
+
         data.products.forEach(product => {
 
-            productDropdown.innerHTML += `
-                <option value="${product.id}">
-                    ${product.name}
+            /* PREVENT DUPLICATE */
+            if (!addedProducts.includes(product.id)) {
+
+                addedProducts.push(product.id);
+
+                productDropdown.innerHTML += `
+                    <option value="${product.id}">
+                        ${product.name}
+                    </option>
+                `;
+            }
+        });
+    });
+}
+
+function loadDigitalLaminations() {
+
+    let productId =
+        document.getElementById("digitalProduct").value;
+
+    let laminationDropdown =
+        document.getElementById("digitalLamination");
+
+    laminationDropdown.innerHTML =
+        '<option value="">Select Lamination</option>';
+
+    if (!productId) return;
+
+    fetch(`/get-digital-laminations/?product_id=${productId}`)
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        data.laminations.forEach(lam => {
+
+            laminationDropdown.innerHTML += `
+                <option value="${lam.id}">
+                    ${lam.name}
                 </option>
             `;
         });
@@ -2239,10 +2315,18 @@ function loadDigitalProducts() {
 document.getElementById("digitalGsm")
 .addEventListener("change", loadDigitalProducts);
 
+document.getElementById("digitalProduct")
+.addEventListener("change", loadDigitalLaminations);
+
+document.getElementById("digitalLamination")
+.addEventListener("change", updatePrice);
+
+document.getElementById("digitalSide")
+.addEventListener("change", updatePrice);
+
 
 /* SIDE CHANGE */
-document.getElementById("digitalSide")
-.addEventListener("change", loadDigitalProducts);
+
 
 
 /* =========================================

@@ -137,6 +137,7 @@
                         <th>Category</th>
                         <th>GSM</th>
                         <th>Product</th>
+                        <th>Lamination</th>
                         <th>Side</th>
                         <th>Qty</th>
                         <th>1 Day</th>
@@ -156,19 +157,24 @@
                     <tr id="digital-rule-{{ item.id }}">
 
                         <td>
-                            {{ item.product.gsm.category.name }}
+                            {{ item.lamination.product.gsm.category.name }}
                         </td>
 
                         <td>
-                            {{ item.product.gsm.name }}
+                            {{ item.lamination.product.gsm.name }}
+
                         </td>
 
                         <td>
-                            {{ item.product.name }}
+                            {{ item.lamination.product.name }}
                         </td>
 
                         <td>
-                            {{ item.product.side }}
+                            {{ item.lamination.name }}
+                        </td>
+
+                        <td>
+                            {{ item.side }}
                         </td>
 
                         <td>
@@ -231,7 +237,7 @@
 
                     <tr>
 
-                        <td colspan="10"
+                        <td colspan="11"
                             class="manage-empty">
 
                             No digital prices added

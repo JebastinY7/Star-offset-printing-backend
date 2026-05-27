@@ -49,7 +49,7 @@
                         {% for category in categories %}
 
                         <option value="{{ category.id }}"
-                            {% if item.product.gsm.category.id == category.id %}
+                            {% if item.lamination.product.gsm.category.id == category.id %}
                                 selected
                             {% endif %}>
 
@@ -73,7 +73,7 @@
                         {% for gsm in gsms %}
 
                         <option value="{{ gsm.id }}"
-                            {% if item.product.gsm.id == gsm.id %}
+                            {% if item.lamination.product.gsm.id == gsm.id %}
                                 selected
                             {% endif %}>
 
@@ -88,14 +88,47 @@
                 </div>
 
                 <!-- PRODUCT -->
+                <!-- PRODUCT -->
                 <div class="form-group">
 
                     <label>Product</label>
 
-                    <input type="text"
-                           name="product_name"
-                           value="{{ item.product.name }}"
-                           required>
+                    <select id="productSelect" required>
+
+                        <option value="">
+                            Select Product
+                        </option>
+
+                        {% for product in products %}
+
+                        <option value="{{ product.id }}"
+                            data-gsm="{{ product.gsm.id }}"
+                            {% if item.lamination.product.id == product.id %}
+                                selected
+                            {% endif %}>
+
+                            {{ product.name }}
+
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <!-- LAMINATION -->
+                <div class="form-group">
+
+                    <label>Lamination</label>
+
+                    <select name="lamination" id="laminationSelect" required>
+
+                        <option value="">
+                            Select Lamination
+                        </option>
+
+                    </select>
 
                 </div>
 
@@ -104,29 +137,20 @@
 
                     <label>Side</label>
 
-                    <select name="side">
+                    <select id="sideSelect" required>
 
-                        <option value="single"
-                            {% if item.product.side == "single" %}
-                                selected
-                            {% endif %}>
-
-                            1 SIDE
-
-                        </option>
-
-                        <option value="double"
-                            {% if item.product.side == "double" %}
-                                selected
-                            {% endif %}>
-
-                            2 SIDE
-
+                        <option value="">
+                            Select Side
                         </option>
 
                     </select>
 
                 </div>
+
+                <!-- HIDDEN PRODUCT -->
+                <input type="hidden"
+                    name="product"
+                    id="finalProductId">
 
                 <!-- MIN QTY -->
                 <div class="form-group">
@@ -222,5 +246,141 @@ document.querySelectorAll('input[type=number]').forEach(input => {
 
 });
 </script>
+
+<script>
+
+const allProducts = [
+
+    {% for product in products %}
+
+    {
+        id: "{{ product.id }}",
+        name: "{{ product.name }}",
+        gsm: "{{ product.gsm.id }}"
+    },
+
+    {% endfor %}
+
+];
+
+const allLaminations = [
+
+    {% for product in products %}
+
+        {% for lamination in product.laminations.all %}
+
+        {
+            id: "{{ lamination.id }}",
+            name: "{{ lamination.name }}",
+            product: "{{ product.id }}"
+        },
+
+        {% endfor %}
+
+    {% endfor %}
+
+];
+
+const productSelect =
+    document.getElementById("productSelect");
+
+const laminationSelect =
+    document.getElementById("laminationSelect");
+
+const sideSelect =
+    document.getElementById("sideSelect");
+
+const finalProductId =
+    document.getElementById("finalProductId");
+
+
+// PRODUCT CHANGE
+// PRODUCT CHANGE
+productSelect.addEventListener("change", function () {
+
+    laminationSelect.innerHTML =
+        '<option value="">Select Lamination</option>';
+
+    sideSelect.innerHTML =
+        '<option value="">Select Side</option>';
+
+    const productId = this.value;
+
+    const laminations =
+        allLaminations.filter(
+            l => l.product === productId
+        );
+
+    laminations.forEach(lamination => {
+
+        laminationSelect.innerHTML += `
+            <option value="${lamination.id}">
+                ${lamination.name}
+            </option>
+        `;
+
+    });
+
+});
+
+
+// LAMINATION CHANGE
+laminationSelect.addEventListener("change", function () {
+
+    sideSelect.innerHTML = `
+    <option value="">Select Side</option>
+    <option value="Single">Single</option>
+    <option value="Double">Double</option>
+    <option value="single">single</option>
+    <option value="double">double</option>
+    <option value="1 Side">1 Side</option>
+    <option value="2 Side">2 Side</option>
+`;
+
+});
+
+
+// SIDE CHANGE
+sideSelect.addEventListener("change", function () {
+
+    finalProductId.value =
+        productSelect.value;
+
+});
+
+window.addEventListener("DOMContentLoaded", function () {
+
+    if (productSelect.value) {
+
+        productSelect.dispatchEvent(
+            new Event("change")
+        );
+
+        setTimeout(() => {
+
+            laminationSelect.value =
+                "{{ item.lamination.id }}";
+
+            sideSelect.innerHTML = `
+                <option value="">Select Side</option>
+                <option value="Single">Single</option>
+                <option value="Double">Double</option>
+                <option value="single">single</option>
+                <option value="double">double</option>
+                <option value="1 Side">1 Side</option>
+                <option value="2 Side">2 Side</option>
+            `;
+
+            sideSelect.value =
+                "{{ item.side }}";
+
+        }, 100);
+
+    }
+
+});
+
+</script>
+
 </body>
 </html>
