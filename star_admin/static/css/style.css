@@ -1757,6 +1757,21 @@ select option {
     box-shadow:0 4px 12px rgba(0,0,0,0.05);
 }
 
+.invoice-table th:nth-child(5),
+.invoice-table td:nth-child(5) {
+    width: 10%;
+}
+
+.invoice-table th:nth-child(6),
+.invoice-table td:nth-child(6) {
+    width: 12%;
+}
+
+.invoice-table th:nth-child(2),
+.invoice-table td:nth-child(2) {
+    width: 30%;
+}
+
 /* TOP */
 .invoice-top{
     text-align:center;
@@ -1861,6 +1876,19 @@ select option {
     margin-top:22px;
     border-top:1px solid #ddd;
     padding-top:12px;
+}
+
+.summary-box-quo{
+    width:290px;
+    margin-left:auto;
+    margin-top:15px;
+    padding-top:12px;
+}
+.summary-row.final-quo{
+    margin-top:12px;
+    padding-top:10px;
+    font-size:18px;
+    font-weight:700;
 }
 
 .summary-row{
@@ -5212,4 +5240,9 @@ html, body {
     display:inline-flex;
     align-items:center;
     justify-content:center;
+}
+
+.ordx-status.quotation{
+    background:#fff4d6;
+    color:#c58b00;
 }

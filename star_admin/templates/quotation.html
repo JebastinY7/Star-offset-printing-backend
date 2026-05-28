@@ -1,0 +1,152 @@
+{% extends 'form_base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="invoice-page">
+  <div class="invoice-card">
+    
+    <div class="invoice-top">
+      <h4>QUOTATION</h4>
+    </div>
+
+   
+    <div class="invoice-shop">
+
+      <div class="shop-left">
+        <img src="{% static 'images/logo.png' %}" class="shop-logo">
+      </div>
+
+      <div class="shop-right">
+        <h1>Star Offset Printing</h1>
+
+        <p>1/116, Puthanchanthai Jn, Maruthancode Post</p>
+
+        <p>K.K District - 629163</p>
+
+        <p>📞 +91 9488634058</p>
+
+        <p>✉ staroffsetprinting@gmail.com</p>
+      </div>
+
+    </div>
+
+    <div class="invoice-header">
+      <div>
+        <p><strong>Quotation No:</strong> Q{{ order.id|stringformat:"03d" }}</p>
+        <p><strong>Date:</strong> {{ order.order_date|date:"d-m-Y" }}</p>
+        <!--<p><strong>Valid Till:</strong> {{ order.delivery_date|date:"d-m-Y" }}</p>-->
+      </div>
+
+      <div>
+        <p><strong>Name:</strong> {{ order.customer.name }}</p>
+        <p><strong>Phone:</strong> {{ order.customer.phone }}</p>
+        {% comment %} <p><strong>Customer Type:</strong> {{ bill.customer.category }}</p> {% endcomment %}
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <table class="invoice-table">
+  <thead>
+    <tr>
+      <th>S.No</th>
+      <th>Service</th>
+      <th>Qty</th>
+      <th>Price</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>
+
+        {% if item.billing_type == "digital" %}
+
+            {% if item.digital_category %}
+                {{ item.digital_category.name }}
+            {% endif %}
+
+            {% if item.digital_gsm %}
+                - {{ item.digital_gsm.name }}
+            {% endif %}
+
+            {% if item.digital_product %}
+                - {{ item.digital_product.name }}
+            {% endif %}
+
+            {% if item.digital_lamination %}
+                - {{ item.digital_lamination.name }}
+            {% endif %}
+
+            {% if item.side_name %}
+                - {{ item.side_name }}
+            {% endif %}
+
+        {% else %}
+
+            {% if item.category %}
+                {{ item.category.name }}
+            {% endif %}
+
+            {% if item.size %}
+                - {{ item.size.name }}
+            {% endif %}
+
+            {% if item.variant %}
+                - {{ item.variant.name }}
+            {% endif %}
+
+        {% endif %}
+
+        </td>
+      <td>{{ item.qty }}</td>
+      <td>{{ item.price }}</td>
+      
+      <td>
+            {{ item.total }}
+        
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+    <div class="summary-box-quo">
+
+        <div class="summary-row final-quo">
+
+            <span>Quotation Amount :</span>
+
+            <span>₹ {{ order.total_amount }}</span>
+
+        </div>
+
+    </div>
+
+    <!-- SIGNATURE -->
+    <div class="signature-box">
+      <div class="sign-left">
+        <p>Customer Signature</p>
+      </div>
+
+      <div class="sign-right">
+        <img src="{% static 'images/signature.png' %}" class="signature-img">
+        <p>For <strong>STAR OFFSET PRINTING</strong></p>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="bill-actions">
+      {% if request.GET.from_history %}
+      <a href="/history/?page={{ request.GET.return_page }}&highlight={{ bill.id }}" class="back-btn">Back</a>
+      {% else %}
+      <a href="/billing/" class="back-btn">Back</a>
+      {% endif %}
+      <button onclick="window.print()" class="print-btn">Print</button>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

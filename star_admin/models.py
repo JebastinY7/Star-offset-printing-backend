@@ -65,6 +65,7 @@ class BillItem(models.Model):
     digital_lamination = models.ForeignKey(DigitalLamination, on_delete=models.SET_NULL, null=True, blank=True)
     side = models.CharField(max_length=20, blank=True, null=True)
     side_name = models.CharField(max_length=50, blank=True, null=True)
+    manual_name = models.CharField(max_length=255, blank=True, null=True)
 
     qty = models.IntegerField()
     job = models.PositiveIntegerField(default=1)
@@ -160,13 +161,14 @@ class Order(models.Model):
     status = models.CharField(
         max_length=20,
         choices=[
+            ('quotation', 'Quotation'),
             ('pending', 'Pending'),
             ('progress', 'In Progress'),
             ('completed', 'Completed'),
             ('delivered', 'Delivered'),
             ('cancelled', 'Cancelled')
         ],
-        default='pending'
+        default='quotation'
     )
 
     created_at = models.DateTimeField(auto_now_add=True)

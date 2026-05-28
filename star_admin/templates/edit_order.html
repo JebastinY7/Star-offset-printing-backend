@@ -50,6 +50,8 @@
           <label>Status</label>
 
           <select name="status">
+            <option value="quotation"
+            {% if order.status == 'quotation' %}selected{% endif %}>Quotation</option>
             <option value="pending"
             {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
             <option value="progress"

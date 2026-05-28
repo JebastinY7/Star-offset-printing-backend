@@ -57,6 +57,7 @@
           <label>Status</label>
 
           <select name="status">
+            <option value="quotation">Quotation</option>
             <option value="pending">Pending</option>
             <option value="progress">In Progress</option>
             <option value="completed">Completed</option>
@@ -1057,7 +1058,7 @@ function fetchDigitalPrice() {
           finalPrice.toFixed(2);
 
         document.getElementById("itemTotal").value =
-  (finalPrice * qty * digitalJob).toFixed(2);
+  (finalPrice * digitalJob).toFixed(2);
 
     });
 

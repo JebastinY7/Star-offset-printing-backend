@@ -1646,9 +1646,34 @@ def save_bill(request):
             billing_type = item.get("billingType")
             print("TYPE:", billing_type)
 
+            manual_name = ""
+
+            if item.get("billingType") == "manual":
+                manual_name = item.get("name")
+
+                BillItem.objects.create(
+                    bill=bill,
+                    service_name=manual_name,
+                    manual_name=manual_name,
+
+                    category_id=item.get("categoryId") or None,
+                    size_id=item.get("sizeId") or None,
+                    variant_id=item.get("variantId") or None,
+
+                    qty=item.get("qty"),
+                    price=item.get("price"),
+                    total=item.get("total"),
+
+                    discount=item.get("discount", 0),
+                    extra_charge=item.get("extraCharge", 0),
+                    extra_purpose=item.get("extraPurpose", ""),
+
+                    
+                )
+
             # NORMAL PRINT
             
-            if billing_type == "normal print":
+            elif billing_type == "normal print":
 
                 BillItem.objects.create(
 
@@ -2211,6 +2236,18 @@ def orders_page(request):
     })
 
 @login_required
+def quotation(request, order_id):
+
+    order = Order.objects.get(id=order_id)
+
+    items = order.items.all()
+
+    return render(request, 'quotation.html', {
+        'order': order,
+        'items': items
+    })
+
+@login_required
 def order_history(request):
     query = request.GET.get("q", "")
 
@@ -2242,6 +2279,7 @@ def update_order_status(request, id, new_status):
     order = get_object_or_404(Order, id=id)
 
     valid_flow = {
+        "quotation": "pending",
         "pending": "progress",
         "progress": "completed",
         "completed": "delivered",
@@ -2453,7 +2491,7 @@ def add_order(request):
                 total_amount=total_amount,
                 advance_paid=advance_paid,
                 due_amount=due_amount,
-                status="pending"
+                status=request.POST.get("status")
             )
 
             # ITEMS

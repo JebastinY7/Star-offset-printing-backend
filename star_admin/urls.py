@@ -56,4 +56,5 @@ urlpatterns = [
     path("get-digital-products/", views.get_digital_products, name="get_digital_products"),
     path("get-digital-laminations/", views.get_digital_laminations, name="get_digital_laminations"),
     path('delete-order-history/<int:id>/', views.delete_order_history, name='delete_order_history'),
+    path('quotation/<int:order_id>/', views.quotation, name='quotation'),
 ]

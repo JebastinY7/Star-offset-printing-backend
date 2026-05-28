@@ -71,6 +71,7 @@
 
         <select id="itemCategory">
             <option value="">Select Category</option>
+            <option value="manual">OTHERS</option>
 
             {% for category in categories %}
             <option value="{{ category.id }}">
@@ -78,6 +79,11 @@
             </option>
             {% endfor %}
         </select>
+
+        <input type="text"
+                id="manualItemName"
+                placeholder="Manual Item Name"
+                style="display:none;">
 
         <select id="itemSize">
             <option value="">Select Size</option>
@@ -164,15 +170,13 @@
     <!-- PRICE -->
     <div class="auto-bill-box">
 
-        <input type="text"
+        <input type="number"
                id="itemPrice"
-               placeholder="Price"
-               readonly>
+               placeholder="Price">
 
-        <input type="text"
+        <input type="number"
                id="itemDiscountValue"
-               placeholder="Discount ₹"
-               readonly>
+               placeholder="Discount ₹">
 
         <input type="text"
                id="itemTotalPreview"
@@ -505,6 +509,92 @@ function addItem() {
   let sizeDropdown = document.getElementById("itemSize");
 
   let categoryId = categoryDropdown.value;
+
+  /* MANUAL ENTRY */
+if (categoryId === "manual") {
+
+    let manualName =
+        document.getElementById("manualItemName").value;
+
+    let qty =
+        parseFloat(document.getElementById("itemQty").value || 0);
+
+    let job =
+        parseFloat(document.getElementById("itemJob").value || 1);
+
+    let price =
+        parseFloat(document.getElementById("itemPrice").value || 0);
+
+    let extraCharge =
+        parseFloat(document.getElementById("itemExtraCharge").value || 0);
+
+    let gross = qty * price * job;
+
+    let discount =
+    parseFloat(
+        document.getElementById("itemDiscountValue").value || 0
+    );
+
+    let total =
+        gross - discount + extraCharge;
+
+    if (!manualName || qty <= 0 || price <= 0) {
+
+        showToast("Enter manual item details");
+
+        return;
+    }
+
+    items.push({
+
+        billingType: "manual",
+
+        name: manualName,
+
+        qty: qty,
+
+        job: job,
+
+        price: price,
+
+        gross: gross,
+
+        discount: parseFloat(
+            document.getElementById("itemDiscountValue").value || 0
+        ),
+
+        extraCharge: extraCharge,
+
+        extraPurpose:
+            document.getElementById("extraPurpose").value || "",
+
+        total: total
+    });
+
+    renderItems();
+
+    calculateTotal();
+
+    /* CLEAR */
+    document.getElementById("manualItemName").value = "";
+
+    document.getElementById("itemQty").value = "";
+
+    document.getElementById("itemJob").value = 1;
+
+    document.getElementById("itemPrice").value = "";
+
+    document.getElementById("itemDiscountValue").value = "";
+
+    document.getElementById("extraPurpose").value = "";
+
+    document.getElementById("itemExtraCharge").value = "";
+
+    document.getElementById("itemTotalPreview").value = "";
+
+    return;
+}
+
   let categoryName = categoryDropdown.options[categoryDropdown.selectedIndex].text;
 
   let sizeId = sizeDropdown.value;
@@ -944,6 +1034,53 @@ function renderItems() {
 
 function editItem(index) {
   let item = items[index];
+
+  /* =========================
+   MANUAL ITEM EDIT
+========================= */
+
+if (item.billingType === "manual") {
+
+    document.getElementById("itemCategory").value = "manual";
+
+    document.getElementById("manualItemName").style.display = "block";
+
+    document.getElementById("itemSize").style.display = "none";
+
+    document.getElementById("itemVariant").style.display = "none";
+
+    document.getElementById("manualItemName").value =
+        item.name || "";
+
+    document.getElementById("itemQty").value =
+        item.qty || "";
+
+    document.getElementById("itemJob").value =
+        item.job || 1;
+
+    document.getElementById("itemPrice").value =
+        parseFloat(item.price || 0).toFixed(2);
+
+    document.getElementById("itemDiscountValue").value =
+        parseFloat(item.discount || 0).toFixed(2);
+
+    document.getElementById("itemExtraCharge").value =
+        parseFloat(item.extraCharge || 0).toFixed(2);
+
+    document.getElementById("extraPurpose").value =
+        item.extraPurpose || "";
+
+    document.getElementById("itemTotalPreview").value =
+        parseFloat(item.total || 0).toFixed(2);
+
+    items.splice(index, 1);
+
+    renderItems();
+
+    calculateTotal();
+
+    return;
+}
 
   /* =========================================
    DIGITAL ITEM EDIT
@@ -1387,6 +1524,33 @@ document.addEventListener("DOMContentLoaded", function () {
     const variantDropdown = document.getElementById("itemVariant");
 
     categoryDropdown.addEventListener("change", function () {
+
+        let manualInput =
+    document.getElementById("manualItemName");
+
+if (this.value === "manual") {
+
+    manualInput.style.display = "block";
+
+    document.getElementById("itemSize").style.display = "none";
+
+    document.getElementById("itemVariant").style.display = "none";
+
+    document.getElementById("itemPrice").readOnly = false;
+
+    return;
+}
+else {
+
+    manualInput.style.display = "none";
+
+    document.getElementById("itemSize").style.display = "block";
+
+    document.getElementById("itemVariant").style.display = "block";
+
+    document.getElementById("itemPrice").readOnly = false;
+}
+
         let categoryId = this.value;
 
         sizeDropdown.innerHTML = '<option value="">Select Size</option>';
@@ -1613,8 +1777,16 @@ fetch(
         let finalTotal =
             gross - discount + extraCharge;
 
-        document.getElementById("itemPrice").value =
-            basePrice.toFixed(2);
+        let priceInput =
+    document.getElementById("itemPrice");
+
+/* DON'T OVERWRITE MANUAL PRICE */
+if (
+    !priceInput.dataset.manual ||
+    priceInput.dataset.manual !== "true"
+) {
+    priceInput.value = price.toFixed(2);
+}
 
         document.getElementById("itemDiscountValue").value =
             discount.toFixed(2);
@@ -1641,6 +1813,29 @@ fetch(
     let categoryText = categoryDropdown.selectedOptions[0]?.textContent.trim().toLowerCase() || "";
     let sizeText = sizeDropdown.selectedOptions[0]?.textContent.trim().toLowerCase() || "";
     let variantText = variantDropdown.selectedOptions[0]?.textContent.trim().toLowerCase() || "";
+
+    /* MANUAL ENTRY */
+if (categoryId === "manual") {
+
+    let price =
+        parseFloat(document.getElementById("itemPrice").value || 0);
+
+    let gross = qty * price * job;
+
+    let discount =
+        parseFloat(document.getElementById("itemDiscountValue").value || 0);
+
+    let extraCharge =
+        parseFloat(document.getElementById("itemExtraCharge").value || 0);
+
+    let total =
+        gross - discount + extraCharge;
+
+    document.getElementById("itemTotalPreview").value =
+        total.toFixed(2);
+
+    return;
+}
 
     /* ==========================================
        RESET IF EMPTY
@@ -1954,6 +2149,8 @@ document.getElementById("itemVariant").addEventListener("change", updatePrice);
 document.getElementById("itemSize").addEventListener("change", updatePrice);
 document.getElementById("itemCategory").addEventListener("change", updatePrice);
 document.getElementById("itemExtraCharge").addEventListener("input", updatePrice);
+document.getElementById("itemPrice").addEventListener("input", updatePrice);
+document.getElementById("itemDiscountValue").addEventListener("input", updatePrice);
 
 document.querySelectorAll('input[type="number"]').forEach(input => {
       input.addEventListener('wheel', function(e) {
