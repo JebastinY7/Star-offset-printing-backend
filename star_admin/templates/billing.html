@@ -700,6 +700,9 @@ let itemName =
     items.push({
 
         billingType: "digital print",
+        job: parseFloat(
+            document.getElementById("digitalJob").value || 1
+        ),
         name: itemName,
         categoryId: categoryDropdown.value,
         sizeId: gsmDropdown.value,
@@ -1764,7 +1767,12 @@ fetch(
            NO qty * price
         ================================= */
 
-        let gross = basePrice;
+        let job =
+            parseFloat(
+                document.getElementById("digitalJob").value || 1
+            );
+
+        let gross = basePrice * job;
 
         let discount =
             gross * (discountPercent / 100);
@@ -1785,7 +1793,7 @@ if (
     !priceInput.dataset.manual ||
     priceInput.dataset.manual !== "true"
 ) {
-    priceInput.value = price.toFixed(2);
+    priceInput.value = basePrice.toFixed(2);
 }
 
         document.getElementById("itemDiscountValue").value =
@@ -2540,6 +2548,9 @@ document.getElementById("digitalGsm")
 .addEventListener("change", updatePrice);
 
 document.getElementById("digitalQty")
+.addEventListener("input", updatePrice);
+
+document.getElementById("digitalJob")
 .addEventListener("input", updatePrice);
 
 </script>

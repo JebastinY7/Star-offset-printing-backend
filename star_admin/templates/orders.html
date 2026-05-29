@@ -23,7 +23,6 @@
             <div class="filter-group ordex-select-wrapper">
               <select name="status">
                 <option value="">All Status</option>
-                <option value="quotation"{% if request.GET.status == "quotation" %}selected{% endif %}>Quotation</option>
                 <option value="pending" {% if request.GET.status == "pending" %}selected{% endif %}>Pending</option>
                 <option value="progress" {% if request.GET.status == "progress" %}selected{% endif %}>In Progress</option>
                 <option value="completed" {% if request.GET.status == "completed" %}selected{% endif %}>Completed</option>
@@ -88,16 +87,14 @@
                     </td>
 
                     <td>
-                        {% if order.status == "quotation" %}
-                        <a href="{% url 'update_order_status' order.id 'pending' %}" class="status-badge quotation">Quotation</a>
-                        {% elif order.status == "pending" %}
-                            <a href="{% url 'update_order_status' order.id 'progress' %}?page={{ orders.number }}" class="ordx-status pending">Pending</a>
+                        {% if order.status == "pending" %}
+                            <a href="{% url 'update_order_status' order.id 'progress' %}?page={{ orders.number }}&status={{ request.GET.status }}&q={{ request.GET.q }}" class="ordx-status pending">Pending</a>
 
                         {% elif order.status == "progress" %}
-                            <a href="{% url 'update_order_status' order.id 'completed' %}?page={{ orders.number }}" class="ordx-status progress">In Progress</a>
+                            <a href="{% url 'update_order_status' order.id 'completed' %}?page={{ orders.number }}&status={{ request.GET.status }}&q={{ request.GET.q }}" class="ordx-status progress">In Progress</a>
 
                         {% elif order.status == "completed" %}
-                            <a href="{% url 'update_order_status' order.id 'delivered' %}?page={{ orders.number }}" class="ordx-status completed">Completed</a>
+                            <a href="{% url 'update_order_status' order.id 'delivered' %}?page={{ orders.number }}&status={{ request.GET.status }}&q={{ request.GET.q }}" class="ordx-status completed">Completed</a>
 
                         {% elif order.status == "delivered" %}
                             <span class="ordx-status delivered">Delivered</span>
@@ -105,23 +102,6 @@
                     </td>
 
                     <td class="ordx-actions">
-
-                        {% if order.status == "quotation" %}
-                        <div class="tooltip">
-
-                            <a href="{% url 'quotation' order.id %}"
-                            class="icon quote">
-
-                                <i class="fa-solid fa-file-lines"></i>
-
-                            </a>
-
-                            <span class="tooltip-text">
-                                Quotation
-                            </span>
-
-                        </div>
-                        {% endif %}
 
                         {% if order.is_billed %}
                             <span class="ordx-status delivered">

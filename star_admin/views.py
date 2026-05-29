@@ -12,7 +12,7 @@ from .models import PasswordResetOTP
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
-from .models import Customer, Bill, BillItem, OffersHistory, Setting, MembershipTransaction, LoginAttempt, PointTransaction, Order, StaffActivity
+from .models import Customer, Bill, BillItem, OffersHistory, Setting, MembershipTransaction, LoginAttempt, PointTransaction, Order, StaffActivity, Quotation, QuotationItem
 from django.utils import timezone
 from .utils import send_whatsapp_template
 from datetime import timedelta, datetime, date
@@ -30,55 +30,17 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from pricing.models import Category, Size, PriceRule, CategoryDiscount, Variant, DigitalCategory, DigitalPrice, DigitalGSM, DigitalProduct, DigitalLamination
+from django.views.decorators.csrf import csrf_exempt
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import letter, landscape
 
 # Create your views here.
 # Admin Login
 
 MAX_ATTEMPTS = 5
 BLOCK_MINUTES = 10
-
-# def admin_login(request):
-#     if request.user.is_authenticated:
-#         return redirect('/dashboard/')
-
-#     if request.method == "POST":
-#         email = request.POST.get("email", "").lower().strip()
-#         password = request.POST.get("password", "")
-
-#         if not email or not password:
-#             return render(request, 'login.html', {
-#                 'error': 'Email and password required'
-#             })
-
-#         obj, _ = LoginAttempt.objects.get_or_create(email=email)
-
-#         block_time = timezone.now() - timedelta(minutes=BLOCK_MINUTES)
-
-#         if obj.attempts >= MAX_ATTEMPTS and obj.last_attempt > block_time:
-#             return render(request, 'login.html', {
-#                 'error': 'Too many attempts. Try again later'
-#             })
-
-#         user = authenticate(request, username=email, password=password)
-
-#         if user and user.is_superuser:
-
-#             obj.attempts = 0
-#             obj.save()
-
-#             login(request, user)
-
-#             if not request.POST.get('remember'):
-#                 request.session.set_expiry(0)
-
-#             return redirect('/dashboard/')
-#         else:
-#              obj.attempts += 1
-#              obj.save()
-
-#              return render(request, 'login.html', {'error': 'Invalid email or password'})
-    
-#     return render(request, 'login.html')
 
 def admin_login(request):
 
@@ -105,8 +67,17 @@ def admin_login(request):
 
             login(request, user)
 
-            if not request.POST.get('remember'):
-                request.session.set_expiry(0)
+            remember = request.POST.get('remember')
+
+            if remember:
+
+                # 30 mins inactive
+                request.session.set_expiry(1800)
+
+            else:
+
+                # 10 mins inactive
+                request.session.set_expiry(600)
 
             return redirect('/dashboard/')
 
@@ -153,8 +124,17 @@ def staff_login(request):
         if (user and user.is_staff and not user.is_superuser):
             login(request, user)
 
-            if not request.POST.get('remember'):
-                request.session.set_expiry(0)
+            remember = request.POST.get('remember')
+
+            if remember:
+
+                # 30 mins inactive
+                request.session.set_expiry(1800)
+
+            else:
+
+                # 10 mins inactive
+                request.session.set_expiry(600)
 
             return redirect('/dashboard/')
         
@@ -795,6 +775,10 @@ def get_digital_price(request):
 
     qty = int(request.GET.get("qty", 0))
 
+    print("LAMINATION:", lamination_id)
+    print("SIDE:", side)
+    print("QTY:", qty)
+
     price = DigitalPrice.objects.filter(
         lamination_id=lamination_id,
         side=side,
@@ -803,6 +787,8 @@ def get_digital_price(request):
         Q(max_qty__gte=qty) |
         Q(max_qty__isnull=True)
     ).first()
+
+    print("PRICE FOUND:", price)
 
     if not price:
         return JsonResponse({
@@ -905,7 +891,7 @@ def get_digital_laminations(request):
 def bill_history(request):
     query = request.GET.get('q')
 
-    bills = Bill.objects.select_related('customer').order_by('-bill_date') #-id
+    bills = Bill.objects.select_related('customer').order_by('-bill_number') #-id
 
     if query:
         bills = bills.filter(
@@ -976,13 +962,18 @@ def reports(request):
     end = None
 
     if date_range:
-        dates = date_range.split(" to ")
-    
+        dates = [d.strip() for d in date_range.split(" to ")]
+
         if len(dates) == 2:
-            start = datetime.strptime(dates[0].strip(), "%Y-%m-%d").date()
-            end = datetime.strptime(dates[1].strip(), "%Y-%m-%d").date()
-        else:
-            start = datetime.strptime(dates[0].strip(), "%Y-%m-%d").date()
+
+            start = datetime.strptime(dates[0], "%Y-%m-%d").date()
+
+            end = datetime.strptime(dates[1], "%Y-%m-%d").date()
+
+        elif len(dates) == 1 and dates[0]:
+
+            start = datetime.strptime(dates[0], "%Y-%m-%d").date()
+
             end = start
 
             
@@ -1597,8 +1588,13 @@ def save_bill(request):
             bill.billitem_set.all().delete()
         
         else:
-            last_bill = Bill.objects.order_by('-id').first()
-            next_id = last_bill.id + 1 if last_bill else 1
+            last_bill = Bill.objects.order_by('-bill_number').first()
+
+            next_number = (
+                last_bill.bill_number + 1
+                if last_bill and last_bill.bill_number
+                else 1
+            )
 
             order_id = request.POST.get("order_id")
 
@@ -1609,7 +1605,8 @@ def save_bill(request):
 
 
             bill = Bill.objects.create(
-                bill_no=f"B{next_id}",
+                bill_no=f"B{next_number}",
+                bill_number=next_number,
                 customer=customer,
                 order=order,
                 gross_total=gross_total,
@@ -1875,11 +1872,19 @@ def download_report(request):
     end = None
 
     if date_range:
-        dates = date_range.split(" to ")
+        dates = [d.strip() for d in date_range.split(" to ")]
 
         if len(dates) == 2:
-            start = datetime.strptime(dates[0].strip(), "%Y-%m-%d").date()
-            end = datetime.strptime(dates[1].strip(), "%Y-%m-%d").date()
+
+            start = datetime.strptime(dates[0], "%Y-%m-%d").date()
+
+            end = datetime.strptime(dates[1], "%Y-%m-%d").date()
+
+        elif len(dates) == 1 and dates[0]:
+
+            start = datetime.strptime(dates[0], "%Y-%m-%d").date()
+
+            end = start
 
     if not start and not end:
         start = today - timedelta(days=6)
@@ -1978,6 +1983,167 @@ def download_report(request):
 
     wb.save(reponse)
     return reponse
+
+
+# Download PDF
+@login_required
+def download_report_pdf(request):
+
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+
+    bills = Bill.objects.select_related('customer')
+
+    category = request.GET.get('category')
+    member_type = request.GET.get('member_type')
+    date_range = request.GET.get("date_range")
+
+    today = timezone.now().date()
+
+    start = None
+    end = None
+
+    if date_range:
+        dates = [d.strip() for d in date_range.split(" to ")]
+
+        if len(dates) == 2:
+
+            start = datetime.strptime(dates[0], "%Y-%m-%d").date()
+
+            end = datetime.strptime(dates[1], "%Y-%m-%d").date()
+
+        elif len(dates) == 1 and dates[0]:
+
+            start = datetime.strptime(dates[0], "%Y-%m-%d").date()
+
+            end = start
+
+    if not start and not end:
+        start = today - timedelta(days=6)
+        end = today
+
+    bills = bills.filter(
+        bill_date__range=[start, end]
+    )
+
+    if category and category != "all":
+        bills = bills.filter(
+            customer__category=category
+        )
+
+    if member_type == "member":
+        bills = bills.filter(
+            customer__is_member=True
+        )
+
+    elif member_type == "non_member":
+        bills = bills.filter(
+            customer__is_member=False
+        )
+
+    response = HttpResponse(
+        content_type='application/pdf'
+    )
+
+    response[
+        'Content-Disposition'
+    ] = 'attachment; filename="report.pdf"'
+
+
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=landscape(letter)
+    )
+
+    styles = getSampleStyleSheet()
+
+    elements = []
+
+    title = Paragraph(
+        "<b>STAR OFFSET PRINTING REPORT</b>",
+        styles['Title']
+    )
+
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+
+    if start and end:
+        date_text = Paragraph(
+            f"From {start.strftime('%d-%m-%Y')} To {end.strftime('%d-%m-%Y')}",
+            styles['Normal']
+        )
+
+        elements.append(date_text)
+        elements.append(Spacer(1, 12))
+
+    data = [[
+        "Bill No",
+        "Date",
+        "Customer",
+        "Category",
+        "Total",
+        "Discount",
+        "Due",
+        "Final"
+    ]]
+
+    total_sales = 0
+    total_discount = 0
+    total_due = 0
+
+    for bill in bills:
+
+        data.append([
+            bill.bill_no,
+            bill.bill_date.strftime("%d-%m-%Y"),
+            bill.customer.name,
+            bill.customer.category,
+            f"Rs. {bill.total_amount}",
+            f"Rs. {bill.discount}",
+            f"Rs. {bill.due_amount}",
+            f"Rs. {bill.final_amount}",
+        ])
+
+        total_sales += float(bill.final_amount)
+        total_discount += float(bill.discount)
+        total_due += float(bill.due_amount)
+
+    data.append([
+        "",
+        "",
+        "",
+        "TOTAL",
+        "",
+        f"Rs. {total_discount}",
+        f"Rs. {total_due}",
+        f"Rs. {total_sales}",
+    ])
+
+    table = Table(data)
+
+    table.setStyle(TableStyle([
+
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#007bff")),
+
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+
+    ]))
+
+    elements.append(table)
+
+    doc.build(elements)
+
+    return response
     
 
 # Membership Renewal History
@@ -2217,6 +2383,13 @@ def orders_page(request):
 
     today = timezone.now().date()
 
+    query_params = request.GET.copy()
+
+    if 'page' in query_params:
+        query_params.pop('page')
+
+    query_string = query_params.urlencode()
+
     # SUMMARY COUNTS
     pending_count = Order.objects.filter(status="pending").count()
     progress_count = Order.objects.filter(status="progress").count()
@@ -2233,19 +2406,269 @@ def orders_page(request):
         "progress_count": progress_count,
         "completed_count": completed_count,
         "overdue_count": overdue_count,
+        "query_string": query_string,
     })
 
 @login_required
-def quotation(request, order_id):
+def quotations(request):
 
-    order = Order.objects.get(id=order_id)
+    query = request.GET.get("q", "")
 
-    items = order.items.all()
+    quotations = Quotation.objects.all().order_by("-id")
 
-    return render(request, 'quotation.html', {
-        'order': order,
-        'items': items
+    if query:
+        quotations = quotations.filter(
+            Q(customer_name__icontains=query) |
+            Q(customer_phone__icontains=query) |
+            Q(work_name__icontains=query)
+        )
+
+    paginator = Paginator(quotations, 7)
+
+    page_number = request.GET.get("page")
+
+    page_obj = paginator.get_page(page_number)
+
+    query_params = request.GET.copy()
+
+    if "page" in query_params:
+        query_params.pop("page")
+
+    query_string = query_params.urlencode()
+
+    return render(request, "quotations.html", {
+        "quotations": page_obj,
+        "query_string": query_string,
     })
+
+@login_required
+def add_quotation(request):
+
+    customers = Customer.objects.all().order_by("name")
+    categories = Category.objects.all().order_by("name")
+    digital_categories = DigitalCategory.objects.all()
+
+    if request.method == "POST":
+        last = Quotation.objects.order_by("-id").first()
+
+        next_no = 1
+
+        if last:
+            next_no = last.id + 1
+        
+        quotation = Quotation.objects.create(
+            quotation_no=f"Q{next_no:04d}",
+            customer_name=request.POST.get("customer_name"),
+            customer_phone=request.POST.get("customer_phone"),
+            work_name=request.POST.get("work_name"),
+            quotation_date=datetime.strptime(
+                request.POST.get("quotation_date"),
+                "%d-%m-%Y"
+            ).date(),
+
+            valid_until=datetime.strptime(
+                request.POST.get("valid_until"),
+                "%d-%m-%Y"
+            ).date()
+            if request.POST.get("valid_until")
+            else None,
+
+            # notes=request.POST.get("notes"),
+
+            total_amount=Decimal(
+                request.POST.get("total_amount") or 0
+            )
+        )
+
+        items_json = request.POST.get("items_json", "[]")
+
+        print("RAW ITEMS =", items_json)
+
+        items = json.loads(items_json)
+
+        print("ITEM COUNT =", len(items))
+
+        for item in items:
+
+            is_digital = item.get("billing_type") == "digital"
+
+            QuotationItem.objects.create(
+                quotation=quotation,
+
+                billing_type=item.get("billing_type"),
+
+                # Normal Print
+                category_id=None if is_digital else item.get("category_id"),
+                size_id=None if is_digital else item.get("size_id"),
+                variant_id=None if is_digital else item.get("variant_id"),
+
+                # Digital Print
+                digital_category_id=item.get("category_id") if is_digital else None,
+                digital_gsm_id=item.get("size_id") if is_digital else None,
+                digital_product_id=item.get("variant_id") if is_digital else None,
+
+                digital_lamination_id=item.get("lamination_id") or None,
+
+                side=item.get("side"),
+                side_name=item.get("side_name"),
+
+                qty=item.get("qty"),
+                job=item.get("job"),
+                price=item.get("price"),
+                total=item.get("total"),
+            )
+
+        messages.success(request, "Quotation saved successfully")
+
+        return redirect("quotations")
+
+    return render(request, "add_quotation.html", {
+        "customers": customers,
+        "categories": categories,
+        "digital_categories": digital_categories,
+        }
+    )
+
+@login_required
+def edit_quotation(request, id):
+
+    quotation = get_object_or_404(
+        Quotation,
+        id=id
+    )
+
+    if request.method == "POST":
+
+        quotation.customer_name = request.POST.get("customer_name")
+        quotation.customer_phone = request.POST.get("customer_phone")
+        quotation.work_name = request.POST.get("work_name")
+        quotation.notes = request.POST.get("notes")
+        quotation.total_amount = request.POST.get("total_amount")
+
+        quotation.save()
+
+        # Get items from hidden field
+        items_json = request.POST.get("items_json", "[]")
+        items = json.loads(items_json)
+
+        # Delete old items
+        quotation.items.all().delete()
+
+        # Create new items
+        for item in items:
+
+            if item.get("billing_type") == "digital":
+
+                QuotationItem.objects.create(
+                    quotation=quotation,
+                    billing_type="digital",
+
+                    digital_category_id=item.get("category_id") or None,
+                    digital_gsm_id=item.get("size_id") or None,
+                    digital_product_id=item.get("variant_id") or None,
+
+                    digital_lamination_id=item.get("lamination_id") or None,
+
+                    side=item.get("side"),
+                    side_name=item.get("side_name"),
+
+                    qty=item.get("qty"),
+                    job=item.get("job", 1),
+                    price=item.get("price"),
+                    total=item.get("total"),
+                )
+
+            else:
+
+                QuotationItem.objects.create(
+                    quotation=quotation,
+                    billing_type="normal",
+
+                    category_id=item.get("category_id") or None,
+                    size_id=item.get("size_id") or None,
+                    variant_id=item.get("variant_id") or None,
+
+                    qty=item.get("qty"),
+                    job=item.get("job", 1),
+                    price=item.get("price"),
+                    total=item.get("total"),
+                )
+        query_string = request.GET.urlencode()
+
+        if query_string:
+            return redirect(f"/quotations/?{query_string}")
+
+        return redirect("/quotations/")
+
+    return render(
+        request,
+        "edit_quotation.html",
+        {
+            "quotation": quotation,
+            "categories": Category.objects.all(),
+            "digital_categories": DigitalCategory.objects.all(),
+        }
+    )
+
+@login_required
+def delete_quotation(request, id):
+
+    quotation = get_object_or_404(
+        Quotation,
+        id=id
+    )
+
+    if request.method == "POST":
+        quotation.delete()
+
+    query_string = request.META.get("QUERY_STRING", "")
+
+    if query_string:
+        return redirect(f"/quotations/?{query_string}")
+
+    return redirect("/quotations/")
+    
+
+@login_required
+def quotation_bill(request, id):
+
+    quotation = get_object_or_404(
+        Quotation,
+        id=id
+    )
+
+    items = quotation.items.all()
+
+    return render(request, 'quotation_bill.html', {
+        'quotation': quotation,
+        'items': items,
+        "return_page": request.GET.get("page", 1)
+    })
+
+@login_required
+def live_search_quotations(request):
+
+    query = request.GET.get("q", "")
+
+    quotations = (
+        Quotation.objects
+        .filter(
+            Q(customer_name__icontains=query) |
+            Q(customer_phone__startswith=query)
+        )
+        .values("customer_name", "customer_phone")
+        .distinct()[:5]
+    )
+
+    data = [
+        {
+            "name": q["customer_name"],
+            "phone": q["customer_phone"]
+        }
+        for q in quotations
+    ]
+
+    return JsonResponse({"customers": data})
 
 @login_required
 def order_history(request):
@@ -2279,7 +2702,6 @@ def update_order_status(request, id, new_status):
     order = get_object_or_404(Order, id=id)
 
     valid_flow = {
-        "quotation": "pending",
         "pending": "progress",
         "progress": "completed",
         "completed": "delivered",
@@ -2293,7 +2715,16 @@ def update_order_status(request, id, new_status):
         order.save()
 
     page = request.GET.get("page", 1)
-    return redirect(f'/orders/?page={page}')
+    status = request.GET.get("status", "")
+    q = request.GET.get("q", "")
+    url = f"/orders/?page={page}"
+
+    if status:
+        url += f"&status={status}"
+    
+    if q:
+        url += f"&q={q}"
+    return redirect(url)
 
 # Edit Order
 @login_required
@@ -2692,3 +3123,30 @@ def get_order_price(request):
     return JsonResponse({
         "price": 0
     })
+
+
+@csrf_exempt
+def whatsapp_webhook(request):
+
+    VERIFY_TOKEN = "staroffsets2015"
+
+    # VERIFY WEBHOOK
+    if request.method == "GET":
+
+        mode = request.GET.get("hub.mode")
+        token = request.GET.get("hub.verify_token")
+        challenge = request.GET.get("hub.challenge")
+
+        if mode == "subscribe" and token == VERIFY_TOKEN:
+            return HttpResponse(challenge)
+
+        return HttpResponse("Verification failed", status=403)
+
+    # RECEIVE MESSAGE STATUS
+    elif request.method == "POST":
+
+        data = json.loads(request.body)
+
+        print("WEBHOOK DATA:", data)
+
+        return JsonResponse({"status": "received"})

@@ -565,7 +565,15 @@ def delete_digital_price(request, id):
 
     price.delete()
 
-    return redirect("digital_price_table")
+    page = request.GET.get("page", "")
+
+    category = request.GET.get("category", "")
+    search = request.GET.get("search", "")
+    url = reverse("digital_price_table")
+
+    return redirect(
+        f"{url}?page={page}&category={category}&search={search}"
+    )
 
 
 def delete_digital_category(request, id):

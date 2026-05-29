@@ -220,7 +220,7 @@
                                 <a href="#"
                                    class="manage-delete-btn"
                                    onclick="openDeleteModal(
-                                   '{% url "delete_digital_price" item.id %}'
+                                   '{% url "delete_digital_price" item.id %}?page={{ page_obj.number }}&category={{ request.GET.category }}&search={{ request.GET.search }}'
                                    )">
 
                                     Delete
@@ -301,41 +301,48 @@
 
 <!-- DELETE MODAL -->
 
-<div class="delete-modal" id="deleteModal">
+<form method="POST"
+      id="deleteForm">
 
-    <div class="delete-modal-content">
+    {% csrf_token %}
 
-        <h3>Delete Digital Price</h3>
+    <div class="delete-modal"
+         id="deleteModal">
 
-        <p>
-            Are you sure you want to delete this price?
-        </p>
+        <div class="delete-modal-content">
 
-        <div class="delete-modal-actions">
+            <h3>
+                Delete Digital Price
+            </h3>
 
-            <button 
-                type="button"
-                href="#"
-                id="confirmDeleteBtn"
-                class="manage-delete-btn">
+            <p>
+                Are you sure you want to delete this price?
+            </p>
 
-                Delete
+            <div class="delete-modal-actions">
 
-            </button>
+                <button type="submit"
+                        class="manage-delete-btn">
 
-            <button type="button"
-                    class="manage-reset-btn"
-                    onclick="closeDeleteModal()">
+                    Delete
 
-                Cancel
+                </button>
 
-            </button>
+                <button type="button"
+                        class="manage-reset-btn"
+                        onclick="closeDeleteModal()">
+
+                    Cancel
+
+                </button>
+
+            </div>
 
         </div>
 
     </div>
 
-</div>
+</form>
 
 <script>
 
@@ -346,8 +353,8 @@ function openDeleteModal(deleteUrl) {
         .classList.add("show");
 
     document
-        .getElementById("confirmDeleteBtn")
-        .href = deleteUrl;
+        .getElementById("deleteForm")
+        .action = deleteUrl;
 }
 
 function closeDeleteModal() {

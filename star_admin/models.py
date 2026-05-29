@@ -25,6 +25,8 @@ class Customer(models.Model):
 # Bills Table
 class Bill(models.Model):
     bill_no = models.CharField(max_length=20)
+    bill_number = models.PositiveIntegerField(unique=True, null=True)
+
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     gross_total = models.DecimalField(max_digits=10, decimal_places=2)
@@ -161,14 +163,13 @@ class Order(models.Model):
     status = models.CharField(
         max_length=20,
         choices=[
-            ('quotation', 'Quotation'),
             ('pending', 'Pending'),
             ('progress', 'In Progress'),
             ('completed', 'Completed'),
             ('delivered', 'Delivered'),
             ('cancelled', 'Cancelled')
         ],
-        default='quotation'
+        default='pending'
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -176,15 +177,6 @@ class Order(models.Model):
     def __str__(self):
         return f"{self.customer.name} - {self.work_name}"
     
-# OrderItem
-# class OrderItem(models.Model):
-#     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
-#     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
-#     size = models.ForeignKey(Size, on_delete=models.SET_NULL, null=True)
-#     variant = models.ForeignKey(Variant, on_delete=models.SET_NULL, null=True)
-#     qty = models.IntegerField(default=1)
-#     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-#     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
 class OrderItem(models.Model):
 
@@ -240,3 +232,80 @@ class OrderItem(models.Model):
 class StaffActivity(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     last_seen = models.DateTimeField(null=True, blank=True)
+
+# Quotation
+class Quotation(models.Model):
+    quotation_no = models.CharField(max_length=20, unique=True)
+    customer_name = models.CharField(max_length=100)
+    customer_phone = models.CharField(max_length=15)
+    work_name = models.CharField(max_length=200)
+    quotation_date = models.DateField()
+    valid_until = models.DateField(null=True, blank=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class QuotationItem(models.Model):
+
+    quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE, related_name="items")
+
+    billing_type = models.CharField(max_length=20,
+        choices=[
+            ("normal", "Normal"),
+            ("digital", "Digital"),
+        ],
+        default="normal"
+    )
+
+    # NORMAL
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+
+    size = models.ForeignKey(Size, on_delete=models.SET_NULL, null=True, blank=True)
+
+    variant = models.ForeignKey(Variant, on_delete=models.SET_NULL, null=True, blank=True)
+
+    # DIGITAL
+    digital_category = models.ForeignKey(DigitalCategory, on_delete=models.SET_NULL, null=True, blank=True)
+
+    digital_gsm = models.ForeignKey(DigitalGSM, on_delete=models.SET_NULL, null=True, blank=True)
+
+    digital_product = models.ForeignKey(DigitalProduct, on_delete=models.SET_NULL, null=True, blank=True)
+
+    digital_lamination = models.ForeignKey(
+        DigitalLamination,
+        on_delete=models.SET_NULL,
+        null=True, blank=True)
+
+    customer_type = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True
+    )
+
+    side = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True
+    )
+
+    side_name = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True
+    )
+
+    qty = models.IntegerField(default=1)
+
+    job = models.PositiveIntegerField(default=1)
+
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
+    total = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )

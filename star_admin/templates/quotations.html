@@ -1,0 +1,315 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="ordx-page">
+    
+      <div class="ordex-top">
+        <h2>Quotation Management</h2>
+        <a href="{% url 'add_quotation' %}" class="ordex-add-btn">+ Add Quotation</a>
+      </div>
+
+        <form method="GET" class="ordex-filter-new">
+            <!-- Search -->
+            <div class="filter-group ordex-select-wrapper" style="position:relative;">
+              <input type="text"
+                    id="searchInput"
+                    value="{{ request.GET.q }}"
+                    name="q"
+                    placeholder="🔍 Search by customer / mobile">
+                   <div id="suggestions" class="suggestion-box"></div>
+            </div>
+
+            <button type="submit" class="ordex-filter-btn">Apply</button>
+            
+            <a href="{% url 'quotations' %}" class="btn-clear">
+                <button type="button" class="btn-clear">Clear</button>
+            </a>
+
+        </form>
+        
+
+
+    <!-- TABLE -->
+    <div class="ordx-table-box">
+        <table class="ordx-table">
+
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Phone</th>
+                    <th>Work</th>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for q in quotations %}
+                <tr>
+
+                    <td>Q{{ q.id|stringformat:"03d" }}</td>
+
+                    <td>{{ q.customer_name }}</td>
+
+                    <td>{{ q.customer_phone }}</td>
+
+                    <td>{{ q.work_name }}</td>
+
+                    <td>{{ q.quotation_date|date:"d-m-Y" }}</td>
+
+                    <td>₹{{ q.total_amount|floatformat:2 }}</td>
+
+                    <td class="ordx-actions">
+
+                        <div class="tooltip">
+                            <a href="{% url 'quotation_bill' q.id %}?page={{ quotations.number }}"
+                                class="icon bill">
+                                <i class="fa-solid fa-file-invoice"></i>
+                            </a>
+                            <span class="tooltip-text">Quotation Bill</span>
+                                
+                        </div>
+
+                        {% if request.user.is_superuser %}
+                        <div class="tooltip">
+                            <a href="{% url 'edit_quotation' q.id %}?page={{ quotations.number }}"
+                                class="icon edit">
+                                ✏️
+                            </a>
+                            <span class="tooltip-text">Edit</span>
+                        </div>
+
+                        <div class="tooltip">
+                            <button
+                                class="icon delete"
+                                onclick="openDeleteModal({{ q.id }})">
+                                🗑
+                            </button>
+                            <span class="tooltip-text">Delete</span>
+                        </div>
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% comment %} <tr id="notes-{{ order.id }}" class="notes-row">
+                    <td colspan="10">
+                        <div class="notes-box">
+                            <strong>Notes:</strong>
+                            {{ order.notes|default:"No notes available" }}
+                        </div>
+                    </td>
+                </tr> {% endcomment %}
+
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="ordx-empty">
+                        No orders found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+
+    {% if quotations.paginator.num_pages > 1 %}
+<div class="pagination">
+
+    <!-- FIRST PAGE -->
+    {% if quotations.has_previous %}
+        <a href="?{{ query_string }}&page=1"
+           class="nav-btn">
+           «
+        </a>
+    {% else %}
+        <span class="nav-btn disabled">«</span>
+    {% endif %}
+
+
+    <!-- PREVIOUS PAGE -->
+    {% if quotations.has_previous %}
+        <a href="?{{ query_string }}&page={{ quotations.previous_page_number }}"
+           class="nav-btn">
+           ‹
+        </a>
+    {% else %}
+        <span class="nav-btn disabled">‹</span>
+    {% endif %}
+
+
+    <!-- PAGE NUMBERS -->
+    {% for num in quotations.paginator.page_range %}
+
+        {% if num == quotations.number %}
+
+            <span class="page-number active">
+                {{ num }}
+            </span>
+
+        {% elif num > quotations.number|add:'-3' and num < quotations.number|add:'3' %}
+
+            <a href="?{{ query_string }}&page={{ num }}"
+               class="page-number">
+               {{ num }}
+            </a>
+
+        {% endif %}
+
+    {% endfor %}
+
+
+    <!-- NEXT PAGE -->
+    {% if quotations.has_next %}
+        <a href="?{{ query_string }}&page={{ quotations.next_page_number }}"
+           class="nav-btn">
+           ›
+        </a>
+    {% else %}
+        <span class="nav-btn disabled">›</span>
+    {% endif %}
+
+
+    <!-- LAST PAGE -->
+    {% if quotations.has_next %}
+        <a href="?{{ query_string }}&page={{ quotations.paginator.num_pages }}"
+           class="nav-btn">
+           »
+        </a>
+    {% else %}
+        <span class="nav-btn disabled">»</span>
+    {% endif %}
+
+</div>
+{% endif %}
+<div id="deleteOrderModal" class="ordx-modal">
+    <div class="ordx-modal-content">
+        <h3>Delete Quotation</h3>
+<p>Are you sure you want to delete this quotation?</p>
+
+        <form id="deleteOrderForm" method="POST">
+            {% csrf_token %}
+            <button type="submit" class="confirm-delete">Yes, Delete</button>
+            <button type="button" class="cancel-delete" onclick="closeDeleteModal()">Cancel</button>
+        </form>
+    </div>
+</div>
+
+</div>
+<script>
+function openDeleteModal(orderId) {
+    const modal = document.getElementById("deleteOrderModal");
+    const form = document.getElementById("deleteOrderForm");
+
+    form.action = `/delete-quotation/${orderId}/?{{ request.GET.urlencode }}`;
+
+    modal.style.display = "flex";
+}
+
+function closeDeleteModal() {
+    document.getElementById("deleteOrderModal").style.display = "none";
+}
+</script>
+
+<script>
+function toggleRow(id) {
+    document.querySelectorAll(".notes-row").forEach(row => {
+        if (row.id !== "notes-" + id) {
+            row.style.display = "none";
+        }
+    });
+
+    document.querySelectorAll(".toggle-arrow").forEach(a => {
+        if (a.id !== "arrow-" + id) {
+            a.innerHTML = "▼";
+        }
+    });
+
+    let row = document.getElementById("notes-" + id);
+    let arrow = document.getElementById("arrow-" + id);
+
+    if (row.style.display === "table-row") {
+        row.style.display = "none";
+        arrow.innerHTML = "▼";
+    } else {
+        row.style.display = "table-row";
+        arrow.innerHTML = "▲";
+    }
+}
+</script>
+
+<script>
+
+const searchInput = document.getElementById("searchInput");
+const suggestions = document.getElementById("suggestions");
+
+searchInput.addEventListener("keyup", function () {
+
+    let query = this.value;
+
+    if(query.length < 1){
+        suggestions.style.display = "none";
+        suggestions.innerHTML = "";
+        return;
+    }
+
+    fetch(`/live-search-quotations/?q=${query}`)
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        suggestions.innerHTML = "";
+
+        if(data.customers.length > 0){
+
+            suggestions.style.display = "block";
+
+            data.customers.forEach(customer => {
+
+                suggestions.innerHTML += `
+
+                    <div class="suggestion-item"
+                         onclick="selectCustomer('${customer.name}')">
+
+                        <strong>${customer.name}</strong>
+
+                        <span>${customer.phone}</span>
+
+                    </div>
+                `;
+            });
+
+        } else {
+
+            suggestions.style.display = "none";
+        }
+    });
+
+});
+
+function selectCustomer(name){
+
+    searchInput.value = name;
+
+    suggestions.style.display = "none";
+
+    window.location.href = `?q=${name}`;
+}
+
+document.addEventListener("click", function(e){
+
+    if(!searchInput.contains(e.target) &&
+       !suggestions.contains(e.target)){
+
+        suggestions.style.display = "none";
+    }
+});
+
+</script>
+
+{% endblock %}

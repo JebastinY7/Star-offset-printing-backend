@@ -10,8 +10,8 @@
 
     <title>Edit Digital Price</title>
 
-    <link rel="stylesheet"
-          href="{% static 'pricing/edit_digital_price.css' %}">
+    <link rel="icon" href="{% static 'images/favicon.png' %}" type="image/png">
+    <link rel="stylesheet" href="{% static 'pricing/edit_digital_price.css' %}">
 
 </head>
 <body>
@@ -137,7 +137,7 @@
 
                     <label>Side</label>
 
-                    <select id="sideSelect" required>
+                    <select name="side" id="sideSelect" required>
 
                         <option value="">
                             Select Side
@@ -329,12 +329,14 @@ laminationSelect.addEventListener("change", function () {
 
     sideSelect.innerHTML = `
     <option value="">Select Side</option>
-    <option value="Single">Single</option>
-    <option value="Double">Double</option>
-    <option value="single">single</option>
-    <option value="double">double</option>
-    <option value="1 Side">1 Side</option>
-    <option value="2 Side">2 Side</option>
+
+    <option value="single">
+        Single Side
+    </option>
+
+    <option value="double">
+        Double Side
+    </option>
 `;
 
 });
@@ -361,18 +363,37 @@ window.addEventListener("DOMContentLoaded", function () {
             laminationSelect.value =
                 "{{ item.lamination.id }}";
 
-            sideSelect.innerHTML = `
-                <option value="">Select Side</option>
-                <option value="Single">Single</option>
-                <option value="Double">Double</option>
-                <option value="single">single</option>
-                <option value="double">double</option>
-                <option value="1 Side">1 Side</option>
-                <option value="2 Side">2 Side</option>
-            `;
+            laminationSelect.dispatchEvent(
+                new Event("change")
+            );
 
-            sideSelect.value =
-                "{{ item.side }}";
+            // sideSelect.innerHTML = `
+            //    <option value="">Select Side</option>
+            //    <option value="single">Single Side</option>
+            //    <option value="double">Double Side</option>
+           // `;
+
+          //  sideSelect.value =
+            //    "{{ item.side }}";
+
+            let currentSide =
+    "{{ item.side }}".toLowerCase();
+
+        if (
+            currentSide === "1 side" ||
+            currentSide === "1"
+        ) {
+            currentSide = "single";
+        }
+
+        else if (
+            currentSide === "2 side" ||
+            currentSide === "2"
+        ) {
+            currentSide = "double";
+        }
+
+        sideSelect.value = currentSide;
 
         }, 100);
 

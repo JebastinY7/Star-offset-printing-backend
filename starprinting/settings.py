@@ -38,6 +38,7 @@ ALLOWED_HOSTS = [
     "admin.starprinting.in",
     "staff.starprinting.in",
     "web-production-d87ac.up.railway.app",
+    'stoppage-mammary-bobcat.ngrok-free.dev',
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -169,3 +170,5 @@ CORS_ALLOWED_ORIGINS = [x for x in os.getenv("CORS_ALLOWED_ORIGINS", "").split("
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
+
+SESSION_SAVE_EVERY_REQUEST = True

@@ -8,8 +8,18 @@
     <h2>Reports</h2>
 
     <div class="reports-actions">
-      <a href="{% url 'download_report' %}?{{ request.GET.urlencode }}" class="btn-download">Download Report ⬇</a>
-    </div>
+
+    <a href="{% url 'download_report' %}?{{ request.GET.urlencode }}"
+       class="btn-download">
+       Excel ⬇
+    </a>
+
+    <a href="{% url 'download_report_pdf' %}?{{ request.GET.urlencode }}"
+       class="btn-download pdf-btn">
+       PDF ⬇
+    </a>
+
+</div>
   </div>
 
   <!-- Filters -->

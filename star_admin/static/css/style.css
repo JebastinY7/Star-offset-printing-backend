@@ -2166,6 +2166,8 @@ select option {
 
 
 
+
+
 /* Reports */
 /* Container */
 .reports-container {
@@ -5246,3 +5248,19 @@ html, body {
     background:#fff4d6;
     color:#c58b00;
 }
+
+
+.invoice-table th:nth-child(1),
+.invoice-table td:nth-child(1) { width: 7%; }
+
+.invoice-table th:nth-child(2),
+.invoice-table td:nth-child(2) { width: 58%; }
+
+.invoice-table th:nth-child(3),
+.invoice-table td:nth-child(3) { width: 10%; }
+
+.invoice-table th:nth-child(4),
+.invoice-table td:nth-child(4) { width: 12%; }
+
+.invoice-table th:nth-child(5),
+.invoice-table td:nth-child(5) { width: 13%; }

@@ -52,6 +52,13 @@
     </a>
     </li>
 
+    <li>
+      <a class="{% if '/quotations/' in request.path %}active{% endif %}" href="/quotations/">
+      <i class="fas fa-file-signature"></i>
+      <span>Quotations</span>
+    </a>
+    </li>
+
     {% if request.user.is_superuser %}
     <li>
       <a class="{% if '/offers/' in request.path %}active{% endif %}" href="/offers/">

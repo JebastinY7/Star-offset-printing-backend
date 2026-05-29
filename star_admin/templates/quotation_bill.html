@@ -32,14 +32,14 @@
 
     <div class="invoice-header">
       <div>
-        <p><strong>Quotation No:</strong> Q{{ order.id|stringformat:"03d" }}</p>
-        <p><strong>Date:</strong> {{ order.order_date|date:"d-m-Y" }}</p>
+        <p><strong>Quotation No:</strong> Q{{ quotation.id|stringformat:"03d" }}</p>
+        <p><strong>Date:</strong> {{ quotation.quotation_date|date:"d-m-Y" }}</p>
         <!--<p><strong>Valid Till:</strong> {{ order.delivery_date|date:"d-m-Y" }}</p>-->
       </div>
 
       <div>
-        <p><strong>Name:</strong> {{ order.customer.name }}</p>
-        <p><strong>Phone:</strong> {{ order.customer.phone }}</p>
+        <p><strong>Name:</strong> {{ quotation.customer_name }}</p>
+        <p><strong>Phone:</strong> {{ quotation.customer_phone }}</p>
         {% comment %} <p><strong>Customer Type:</strong> {{ bill.customer.category }}</p> {% endcomment %}
       </div>
     </div>
@@ -62,45 +62,35 @@
       <td>{{ forloop.counter }}</td>
       <td>
 
-        {% if item.billing_type == "digital" %}
+{% if item.billing_type == "digital" %}
 
-            {% if item.digital_category %}
-                {{ item.digital_category.name }}
-            {% endif %}
+    {{ item.digital_category.name }}
+    - {{ item.digital_gsm.name }}
+    - {{ item.digital_product.name }}
 
-            {% if item.digital_gsm %}
-                - {{ item.digital_gsm.name }}
-            {% endif %}
+    {% if item.digital_lamination %}
+        - {{ item.digital_lamination.name }}
+    {% endif %}
 
-            {% if item.digital_product %}
-                - {{ item.digital_product.name }}
-            {% endif %}
+    {% if item.side_name %}
+        - {{ item.side_name }}
+    {% endif %}
 
-            {% if item.digital_lamination %}
-                - {{ item.digital_lamination.name }}
-            {% endif %}
+{% else %}
 
-            {% if item.side_name %}
-                - {{ item.side_name }}
-            {% endif %}
+    {{ item.category }}
 
-        {% else %}
+    {% if item.size %}
+        - {{ item.size.name }}
+    {% endif %}
 
-            {% if item.category %}
-                {{ item.category.name }}
-            {% endif %}
+    {% if item.variant %}
+        - {{ item.variant.name }}
+    {% endif %}
 
-            {% if item.size %}
-                - {{ item.size.name }}
-            {% endif %}
+{% endif %}
 
-            {% if item.variant %}
-                - {{ item.variant.name }}
-            {% endif %}
-
-        {% endif %}
-
-        </td>
+</td>
       <td>{{ item.qty }}</td>
       <td>{{ item.price }}</td>
       
@@ -119,7 +109,7 @@
 
             <span>Quotation Amount :</span>
 
-            <span>₹ {{ order.total_amount }}</span>
+            <span>₹ {{ quotation.total_amount }}</span>
 
         </div>
 
@@ -142,7 +132,7 @@
       {% if request.GET.from_history %}
       <a href="/history/?page={{ request.GET.return_page }}&highlight={{ bill.id }}" class="back-btn">Back</a>
       {% else %}
-      <a href="/billing/" class="back-btn">Back</a>
+      <a href="/quotations/?page={{ return_page }}" class="back-btn">Back</a>
       {% endif %}
       <button onclick="window.print()" class="print-btn">Print</button>
     </div>

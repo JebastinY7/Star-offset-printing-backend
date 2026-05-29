@@ -6,15 +6,15 @@
 
   <!-- HEADER -->
   <div class="addx-header">
-    <h1>Add New Order</h1>
+    <h1>Add Quotation</h1>
 
     <p>
-      Create customer work orders with deadline,
-      payment and production tracking
+        Create quotation for customer
+        before order confirmation
     </p>
 
-    <a href="{% url 'orders_page' %}" class="back-orders-btn">
-      ← Back to Orders
+    <a href="{% url 'quotations' %}" class="back-orders-btn">
+      ← Back to Quotations
     </a>
   </div>
 
@@ -28,19 +28,25 @@
       <!-- TOP DETAILS -->
       <div class="form-grid addx-form-grid">
 
-        <!-- CUSTOMER -->
-        <div class="form-group addx-form-group">
-          <label>Customer</label>
+        <div class="form-group">
+            <label>Customer Name</label>
+            <input type="text"
+                name="customer_name"
+                required>
+        </div>
 
-          <select name="customer" required>
-            <option value="">Select Customer</option>
+        <div class="form-group">
+            <label>Mobile Number</label>
+            <input type="text"
+                name="customer_phone">
+        </div>
 
-            {% for customer in customers %}
-            <option value="{{ customer.id }}">
-              {{ customer.name }} - {{ customer.phone }}
-            </option>
-            {% endfor %}
-          </select>
+        <div class="form-group">
+            <label>Quotation Date</label>
+            <input type="text"
+                id="quotationDate"
+                name="quotation_date"
+                required>
         </div>
         
         
@@ -50,38 +56,6 @@
                 name="work_name"
                 placeholder="e.g. Visiting Card, Wedding Notice" required>
         </div>
-        </div>
-
-        <div class="addx-form-grids">
-        <div class="form-group addx-form-group">
-          <label>Status</label>
-
-          <select name="status">
-            <option value="pending">Pending</option>
-            <option value="progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="delivered">Delivered</option>
-          </select>
-        </div>
-
-        <!-- ORDER DATE -->
-        <div class="form-group addx-form-group">
-          <label>Order Date</label>
-
-          <input type="text"
-                 name="order_date"
-                 id="orderDate"
-                 value="{{ today|date:'Y-m-d' }}"
-                 required>
-        </div>
-
-        <!-- DELIVERY DATE -->
-        <div class="form-group addx-form-group">
-          <label>Delivery Date</label>
-
-          <input type="text"
-                  id="deliveryDate"
-                 name="delivery_date">
         </div>
       </div>
       
@@ -272,38 +246,21 @@
                    value="0.00">
           </div>
 
-          <!-- ADVANCE -->
-          <div class="form-group addx-form-group">
-            <label>Advance Paid</label>
-
-            <input type="number"
-                   step="0.01"
-                   id="advancePaid"
-                   name="advance_paid"
-                   value="0"
-                   oninput="calculateDue()">
-          </div>
-
-          <!-- DUE -->
-          <div class="form-group addx-form-group">
-            <label>Due Amount</label>
-
-            <input type="text"
-                   id="dueAmount"
-                   readonly
-                   value="0.00">
-          </div>
+          
           <!-- NOTES -->
-        <div class="form-group addx-form-group addx-full">
+        {% comment %} <div class="form-group addx-form-group addx-full">
           <label>Description / Notes</label>
 
           <textarea name="notes"
             placeholder="Paper type, urgent work, design notes, printing details..."></textarea>
-        </div>
+        </div> {% endcomment %}
 
         </div>
 
       </div>
+      <input type="hidden"
+       name="items_json"
+       id="itemsJson">
 
 
       <!-- SAVE -->
@@ -312,10 +269,10 @@
         <button type="submit"
                 class="addx-save-btn">
 
-          Save Order
+          Save Quotation
         </button>
 
-        <a href="{% url 'orders_page' %}"
+        <a href="{% url 'quotations' %}"
            class="addx-cancel-btn">
 
           Cancel
@@ -470,7 +427,18 @@ delivery:
           isDigital ? "digital" : "normal"
     };
 
+    if(editIndex >= 0){
+
+    orderItems.splice(editIndex, 0, itemData);
+
+    editIndex = -1;
+
+    document.querySelector(".add-item-btn").innerText = "Add";
+
+}else{
+
     orderItems.push(itemData);
+}
 
     renderItems();
 
@@ -566,6 +534,8 @@ function removeItem(index) {
 
 
 function editItem(index) {
+
+    editIndex = index;
 
     let item = orderItems[index];
 
@@ -742,23 +712,7 @@ else {
 /* DUE */
 function calculateDue() {
 
-    let gross =
-      parseFloat(document.getElementById("grossTotal").value) || 0;
-
-    let advance =
-      parseFloat(document.getElementById("advancePaid").value) || 0;
-
-    
-
-    let due = gross - advance;
-
-    if (due < 0) {
-        due = 0;
-    }
-
-
-    document.getElementById("dueAmount").value =
-      due.toFixed(2);
+    return
 }
 
 
@@ -1415,17 +1369,39 @@ else {
 
 function clearItemFields() {
 
+    // Normal
     document.getElementById("itemCategory").value = "";
     document.getElementById("itemSize").innerHTML =
-      '<option value="">Select Size</option>';
+        '<option value="">Select Size</option>';
     document.getElementById("itemVariant").innerHTML =
-      '<option value="">Select Variant</option>';
+        '<option value="">Select Variant</option>';
     document.getElementById("itemQty").value = "";
     document.getElementById("itemJob").value = 1;
-document.getElementById("digitalJob").value = 1;
+
+    // Digital
+    document.getElementById("digitalCategory").value = "";
+    document.getElementById("digitalGsm").innerHTML =
+        '<option value="">Select GSM</option>';
+    document.getElementById("digitalProduct").innerHTML =
+        '<option value="">Select Product</option>';
+    document.getElementById("digitalLamination").innerHTML =
+        '<option value="">Select Lamination</option>';
+    document.getElementById("digitalSide").value = "";
+    document.getElementById("digitalDelivery").value = "1 Day";
+    document.getElementById("digitalQty").value = "";
+    document.getElementById("digitalJob").value = 1;
+
     document.getElementById("itemPrice").value = "";
     document.getElementById("itemTotal").value = "";
 }
+
+document.querySelector("form").addEventListener("submit", function() {
+
+    document.getElementById("itemsJson").value =
+        JSON.stringify(orderItems);
+
+    console.log("ITEMS JSON:", document.getElementById("itemsJson").value);
+});
 
 </script>
 <script>
@@ -1440,19 +1416,14 @@ document.querySelectorAll('input[type=number]').forEach(input => {
 
 <script>
 
-flatpickr("#orderDate", {
-
+flatpickr("#quotationDate", {
     dateFormat: "d-m-Y",
-
     defaultDate: "today",
-
     allowInput: true
 });
 
-flatpickr("#deliveryDate", {
-
+flatpickr("#validUntil", {
     dateFormat: "d-m-Y",
-
     allowInput: true
 });
 
