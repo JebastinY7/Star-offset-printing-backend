@@ -788,7 +788,8 @@ let itemName =
           categoryName.toLowerCase().includes("bill book") ||
           categoryName.toLowerCase().includes("poster") ||
           categoryName.toLowerCase().includes("letter pad") ||
-          categoryName.toLowerCase().includes("printing")
+          categoryName.toLowerCase().includes("printing") ||
+          categoryName.toLowerCase().includes("invitation")
         ) {
           grossAmount = price * job;
         }
@@ -1907,7 +1908,9 @@ if (
     categoryText.includes("bill book") ||
     categoryText.includes("poster") ||
     categoryText.includes("letter pad") ||
-    categoryText.includes("printing")
+    categoryText.includes("printing") ||
+    categoryText.includes("invitation")
+
 ) {
     gross = price * job;
 }
