@@ -5265,3 +5265,45 @@ html, body {
 
 .invoice-table th:nth-child(5),
 .invoice-table td:nth-child(5) { width: 13%; }
+
+
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-container .select2-selection--single {
+    height: 52px !important;
+    border: 1px solid #dcdcdc !important;
+    border-radius: 14px !important;
+    padding: 10px 15px !important;
+    display: flex !important;
+    align-items: center !important;
+    background: #fff !important;
+}
+
+.select2-container .select2-selection__rendered {
+    line-height: normal !important;
+    font-size: 18px !important;
+    color: #222 !important;
+    padding-left: 0 !important;
+}
+
+.select2-container .select2-selection__arrow {
+    height: 52px !important;
+    right: 10px !important;
+}
+
+.select2-dropdown {
+    border-radius: 15px !important;
+    overflow: hidden;
+}
+
+.select2-search__field {
+    padding: 10px !important;
+    border-radius: 10px !important;
+}
+
+.ordx-status.cancelled{
+    background:#ffe5e5;
+    color:#d10000;
+}

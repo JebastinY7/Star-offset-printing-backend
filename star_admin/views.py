@@ -4,6 +4,7 @@ import time
 import traceback
 from decimal import Decimal, InvalidOperation
 from django.utils.timezone import now
+from django.db.models import Max
 from django.conf import settings as django_settings
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
@@ -1588,13 +1589,11 @@ def save_bill(request):
             bill.billitem_set.all().delete()
         
         else:
-            last_bill = Bill.objects.order_by('-bill_number').first()
-
             next_number = (
-                last_bill.bill_number + 1
-                if last_bill and last_bill.bill_number
-                else 1
-            )
+                Bill.objects.aggregate(
+                    max_no=Max('bill_number')
+                )['max_no'] or 0
+            ) + 1
 
             order_id = request.POST.get("order_id")
 
@@ -2440,6 +2439,21 @@ def quotations(request):
         "quotations": page_obj,
         "query_string": query_string,
     })
+
+@login_required
+def cancel_order(request, id):
+
+    order = get_object_or_404(Order, id=id)
+
+    order.status = "cancelled"
+
+    order.save()
+
+    messages.success(request, "Order cancelled successfully")
+
+    page = request.GET.get("page", 1)
+
+    return redirect(f"/orders/?page={page}")
 
 @login_required
 def add_quotation(request):

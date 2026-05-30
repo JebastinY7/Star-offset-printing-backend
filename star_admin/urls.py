@@ -50,6 +50,7 @@ urlpatterns = [
     path('delete-membership/<int:id>/', views.delete_membership, name='delete_membership'),
     path("pay-due/", views.pay_due, name="pay_due"),
     path("orders/<int:order_id>/bill/", views.generate_bill_from_order, name="generate_bill_from_order"),
+    path("cancel-order/<int:id>/", views.cancel_order, name="cancel_order"),
     path("get-order-price/", views.get_order_price, name="get_order_price"),
     path('order-history/', views.order_history, name='order_history'),
     path("get-digital-price/", views.get_digital_price, name="get_digital_price"),

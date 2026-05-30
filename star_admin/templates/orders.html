@@ -87,7 +87,11 @@
                     </td>
 
                     <td>
-                        {% if order.status == "pending" %}
+                        {% if order.status == "cancelled" %}
+                        <span class="ordx-status cancelled">
+                            Cancelled
+                        </span>
+                        {% elif order.status == "pending" %}
                             <a href="{% url 'update_order_status' order.id 'progress' %}?page={{ orders.number }}&status={{ request.GET.status }}&q={{ request.GET.q }}" class="ordx-status pending">Pending</a>
 
                         {% elif order.status == "progress" %}
@@ -131,6 +135,17 @@
                                     <span class="tooltip-text">Edit</span>
                                 
                             </div>
+
+                            {% if order.status != "cancelled" and not order.is_billed %}
+                            <div class="tooltip">
+                                <button type="button"
+                                        class="icon delete"
+                                        onclick="openCancelModal('{{ order.id }}')">
+                                    ❌
+                                </button>
+                                <span class="tooltip-text">Cancel Order</span>
+                            </div>
+                            {% endif %}
                                
 
                             <div class="tooltip">
@@ -250,6 +265,31 @@
     </div>
 </div>
 
+<div id="cancelOrderModal" class="ordx-modal">
+    <div class="ordx-modal-content">
+        <h3>Cancel Order</h3>
+
+        <p>
+            Are you sure you want to cancel this order?
+        </p>
+
+        <form id="cancelOrderForm" method="POST">
+            {% csrf_token %}
+
+            <button type="submit"
+                    class="confirm-delete">
+                Yes, Cancel
+            </button>
+
+            <button type="button"
+                    class="cancel-delete"
+                    onclick="closeCancelModal()">
+                No
+            </button>
+        </form>
+    </div>
+</div>
+
 </div>
 <script>
 function openDeleteModal(orderId) {
@@ -263,6 +303,23 @@ function openDeleteModal(orderId) {
 
 function closeDeleteModal() {
     document.getElementById("deleteOrderModal").style.display = "none";
+}
+</script>
+
+<script>
+function openCancelModal(orderId) {
+
+    const modal = document.getElementById("cancelOrderModal");
+    const form = document.getElementById("cancelOrderForm");
+
+    form.action = `/cancel-order/${orderId}/`;
+
+    modal.style.display = "flex";
+}
+
+function closeCancelModal() {
+
+    document.getElementById("cancelOrderModal").style.display = "none";
 }
 </script>
 
