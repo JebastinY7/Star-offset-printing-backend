@@ -87,11 +87,7 @@
         {% endif %}
       </td>
       <td>
-        {% if bill.current_due > 0 %}
-            {{ bill.gross_total }}
-        {% else %}
-            {{ item.total }}
-        {% endif %}
+        {{ item.total }}
       </td>
     </tr>
     {% endfor %}

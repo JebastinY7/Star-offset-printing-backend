@@ -81,7 +81,8 @@
 
           <input type="text"
                   id="deliveryDate"
-                 name="delivery_date">
+                 name="delivery_date"
+                 required>
         </div>
       </div>
       
@@ -1291,6 +1292,14 @@ else if (
           ].text.toLowerCase();
     }
 
+    if (sizeText.includes("sticker")) {
+
+        grossAmount = qty * price * job;
+
+    }
+
+    else {
+
     let isBlackSingle = variantText.includes("black s");
 
     let isBlackDouble = variantText.includes("black d");
@@ -1402,6 +1411,7 @@ else if (
 }
 
 }
+}
 
 /* NORMAL ITEMS */
 else {
@@ -1454,7 +1464,7 @@ flatpickr("#deliveryDate", {
 
     dateFormat: "d-m-Y",
 
-    allowInput: true
+    allowInput: false
 });
 
 </script>

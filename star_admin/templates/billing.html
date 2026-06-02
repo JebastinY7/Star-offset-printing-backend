@@ -831,7 +831,13 @@ let itemName =
 
           let sizeText = sizeName.toLowerCase();
 
-          if (
+          if (sizeText.includes("sticker")) {
+
+        gross = qty * price * job;
+
+    }
+
+          else if (
               isBlackSingle ||
               isBlackDouble
             ) {
@@ -928,13 +934,16 @@ let itemName =
                     }
                   }
                   
+                  
                 else {
                     grossAmount = qty * price * job;
                 }
               }
+              
               else {
                 grossAmount = qty * price * job;
               }
+              
 
 let previousDue =
     parseFloat(window.previousDue || 0);
@@ -1965,8 +1974,14 @@ else if (categoryText.includes("print out")) {
     let isInkjetDouble =
         variantText.includes("color inkjet d");
 
+        if (sizeText.includes("sticker")) {
+
+        gross = qty * price * job;
+
+    }
+
     /* BLACK */
-    if (isBlackSingle || isBlackDouble) {
+    else if (isBlackSingle || isBlackDouble) {
 
         if (
             sizeText.includes("a4") ||
@@ -2060,6 +2075,14 @@ else if (categoryText.includes("print out")) {
     else {
         gross = qty * price * job;
     }
+
+    console.log({
+        categoryText,
+        sizeText,
+        variantText,
+        price,
+        gross
+    });
 
 
 

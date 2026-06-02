@@ -1245,6 +1245,14 @@ else if (
           ].text.toLowerCase();
     }
 
+    if (sizeText.includes("sticker")) {
+
+        grossAmount = qty * price * job;
+
+    }
+
+    else {
+
     let isBlackSingle = variantText.includes("black s");
 
     let isBlackDouble = variantText.includes("black d");
@@ -1355,6 +1363,7 @@ else if (
     grossAmount = qty * price * job;
 }
 
+}
 }
 
 /* NORMAL ITEMS */

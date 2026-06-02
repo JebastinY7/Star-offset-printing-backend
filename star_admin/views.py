@@ -1527,16 +1527,26 @@ def save_bill(request):
 
         current_due = max(final - remaining_payment, Decimal('0'))
 
+        # remaining_old_due = max(previous_due - old_due_payment, Decimal('0'))
+
+
+        # if (remaining_old_due > 0 or current_due > 0):
+        #     for item in items:
+        #         item['discount'] = 0    
+        #     total_discount = extra_discount
+        #     raw_final = gross_total - extra_discount  + total_extra_charge
+        #     final = raw_final.quantize(Decimal('1'))
+        #     current_due = max(final - paid_amount, Decimal('0'))
+
         remaining_old_due = max(previous_due - old_due_payment, Decimal('0'))
 
-
-        # total_remaining_due = remaining_old_due + current_due
-
-        if (remaining_old_due > 0 or current_due > 0):
+        
+        if previous_due > 0:
             for item in items:
-                item['discount'] = 0    
+                item['discount'] = 0
+
             total_discount = extra_discount
-            raw_final = gross_total - extra_discount  + total_extra_charge
+            raw_final = gross_total - extra_discount + total_extra_charge
             final = raw_final.quantize(Decimal('1'))
             current_due = max(final - paid_amount, Decimal('0'))
 
@@ -2901,6 +2911,15 @@ def add_order(request):
 
             order_date = request.POST.get("order_date")
             delivery_date = request.POST.get("delivery_date")
+
+            if not delivery_date:
+                messages.error(request, "Please select delivery date")
+                return render(request, "add_order.html", {
+                    "customers": customers,
+                    "categories": categories,
+                    "digital_categories": digital_categories,
+                    "today": date.today(),
+                })
 
             if order_date:
                 order_date = datetime.strptime(
