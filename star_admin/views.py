@@ -356,16 +356,23 @@ def dashboard(request):
     today_discount = today_bills.aggregate(Sum('discount'))['discount__sum'] or 0
 
 
-    pending_count = Order.objects.filter(status="pending").count()
-    progress_count = Order.objects.filter(
-        status__in=["progress", "completed"]
-    ).exclude(status="delivered").count()
+    pending_count = Order.objects.filter(
+        status="pending"
+    ).count()
 
-    completed_count = Order.objects.filter(status="delivered").count()
+    progress_count = Order.objects.filter(
+        status="progress"
+    ).count()
+
+    completed_count = Order.objects.filter(
+        status="completed"
+    ).count()
 
     overdue_count = Order.objects.filter(
         delivery_date__lt=today
-    ).exclude(status="delivered").count()
+    ).exclude(
+        status__in=["delivered", "cancelled"]
+    ).count()
 
     # today_points = PointTransaction.objects.filter(
     #     type='redeem',
