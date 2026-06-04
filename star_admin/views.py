@@ -68,17 +68,17 @@ def admin_login(request):
 
             login(request, user)
 
-            remember = request.POST.get('remember')
+            # remember = request.POST.get('remember')
 
-            if remember:
+            # if remember:
 
-                # 30 mins inactive
-                request.session.set_expiry(1800)
+            #     # 30 mins inactive
+            #     request.session.set_expiry(1800)
 
-            else:
+            # else:
 
-                # 10 mins inactive
-                request.session.set_expiry(600)
+            #     # 10 mins inactive
+            #     request.session.set_expiry(600)
 
             return redirect('/dashboard/')
 
@@ -125,17 +125,17 @@ def staff_login(request):
         if (user and user.is_staff and not user.is_superuser):
             login(request, user)
 
-            remember = request.POST.get('remember')
+            # remember = request.POST.get('remember')
 
-            if remember:
+            # if remember:
 
-                # 30 mins inactive
-                request.session.set_expiry(1800)
+            #     # 30 mins inactive
+            #     request.session.set_expiry(1800)
 
-            else:
+            # else:
 
-                # 10 mins inactive
-                request.session.set_expiry(600)
+            #     # 10 mins inactive
+            #     request.session.set_expiry(600)
 
             return redirect('/dashboard/')
         
@@ -368,6 +368,10 @@ def dashboard(request):
         status="completed"
     ).count()
 
+    delivered_count = Order.objects.filter(
+        status="delivered"
+    ).count()
+
     overdue_count = Order.objects.filter(
         delivery_date__lt=today
     ).exclude(
@@ -420,6 +424,7 @@ def dashboard(request):
         'pending_count': pending_count,
         'progress_count': progress_count,
         'completed_count': completed_count,
+        'delivered_count': delivered_count,
         'overdue_count': overdue_count,
 
         'recent_bills': recent_bills,

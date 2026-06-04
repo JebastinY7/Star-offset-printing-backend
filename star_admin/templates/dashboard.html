@@ -28,6 +28,27 @@
     </div>
   </div>
 
+
+  <!-- Card Status -->
+  <div class="dash-grid">
+
+    <div class="dash-card green">
+      <p>Active Cards</p>
+      <h3>{{ active_cards }}</h3>
+    </div>
+
+    <div class="dash-card red">
+      <p>Expired Cards</p>
+      <h3>{{ expired_cards }}</h3>
+    </div>
+
+    <div class="dash-card gray">
+      <p>No Card Users</p>
+      <h3>{{ no_card }}</h3>
+    </div>
+
+  </div>
+
   <!-- Customer Overview -->
   <div class="dash-grid">
 
@@ -49,26 +70,6 @@
     <div class="dash-card green">
       <p>Shops</p>
       <h3>{{ shops }}</h3>
-    </div>
-
-  </div>
-
-  <!-- Card Status -->
-  <div class="dash-grid">
-
-    <div class="dash-card green">
-      <p>Active Cards</p>
-      <h3>{{ active_cards }}</h3>
-    </div>
-
-    <div class="dash-card red">
-      <p>Expired Cards</p>
-      <h3>{{ expired_cards }}</h3>
-    </div>
-
-    <div class="dash-card gray">
-      <p>No Card Users</p>
-      <h3>{{ no_card }}</h3>
     </div>
 
   </div>
@@ -112,6 +113,11 @@
     <div class="dash-card purple">
       <p>Completed Orders</p>
       <h3>{{ completed_count|default:0 }}</h3>
+    </div>
+
+    <div class="dash-card green">
+      <p>Delivered Orders</p>
+      <h3>{{ delivered_count|default:0 }}</h3>
     </div>
 
     <div class="dash-card red">
