@@ -169,8 +169,15 @@
     </select>
 
     <select id="digitalDelivery">
-        <option value="1 Day">1 Day</option>
-        <option value="3-5 Days">3-5 Days</option>
+        <option value="">Select Delivery</option>
+
+            {% for delivery in delivery_types %}
+
+                <option value="{{ delivery.id }}">
+                    {{ delivery.name }}
+                </option>
+
+            {% endfor %}
     </select>
 
     <input type="number"
@@ -415,8 +422,11 @@ side_name:
             document.getElementById("digitalSide").selectedIndex
         ].text,
 
-delivery:
-    document.getElementById("digitalDelivery").value,
+delivery_type:
+document.getElementById("digitalDelivery").value,
+
+customer_type:
+document.getElementById("customerType").value,
 
         qty: qty,
         job: isDigital ? digitalJob : job,
@@ -483,6 +493,8 @@ function renderItems() {
             <input type="hidden" name="item_side_name[]" value="${item.side_name || ''}">
             <input type="hidden" name="item_job[]" value="${item.job}">
             <input type="hidden" name="item_lamination[]" value="${item.lamination_id || ''}">
+            <input type="hidden" name="customer_type[]" value="${item.customer_type || ''}">
+            <input type="hidden" name="work_type[]" value="${item.delivery_type || ''}">
           </td>
 
           <td>${item.qty}</td>
@@ -560,7 +572,10 @@ function editItem(index) {
       item.side;
 
     document.getElementById("digitalDelivery").value =
-      item.delivery;
+item.delivery_type;
+
+document.getElementById("customerType").value =
+item.customer_type;
 
       document.getElementById("digitalJob").value =
   item.job || 1;
@@ -947,8 +962,8 @@ function fetchDigitalPrice() {
     const qty =
       digitalQty.value;
 
-    const delivery =
-      digitalDelivery.value;
+    const deliveryType =
+digitalDelivery.value;
     
     const digitalJob =
     parseFloat(
@@ -963,7 +978,7 @@ function fetchDigitalPrice() {
     }
 
     fetch(
-      `/get-digital-price/?lamination_id=${laminationId}&side=${digitalSide.value}&qty=${qty}`
+      `/get-digital-price/?lamination_id=${laminationId}&side=${digitalSide.value}&delivery_type=${deliveryType}&qty=${qty}`
     )
 
     .then(res => res.json())
@@ -980,31 +995,14 @@ function fetchDigitalPrice() {
 
         let finalPrice = 0;
 
-        /* 1 DAY */
-        if (delivery === "1 Day") {
+        if (customerType === "shop") {
 
-            finalPrice =
-              parseFloat(data.one_day_rate);
+            finalPrice = parseFloat(data.shop_rate);
 
-        }
+        } else {
 
-        /* 3-5 DAYS */
-        else {
+            finalPrice = parseFloat(data.customer_rate);
 
-            /* SHOP PRICE */
-            if (customerType === "shop") {
-
-                finalPrice =
-                  parseFloat(data.shop_rate);
-
-            }
-
-            /* CUSTOMER PRICE */
-            else {
-
-                finalPrice =
-                  parseFloat(data.customer_rate);
-            }
         }
 
         document.getElementById("itemPrice").value =
@@ -1397,7 +1395,7 @@ function clearItemFields() {
     document.getElementById("digitalLamination").innerHTML =
         '<option value="">Select Lamination</option>';
     document.getElementById("digitalSide").value = "";
-    document.getElementById("digitalDelivery").value = "1 Day";
+    document.getElementById("digitalDelivery").value = "";
     document.getElementById("digitalQty").value = "";
     document.getElementById("digitalJob").value = 1;
 

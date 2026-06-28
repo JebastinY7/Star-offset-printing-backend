@@ -203,7 +203,7 @@ Example:
 
                     <textarea name="lamination_list"
                         placeholder=
-"No Lamination
+"Without Lamination
 Glossy
 Matt
 3D"
@@ -381,13 +381,23 @@ double"
                     </div>
 
                     <!-- 1 DAY -->
-                    <div class="form-group">
+                    {% comment %} <div class="form-group">
 
-                        <label>1 Day Rate</label>
+                        <label>Delivery Type</label>
 
-                        <input type="number"
-                            step="0.01"
-                            name="one_day_rate">
+                        <select name="delivery_type" required>
+
+                            <option value="">Select Delivery</option>
+
+                            {% for delivery in delivery_types %}
+
+                                <option value="{{ delivery.id }}">
+                                    {{ delivery.name }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
 
                     </div>
 
@@ -423,7 +433,64 @@ double"
                             name="customer_discount"
                             placeholder="10">
 
+                    </div> {% endcomment %}
+
+                    <div id="priceRulesContainer">
+
+                        <div class="price-rule">
+
+                            <div class="form-group">
+                                <label>Delivery Type</label>
+
+                                <select name="delivery_type[]">
+                                    <option value="">Select Delivery</option>
+
+                                    {% for delivery in delivery_types %}
+                                    <option value="{{ delivery.id }}">
+                                        {{ delivery.name }}
+                                    </option>
+                                    {% endfor %}
+
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Shop Rate</label>
+
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    name="shop_rate[]">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Customer Rate</label>
+
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    name="customer_rate[]">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Customer Discount %</label>
+
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    name="customer_discount[]">
+                            </div>
+
+                        </div>
+
                     </div>
+
+                    <button
+                        type="button"
+                        id="addPriceRule"
+                        class="table-btn">
+                        + Add Price Rule
+                    </button>
 
                 </div>
 
@@ -695,6 +762,26 @@ laminationSelect.addEventListener("change", function () {
         <option value="single">Single</option>
         <option value="double">Double</option>
     `;
+
+});
+
+document.getElementById("addPriceRule").addEventListener("click", function () {
+
+    const firstRule =
+        document.querySelector(".price-rule");
+
+    const clone =
+        firstRule.cloneNode(true);
+
+    clone.querySelectorAll("input").forEach(input => {
+        input.value = "";
+    });
+
+    clone.querySelector("select").selectedIndex = 0;
+
+    document
+        .getElementById("priceRulesContainer")
+        .appendChild(clone);
 
 });
 

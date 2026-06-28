@@ -148,13 +148,15 @@
         
 
         <select id="digitalDeliveryType">
-            <option value="one_day">
-                1 Day
+            <option value="">
+                Select Delivery
             </option>
 
-            <option value="three_five">
-                3-5 Days
-            </option>
+            {% for delivery in delivery_types %}
+                <option value="{{ delivery.id }}">
+                    {{ delivery.name }}
+                </option>
+            {% endfor %}
         </select>
 
         <input type="number"
@@ -575,24 +577,38 @@ if (categoryId === "manual") {
 
     calculateTotal();
 
-    /* CLEAR */
-    document.getElementById("manualItemName").value = "";
+    // Clear Digital Fields
+document.getElementById("digitalCategory").value = "";
 
-    document.getElementById("itemQty").value = "";
+document.getElementById("digitalGsm").innerHTML =
+    '<option value="">Select GSM</option>';
 
-    document.getElementById("itemJob").value = 1;
+document.getElementById("digitalProduct").innerHTML =
+    '<option value="">Select Product</option>';
 
-    document.getElementById("itemPrice").value = "";
+document.getElementById("digitalLamination").innerHTML =
+    '<option value="">Select Lamination</option>';
 
-    document.getElementById("itemDiscountValue").value = "";
+document.getElementById("digitalSide").value = "";
 
-    document.getElementById("extraPurpose").value = "";
+document.getElementById("digitalDeliveryType").value = "";
 
-    document.getElementById("itemExtraCharge").value = "";
+document.getElementById("digitalQty").value = "";
 
-    document.getElementById("itemTotalPreview").value = "";
+document.getElementById("digitalJob").value = 1;
 
-    return;
+// Common Fields
+document.getElementById("itemPrice").value = "";
+
+document.getElementById("itemDiscountValue").value = "";
+
+document.getElementById("itemTotalPreview").value = "";
+
+document.getElementById("itemExtraCharge").value = "";
+
+document.getElementById("extraPurpose").value = "";
+
+return;
 }
 
   let categoryName = categoryDropdown.options[categoryDropdown.selectedIndex].text;
@@ -689,13 +705,22 @@ let sideText =
         sideDropdown.selectedIndex
     ].text;
 
-let itemName =
-    `${categoryDropdown.options[categoryDropdown.selectedIndex].text}
-    - ${gsmDropdown.options[gsmDropdown.selectedIndex].text}
-    - ${productDropdown.options[productDropdown.selectedIndex].text}
-    - ${laminationName}
-    - ${sideText}
-    - ${deliveryDropdown.options[deliveryDropdown.selectedIndex].text}`;
+let categoryName =
+    categoryDropdown.options[categoryDropdown.selectedIndex].text;
+
+let itemName = categoryName;
+
+// Show GSM and Size for all except Letter Pad
+if (categoryName.trim().toLowerCase() !== "visiting card") {
+    itemName += ` - ${gsmDropdown.options[gsmDropdown.selectedIndex].text}`;
+    itemName += ` - ${productDropdown.options[productDropdown.selectedIndex].text}`;
+}
+
+itemName += ` - ${laminationName}`;
+itemName += ` - ${sideText}`;
+itemName += ` - ${deliveryDropdown.options[deliveryDropdown.selectedIndex].text}`;
+
+    
 
     items.push({
 
@@ -708,6 +733,11 @@ let itemName =
         sizeId: gsmDropdown.value,
         variantId: productDropdown.value,
         laminationId: laminationId,
+        deliveryTypeId: deliveryDropdown.value,
+        deliveryTypeName:
+            deliveryDropdown.options[
+                deliveryDropdown.selectedIndex
+            ].text,
         laminationName: laminationName,
 
         side: sideValue,
@@ -733,17 +763,7 @@ let itemName =
 
     calculateTotal();
 
-    document.getElementById("digitalQty").value = "";
-
-    document.getElementById("itemPrice").value = "";
-
-    document.getElementById("itemDiscountValue").value = "";
-
-    document.getElementById("itemTotalPreview").value = "";
-
-    document.getElementById("itemExtraCharge").value = "";
-
-    document.getElementById("digitalJob").value = 1;
+    clearBillingFields();
 
     return;
 }
@@ -1101,7 +1121,13 @@ if (item.billingType === "manual") {
 
 if (item.billingType === "digital print") {
 
+    console.log(item);
+
     document.getElementById("billingMode").value = "digital";
+
+    document.getElementById("billingMode").dispatchEvent(
+    new Event("change")
+);
 
     document.getElementById("normalBillingFields").style.display = "none";
 
@@ -1120,6 +1146,7 @@ if (item.billingType === "digital print") {
     .then(res => res.json())
 
     .then(data => {
+         console.log("Laminations:", data);
 
         let gsmDropdown =
             document.getElementById("digitalGsm");
@@ -1170,20 +1197,43 @@ if (item.billingType === "digital print") {
 
         productDropdown.value = item.variantId;
 
-        // DELIVERY TYPE
-        if (
-            item.name.toLowerCase().includes("3-5")
-        ) {
+        return fetch(
+    `/get-digital-laminations/?product_id=${item.variantId}`
+)
+.then(res => res.json())
+.then(data => {
 
-            document.getElementById("digitalDeliveryType").value =
-                "three_five";
-        }
+    let laminationDropdown =
+        document.getElementById("digitalLamination");
 
-        else {
+    laminationDropdown.innerHTML =
+        '<option value="">Select Lamination</option>';
 
-            document.getElementById("digitalDeliveryType").value =
-                "one_day";
-        }
+    data.laminations.forEach(lam => {
+
+        laminationDropdown.innerHTML += `
+            <option value="${lam.id}">
+                ${lam.name}
+            </option>`;
+    });
+
+    laminationDropdown.value = item.laminationId;
+
+    console.log("Selected Lamination:", item.laminationId);
+console.log("Dropdown Value:", laminationDropdown.value);
+
+    document.getElementById("digitalDeliveryType").value =
+        item.deliveryTypeId;
+
+    console.log("Delivery:", item.deliveryTypeId);
+console.log(
+    "Delivery Dropdown:",
+    document.getElementById("digitalDeliveryType").value
+);
+
+    // DELIVERY TYPE
+        document.getElementById("digitalDeliveryType").value =
+    item.deliveryTypeId;
 
         // PREFILL
         document.getElementById("digitalQty").value =
@@ -1203,6 +1253,11 @@ if (item.billingType === "digital print") {
 
         document.getElementById("itemTotalPreview").value =
             parseFloat(item.total || 0).toFixed(2);
+
+    updatePrice();
+});
+
+        
     });
 
     // REMOVE TEMP
@@ -1659,19 +1714,34 @@ document.addEventListener("DOMContentLoaded", function () {
 
   {% for i in items %}
     items.push({
-      name: "{{ i.service_name|default:''|escapejs }}",
-      categoryId: "{{ i.category_id|default:'' }}",
-      sizeId: "{{ i.size_id|default:'' }}",
-      variantId: "{{ i.variant_id|default:'' }}",
-      qty: parseFloat("{{ i.qty|default:0 }}"),
-      job: parseFloat("{{ i.job|default:1 }}"),
-      price: parseFloat("{{ i.price|default:0 }}"),
-      discount: parseFloat("{{ i.discount|default:0 }}"),
-      gross: parseFloat("{{ i.total|default:0 }}") + parseFloat("{{ i.discount|default:0 }}") - parseFloat("{{ i.extra_charge|default:0 }}"),
-      extraCharge: parseFloat("{{ i.extra_charge|default:0 }}"),
-      extraPurpose: "{{ i.extra_purpose|default:''|escapejs }}",
-      total: parseFloat("{{ i.total|default:0 }}")
-    });
+    billingType: "{{ i.billing_type|default:'normal print' }}",
+
+    name: "{{ i.service_name|default:''|escapejs }}",
+
+    categoryId: "{{ i.category_id|default:'' }}",
+    sizeId: "{{ i.size_id|default:'' }}",
+    variantId: "{{ i.variant_id|default:'' }}",
+
+    laminationId: "{{ i.lamination_id|default:'' }}",
+    deliveryTypeId: "{{ i.delivery_type_id|default:'' }}",
+
+    laminationName: "{{ i.lamination_name|default:''|escapejs }}",
+    deliveryTypeName: "{{ i.delivery_type_name|default:''|escapejs }}",
+
+    side: "{{ i.side|default:''|escapejs }}",
+    sideName: "{{ i.side_name|default:''|escapejs }}",
+
+    qty: parseFloat("{{ i.qty|default:0 }}"),
+    job: parseFloat("{{ i.job|default:1 }}"),
+    price: parseFloat("{{ i.price|default:0 }}"),
+    discount: parseFloat("{{ i.discount|default:0 }}"),
+    gross: parseFloat("{{ i.total|default:0 }}")
+          + parseFloat("{{ i.discount|default:0 }}")
+          - parseFloat("{{ i.extra_charge|default:0 }}"),
+    extraCharge: parseFloat("{{ i.extra_charge|default:0 }}"),
+    extraPurpose: "{{ i.extra_purpose|default:''|escapejs }}",
+    total: parseFloat("{{ i.total|default:0 }}")
+});
   {% endfor %}
 
   console.log("Loaded Bill Items:", items);
@@ -1717,60 +1787,62 @@ function updatePrice() {
 let side =
     document.getElementById("digitalSide").value;
 
+if (
+    !laminationId ||
+    !deliveryType ||
+    !side ||
+    qty <= 0
+){
+    return;
+}
+
 fetch(
-`/get-digital-price/?lamination_id=${laminationId}&side=${side}&qty=${qty}`
+`/get-digital-price/?lamination_id=${laminationId}&side=${side}&delivery_type=${deliveryType}&qty=${qty}`
 )
+.then(res => res.json())
+.then(data => {
 
-      .then(res => res.json())
+let customerType =
+    (window.selectedCustomerType || "").toLowerCase();
 
-      .then(data => {
-        if (!data.success) {
-          showToast("No digital price found");
-          return;
-    }
-    let customerType =
-            (window.selectedCustomerType || "").toLowerCase();
+let basePrice = 0;
+let discountPercent = 0;
 
-        let basePrice = 0;
+/* Shop */
 
-        let discountPercent = 0;
+if (customerType === "shop") {
 
-        /* =========================
-           1 DAY
-        ========================= */
+    basePrice =
+        parseFloat(data.shop_rate || 0);
 
-        if (deliveryType === "one_day") {
+}
 
-            basePrice =
-                parseFloat(data.one_day_rate || 0);
-        }
+/* Member */
 
-        /* =========================
-           3-5 DAYS
-        ========================= */
+else if (customerType === "member") {
 
-        else {
+    basePrice =
+        parseFloat(data.customer_rate || 0);
 
-            if (customerType === "shop") {
+    discountPercent =
+        parseFloat(data.customer_discount || 0);
 
-                basePrice =
-                    parseFloat(data.shop_rate || 0);
+}
+
+/* Customer */
+
+else {
+
+    basePrice =
+        parseFloat(data.customer_rate || 0);
+    
+    if (customerType === "member") {
+
+                discountPercent =
+                    parseFloat(data.customer_discount || 0);
             }
 
-            else {
-
-                basePrice =
-                    parseFloat(data.customer_rate || 0);
-
-                if (customerType === "member") {
-
-                    discountPercent =
-                        parseFloat(
-                            data.customer_discount || 0
-                        );
-                }
-            }
-        }
+}
 
         /* =================================
            DIGITAL = SLAB PRICE
@@ -1812,7 +1884,7 @@ if (
         document.getElementById("itemTotalPreview").value =
             finalTotal.toFixed(2);
 
-        return;
+        
     });
 
     return;
@@ -2258,6 +2330,12 @@ window.addEventListener("DOMContentLoaded", function () {
         sizeId: "{{ item.size_id }}",
         variantId: "{{ item.variant_id }}",
 
+        laminationId: "{{ item.lamination_id }}",
+    deliveryTypeId: "{{ item.delivery_type_id }}",
+
+    laminationName: "{{ item.lamination_name|escapejs }}",
+    deliveryTypeName: "{{ item.delivery_type_name|escapejs }}",
+
         side: "{{ item.side|default:''|escapejs }}",
         sideName: "{{ item.side_name|default:''|escapejs }}",
 
@@ -2398,19 +2476,65 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+function clearBillingFields() {
+
+    /* ---------- Normal ---------- */
+
+    document.getElementById("itemCategory").value = "";
+    document.getElementById("itemSize").innerHTML =
+        '<option value="">Select Size</option>';
+
+    document.getElementById("itemVariant").innerHTML =
+        '<option value="">Select Variant</option>';
+
+    document.getElementById("itemQty").value = "";
+    document.getElementById("itemJob").value = 1;
+
+    document.getElementById("manualItemName").value = "";
+    document.getElementById("manualItemName").style.display = "none";
+
+    /* ---------- Digital ---------- */
+
+    document.getElementById("digitalCategory").value = "";
+
+    document.getElementById("digitalGsm").innerHTML =
+        '<option value="">Select GSM</option>';
+
+    document.getElementById("digitalProduct").innerHTML =
+        '<option value="">Select Product</option>';
+
+    document.getElementById("digitalLamination").innerHTML =
+        '<option value="">Select Lamination</option>';
+
+    document.getElementById("digitalSide").value = "";
+    document.getElementById("digitalDeliveryType").value = "";
+    document.getElementById("digitalQty").value = "";
+    document.getElementById("digitalJob").value = 1;
+
+    /* ---------- Common ---------- */
+
+    document.getElementById("itemPrice").value = "";
+    document.getElementById("itemDiscountValue").value = "";
+    document.getElementById("itemTotalPreview").value = "";
+    document.getElementById("itemExtraCharge").value = "";
+    document.getElementById("extraPurpose").value = "";
+
+    document.getElementById("itemDiscount").value = 0;
+}
+
 /* SWITCH */
 billingMode.addEventListener("change", function () {
+
+    clearBillingFields();
 
     if (this.value === "digital") {
 
         normalFields.style.display = "none";
-
         digitalFields.style.display = "grid";
 
     } else {
 
         normalFields.style.display = "grid";
-
         digitalFields.style.display = "none";
     }
 });

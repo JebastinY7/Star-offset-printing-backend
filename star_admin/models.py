@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from pricing.models import Category, Size, Variant, DigitalProduct, DigitalGSM, DigitalCategory, DigitalLamination
+from pricing.models import Category, Size, Variant, DigitalProduct, DigitalGSM, DigitalCategory, DigitalLamination, DeliveryType
 
 # Create your models here.
     
@@ -68,6 +68,8 @@ class BillItem(models.Model):
     side = models.CharField(max_length=20, blank=True, null=True)
     side_name = models.CharField(max_length=50, blank=True, null=True)
     manual_name = models.CharField(max_length=255, blank=True, null=True)
+
+    delivery_type = models.ForeignKey(DeliveryType, on_delete=models.SET_NULL, null=True, blank=True)
 
     qty = models.IntegerField()
     job = models.PositiveIntegerField(default=1)
@@ -206,6 +208,8 @@ class OrderItem(models.Model):
 
     digital_lamination = models.ForeignKey(DigitalLamination, on_delete=models.SET_NULL, null=True, blank=True)
 
+    delivery_type = models.ForeignKey(DeliveryType, on_delete=models.SET_NULL, null=True, blank=True)
+    
     customer_type = models.CharField(max_length=20, blank=True, null=True)
 
     work_type = models.CharField(max_length=20, blank=True, null=True)
@@ -270,42 +274,20 @@ class QuotationItem(models.Model):
     digital_gsm = models.ForeignKey(DigitalGSM, on_delete=models.SET_NULL, null=True, blank=True)
 
     digital_product = models.ForeignKey(DigitalProduct, on_delete=models.SET_NULL, null=True, blank=True)
+    customer_type = models.CharField(max_length=20, blank=True)
+    work_type = models.CharField(max_length=50, blank=True)
+    digital_lamination = models.ForeignKey(DigitalLamination, on_delete=models.SET_NULL, null=True, blank=True)
 
-    digital_lamination = models.ForeignKey(
-        DigitalLamination,
-        on_delete=models.SET_NULL,
-        null=True, blank=True)
+    customer_type = models.CharField(max_length=20, blank=True, null=True)
 
-    customer_type = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True
-    )
+    side = models.CharField(max_length=20, blank=True, null=True)
 
-    side = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True
-    )
-
-    side_name = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True
-    )
+    side_name = models.CharField(max_length=50, blank=True, null=True)
 
     qty = models.IntegerField(default=1)
 
     job = models.PositiveIntegerField(default=1)
 
-    price = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0
-    )
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
-    total = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0
-    )
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)

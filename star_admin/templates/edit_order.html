@@ -217,13 +217,13 @@
 
         <select id="digitalDeliveryType">
 
-            <option value="one_day">
-                1 Day
+            {% for delivery in delivery_types %}
+
+            <option value="{{ delivery.id }}">
+                {{ delivery.name }}
             </option>
 
-            <option value="three_five">
-                3-5 Days
-            </option>
+            {% endfor %}
 
         </select>
 
@@ -373,7 +373,7 @@ window.existingOrderItems = [
 
     customer_type: "{{ item.customer_type|default:'customer' }}",
 
-    work_type: "{{ item.work_type|default:'one_day' }}",
+    delivery_type: "{{ item.delivery_type_id|default:'' }}",
 
     category_id: "{{ item.category_id|default:item.digital_category_id|default:'' }}",
 
@@ -479,8 +479,14 @@ function addOrderItem() {
         customer_type:
         document.getElementById("customerType").value,
 
-    work_type:
+    delivery_type:
         document.getElementById("digitalDeliveryType").value,
+
+        delivery_name:
+        document.getElementById("digitalDeliveryType")
+        .options[
+        document.getElementById("digitalDeliveryType").selectedIndex
+        ].text,
 
         category_id: category.value,
 
@@ -718,9 +724,20 @@ function loadDigitalPrice() {
         return;
     }
 
-    fetch(
-        `/get-digital-price/?product_id=${productId}&qty=${qty}`
-    )
+    
+
+    const laminationId =
+    document.getElementById("digitalLamination").value;
+
+const side =
+    document.getElementById("digitalSize").value;
+
+const deliveryType =
+    document.getElementById("digitalDeliveryType").value;
+
+fetch(
+`/get-digital-price/?lamination_id=${laminationId}&side=${side}&delivery_type=${deliveryType}&qty=${qty}`
+)
 
     .then(response => response.json())
 
@@ -875,6 +892,8 @@ function renderItems() {
             <input type="hidden" name="item_side_name[]" value="${item.side_name || ''}">
 
             <input type="hidden" name="item_job[]" value="${item.job || 1}">
+
+            <input type="hidden" name="item_delivery_type[]" value="${item.delivery_type || ''}">
         </td>
 
           <td>${item.qty}</td>
@@ -1045,7 +1064,7 @@ fetch(
         String(item.lamination_id || "");
 
     document.getElementById("digitalDeliveryType").value =
-        item.work_type || "one_day";
+item.delivery_type;
 
     document.getElementById("digitalQty").value =
         item.qty || "";

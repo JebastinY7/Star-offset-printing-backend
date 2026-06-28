@@ -171,8 +171,15 @@
     </select>
 
     <select id="digitalDelivery">
-        <option value="1 Day">1 Day</option>
-        <option value="3-5 Days">3-5 Days</option>
+        <option value="">Select Delivery</option>
+
+        {% for delivery in delivery_types %}
+
+            <option value="{{ delivery.id }}">
+                {{ delivery.name }}
+            </option>
+
+        {% endfor %}
     </select>
 
     <input type="number"
@@ -297,14 +304,17 @@ let orderItems = [
 {
     billing_type: "{{ item.billing_type }}",
 
-    category_id: "{{ item.category.id|default:'' }}",
-    category: "{{ item.category|default:'' }}",
+    category_id: "{% if item.billing_type == 'digital' %}{{ item.digital_category.id }}{% else %}{{ item.category.id }}{% endif %}",
 
-    size_id: "{{ item.size.id|default:'' }}",
-    size: "{{ item.size|default:'' }}",
+    category: "{% if item.billing_type == 'digital' %}{{ item.digital_category }}{% else %}{{ item.category }}{% endif %}",
 
-    variant_id: "{{ item.variant.id|default:'' }}",
-    variant: "{{ item.variant|default:'' }}",
+    size_id: "{% if item.billing_type == 'digital' %}{{ item.digital_gsm.id }}{% else %}{{ item.size.id }}{% endif %}",
+
+    size: "{% if item.billing_type == 'digital' %}{{ item.digital_gsm }}{% else %}{{ item.size }}{% endif %}",
+
+    variant_id: "{% if item.billing_type == 'digital' %}{{ item.digital_product.id }}{% else %}{{ item.variant.id }}{% endif %}",
+
+    variant: "{% if item.billing_type == 'digital' %}{{ item.digital_product }}{% else %}{{ item.variant }}{% endif %}",
 
     qty: {{ item.qty }},
     job: {{ item.job }},
@@ -316,7 +326,9 @@ let orderItems = [
     lamination: "{{ item.digital_lamination|default:'' }}",
 
     side: "{{ item.side|default:'' }}",
-    side_name: "{{ item.side_name|default:'' }}"
+    side_name: "{{ item.side_name|default:'' }}",
+    delivery_type: "{{ item.work_type|default:'' }}",
+    customer_type: "{{ item.customer_type|default:'' }}",
 },
 {% endfor %}
 
@@ -451,8 +463,11 @@ side_name:
             document.getElementById("digitalSide").selectedIndex
         ].text,
 
-delivery:
-    document.getElementById("digitalDelivery").value,
+delivery_type:
+document.getElementById("digitalDelivery").value,
+
+customer_type:
+document.getElementById("customerType").value,
 
         qty: qty,
         job: isDigital ? digitalJob : job,
@@ -519,6 +534,8 @@ function renderItems() {
             <input type="hidden" name="item_side_name[]" value="${item.side_name || ''}">
             <input type="hidden" name="item_job[]" value="${item.job}">
             <input type="hidden" name="item_lamination[]" value="${item.lamination_id || ''}">
+            <input type="hidden" name="customer_type[]" value="${item.customer_type || ''}">
+            <input type="hidden" name="work_type[]" value="${item.delivery_type || ''}">
           </td>
 
           <td>${item.qty}</td>
@@ -596,7 +613,10 @@ function editItem(index) {
       item.side;
 
     document.getElementById("digitalDelivery").value =
-      item.delivery;
+item.delivery_type;
+
+document.getElementById("customerType").value =
+item.customer_type;
 
       document.getElementById("digitalJob").value =
   item.job || 1;
@@ -628,42 +648,50 @@ function editItem(index) {
     })
 
     .then(res => res.json())
+.then(data => {
 
-    .then(data => {
+    digitalProduct.innerHTML =
+        '<option value="">Select Product</option>';
 
-        digitalProduct.innerHTML =
-          '<option value="">Select Product</option>';
+    data.products.forEach(product => {
 
-        data.products.forEach(product => {
+        digitalProduct.innerHTML += `
+            <option value="${product.id}">
+                ${product.name}
+            </option>`;
+    });
 
-            digitalProduct.innerHTML += `
-                <option value="${product.id}">
-                    ${product.name}
-                </option>
-            `;
-        });
+    digitalProduct.value = item.variant_id;
 
-        /* IMPORTANT */
-        setTimeout(() => {
+    return fetch(
+        `/get-digital-laminations/?product_id=${item.variant_id}`
+    );
 
-            document.getElementById("digitalProduct").value =
-              item.variant_id;
+})
+.then(res => res.json())
+.then(data => {
 
-        }, 100);
+    digitalLamination.innerHTML =
+        '<option value="">Select Lamination</option>';
 
-        document.getElementById("digitalQty").value =
-          item.qty;
+    data.laminations.forEach(lam => {
 
-          document.getElementById("itemJob").value =
-  item.job || 1;
+        digitalLamination.innerHTML += `
+            <option value="${lam.id}">
+                ${lam.name}
+            </option>`;
+    });
 
-        document.getElementById("itemPrice").value =
-          item.price;
+    digitalLamination.value = item.lamination_id;
 
-        document.getElementById("itemTotal").value =
-          item.total;
+    digitalQty.value = item.qty;
+    digitalJob.value = item.job || 1;
 
- });
+    itemPrice.value = item.price;
+    itemTotal.value = item.total;
+
+    fetchDigitalPrice();     // <-- IMPORTANT
+});
 }
 
 /* NORMAL */
@@ -676,7 +704,7 @@ else {
     document.getElementById("itemCategory").value =
       item.category_id;
 
-    document.getElementById("itemJob").value =
+    document.getElementById("digitalJob").value =
       item.job || 1;
 
     fetch(`/get-sizes/?category_id=${item.category_id}`)
@@ -861,6 +889,9 @@ function updateBillingView() {
 
         customerTypeWrapper.style.display = "none";
     }
+
+    itemPrice.value = "";
+itemTotal.value = "";
 }
 
 
@@ -983,8 +1014,8 @@ function fetchDigitalPrice() {
     const qty =
       digitalQty.value;
 
-    const delivery =
-      digitalDelivery.value;
+   const deliveryType =
+digitalDelivery.value;
     
     const digitalJob =
     parseFloat(
@@ -999,7 +1030,7 @@ function fetchDigitalPrice() {
     }
 
     fetch(
-      `/get-digital-price/?lamination_id=${laminationId}&side=${digitalSide.value}&qty=${qty}`
+      `/get-digital-price/?lamination_id=${laminationId}&side=${digitalSide.value}&delivery_type=${deliveryType}&qty=${qty}`
     )
 
     .then(res => res.json())
@@ -1016,32 +1047,15 @@ function fetchDigitalPrice() {
 
         let finalPrice = 0;
 
-        /* 1 DAY */
-        if (delivery === "1 Day") {
+if (customerType === "shop") {
 
-            finalPrice =
-              parseFloat(data.one_day_rate);
+    finalPrice = parseFloat(data.shop_rate);
 
-        }
+} else {
 
-        /* 3-5 DAYS */
-        else {
+    finalPrice = parseFloat(data.customer_rate);
 
-            /* SHOP PRICE */
-            if (customerType === "shop") {
-
-                finalPrice =
-                  parseFloat(data.shop_rate);
-
-            }
-
-            /* CUSTOMER PRICE */
-            else {
-
-                finalPrice =
-                  parseFloat(data.customer_rate);
-            }
-        }
+}
 
         document.getElementById("itemPrice").value =
           finalPrice.toFixed(2);
@@ -1433,7 +1447,7 @@ function clearItemFields() {
     document.getElementById("digitalLamination").innerHTML =
         '<option value="">Select Lamination</option>';
     document.getElementById("digitalSide").value = "";
-    document.getElementById("digitalDelivery").value = "1 Day";
+    document.getElementById("digitalDelivery").value = "";
     document.getElementById("digitalQty").value = "";
     document.getElementById("digitalJob").value = 1;
 

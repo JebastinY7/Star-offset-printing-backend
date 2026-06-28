@@ -94,29 +94,6 @@ class ShopSettings(models.Model):
     def __str__(self):
         return "Shop Settings"
     
-
-# # Digital Price List Model
-# class DigitalPrice(models.Model):
-#     category = models.ForeignKey(Category, on_delete=models.CASCADE)
-#     gsm = models.CharField(max_length=50)
-#     product_type = models.CharField(max_length=100, blank=True, null=True)
-#     side = models.CharField(
-#         max_length=20,
-#         choices=[
-#             ("single", "1 SIDE"),
-#             ("double", "2 SIDE"),
-#         ]
-#     )
-
-#     qty = models.IntegerField()
-#     one_day_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-#     shop_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-#     customer_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-#     customer_discount = models.FloatField()
-#     created_at = models.DateTimeField(auto_now_add=True)
-
-#     def __str__(self):
-#         return f"{self.category} - {self.gsm} - {self.qty}"
     
 class DigitalCategory(models.Model):
     name = models.CharField(max_length=200)
@@ -150,6 +127,17 @@ class DigitalLamination(models.Model):
         return f"{self.product.name} - {self.name}"
 
 
+class DeliveryType(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["display_order", "name"]
+
+    def __str__(self):
+        return self.name
+
+
 class DigitalPrice(models.Model):
 
     SIDE_CHOICES = [
@@ -164,13 +152,20 @@ class DigitalPrice(models.Model):
 
     max_qty = models.PositiveIntegerField(null=True, blank=True)
 
-    one_day_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    delivery_type = models.ForeignKey(DeliveryType, on_delete=models.CASCADE, related_name="prices")
 
     shop_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
     customer_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
     customer_discount = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+
+    class Meta:
+        unique_together = (
+            "lamination",
+            "side",
+            "delivery_type",
+            "min_qty",
+            "max_qty",
+        )
 
     def __str__(self):
 

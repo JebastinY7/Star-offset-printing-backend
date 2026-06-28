@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Category, Size, Variant, PriceRule, MemberType, DigitalPrice, DigitalCategory, DigitalGSM, DigitalProduct, DigitalLamination
+from .models import Category, Size, Variant, PriceRule, MemberType, DigitalPrice, DigitalCategory, DigitalGSM, DigitalProduct, DigitalLamination, DeliveryType
 from .forms import CategoryForm, BulkSizeForm,BulkVariantForm, PriceRuleForm, CategoryDiscountForm
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -310,6 +310,7 @@ def digital_price_setup(request):
     categories = DigitalCategory.objects.all()
     gsms = DigitalGSM.objects.select_related("category")
     products = DigitalProduct.objects.select_related("gsm", "gsm__category").prefetch_related("laminations")
+    delivery_types = DeliveryType.objects.all()
 
     if request.method == "POST":
         form_type = request.POST.get("form_type")
@@ -375,38 +376,85 @@ def digital_price_setup(request):
             
             return redirect("digital_price_setup")
         
+        # elif form_type == "add_digital_price":
+        #     lamination_id = request.POST.get("lamination")
+        #     side = request.POST.get("side")
+        #     min_qty = request.POST.get("min_qty")
+        #     max_qty = request.POST.get("max_qty") or None
+
+        #     delivery_type_id = request.POST.get("delivery_type")
+
+        #     shop_rate = request.POST.get("shop_rate") or 0
+        #     customer_rate = request.POST.get("customer_rate") or 0
+        #     customer_discount = request.POST.get("customer_discount") or 0
+
+        #     if lamination_id and side and min_qty:
+        #         lamination = DigitalLamination.objects.get(id=lamination_id)
+
+        #         delivery_type = DeliveryType.objects.get(id=delivery_type_id)
+
+        #         DigitalPrice.objects.create(
+        #             lamination=lamination,
+        #             side=side,
+        #             min_qty=min_qty,
+        #             max_qty=max_qty,
+        #             delivery_type=delivery_type,
+        #             shop_rate=shop_rate,
+        #             customer_rate=customer_rate,
+        #             customer_discount=customer_discount
+        #         )
+
+        #         messages.success(request, "Price rule added successfully")
+            
+        #     return redirect("digital_price_setup")
+
         elif form_type == "add_digital_price":
+
             lamination_id = request.POST.get("lamination")
             side = request.POST.get("side")
             min_qty = request.POST.get("min_qty")
             max_qty = request.POST.get("max_qty") or None
-            one_day_rate = request.POST.get("one_day_rate") or 0
-            shop_rate = request.POST.get("shop_rate") or 0
-            customer_rate = request.POST.get("customer_rate") or 0
-            customer_discount = request.POST.get("customer_discount") or 0
+
+            delivery_types = request.POST.getlist("delivery_type[]")
+            shop_rates = request.POST.getlist("shop_rate[]")
+            customer_rates = request.POST.getlist("customer_rate[]")
+            customer_discounts = request.POST.getlist("customer_discount[]")
 
             if lamination_id and side and min_qty:
+
                 lamination = DigitalLamination.objects.get(id=lamination_id)
 
-                DigitalPrice.objects.create(
-                    lamination=lamination,
-                    side=side,
-                    min_qty=min_qty,
-                    max_qty=max_qty,
-                    one_day_rate=one_day_rate,
-                    shop_rate=shop_rate,
-                    customer_rate=customer_rate,
-                    customer_discount=customer_discount
-                )
+                for i in range(len(delivery_types)):
 
-                messages.success(request, "Price rule added successfully")
-            
+                    if not delivery_types[i]:
+                        continue
+
+                    DigitalPrice.objects.create(
+
+                        lamination=lamination,
+                        side=side,
+                        min_qty=min_qty,
+                        max_qty=max_qty,
+
+                        delivery_type_id=delivery_types[i],
+
+                        shop_rate=shop_rates[i] or 0,
+
+                        customer_rate=customer_rates[i] or 0,
+
+                        customer_discount=customer_discounts[i] or 0
+
+                    )
+
+                messages.success(request, "Price rules added successfully")
+
             return redirect("digital_price_setup")
         
     context = {
         "categories": categories,
         "gsms": gsms,
         "products": products,
+        "delivery_types": delivery_types,
     }
 
 
@@ -474,6 +522,8 @@ def edit_digital_price(request, id):
         "gsm__category"
     )
 
+    delivery_types = DeliveryType.objects.all()
+
     if request.method == "POST":
 
         lamination_id = request.POST.get("lamination")
@@ -484,7 +534,9 @@ def edit_digital_price(request, id):
 
         max_qty = request.POST.get("max_qty") or None
 
-        one_day_rate = request.POST.get("one_day_rate") or 0
+        delivery_type_id = request.POST.get("delivery_type")
+
+        delivery_type = get_object_or_404(DeliveryType, id=delivery_type_id)
 
         shop_rate = request.POST.get("shop_rate") or 0
 
@@ -508,7 +560,7 @@ def edit_digital_price(request, id):
 
         item.max_qty = max_qty
 
-        item.one_day_rate = one_day_rate
+        item.delivery_type = delivery_type
 
         item.shop_rate = shop_rate
 
@@ -544,15 +596,11 @@ def edit_digital_price(request, id):
         )
 
     context = {
-
         "item": item,
-
         "categories": categories,
-
         "gsms": gsms,
-
         "products": products,
-
+        "delivery_types": delivery_types,
     }
 
     return render(request, "pricing/edit_digital_price.html", context)

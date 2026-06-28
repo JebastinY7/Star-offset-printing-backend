@@ -30,7 +30,7 @@ from openpyxl.utils import get_column_letter
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
-from pricing.models import Category, Size, PriceRule, CategoryDiscount, Variant, DigitalCategory, DigitalPrice, DigitalGSM, DigitalProduct, DigitalLamination
+from pricing.models import Category, Size, PriceRule, CategoryDiscount, Variant, DigitalCategory, DigitalPrice, DigitalGSM, DigitalProduct, DigitalLamination, DeliveryType
 from django.views.decorators.csrf import csrf_exempt
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
@@ -679,6 +679,8 @@ def billing_system(request):
 
     digital_categories = DigitalCategory.objects.all()
 
+    delivery_types = DeliveryType.objects.all()
+
     advance_paid = 0
 
     if selected_order:
@@ -767,6 +769,16 @@ def billing_system(request):
                 "discount": discount,
                 "extra_charge": 0,
                 "total": final_total,
+                "delivery_type_id": (
+                    item.digital_price.delivery_type.id
+                    if getattr(item, "digital_price", None)
+                    else ""
+                ),
+                "lamination_id": item.digital_lamination.id if item.digital_lamination else "",
+    "delivery_type_id": item.delivery_type.id if item.delivery_type else "",
+
+    "lamination_name": item.digital_lamination.name if item.digital_lamination else "",
+    "delivery_type_name": item.delivery_type.name if item.delivery_type else "",
             })
 
     return render(request, 'billing.html', {
@@ -778,6 +790,7 @@ def billing_system(request):
         'advance_paid': advance_paid,
         'categories': categories,
         'digital_categories': digital_categories,
+        'delivery_types': delivery_types,
     })
 
 def get_digital_price(request):
@@ -788,20 +801,17 @@ def get_digital_price(request):
 
     qty = int(request.GET.get("qty", 0))
 
-    print("LAMINATION:", lamination_id)
-    print("SIDE:", side)
-    print("QTY:", qty)
+    delivery_type_id = request.GET.get("delivery_type")
 
     price = DigitalPrice.objects.filter(
         lamination_id=lamination_id,
         side=side,
+        delivery_type_id=delivery_type_id,
         min_qty__lte=qty
     ).filter(
         Q(max_qty__gte=qty) |
         Q(max_qty__isnull=True)
-    ).first()
-
-    print("PRICE FOUND:", price)
+    ).order_by("-min_qty").first()
 
     if not price:
         return JsonResponse({
@@ -811,8 +821,6 @@ def get_digital_price(request):
     return JsonResponse({
 
         "success": True,
-
-        "one_day_rate": float(price.one_day_rate),
 
         "shop_rate": float(price.shop_rate),
 
@@ -1731,36 +1739,26 @@ def save_bill(request):
                 )
 
                 BillItem.objects.create(
-
                     bill=bill,
-                    
                     service_name=service_name,
 
-                    digital_category_id=item.get('categoryId') or None,
+                    digital_category_id=item.get("categoryId") or None,
+                    digital_gsm_id=item.get("sizeId") or None,
+                    digital_product_id=item.get("variantId") or None,
 
-                    digital_gsm_id=item.get('sizeId') or None,
+                    digital_lamination_id=item.get("laminationId") or None,
+                    delivery_type_id=item.get("deliveryTypeId") or None,
 
-                    digital_product_id=item.get('variantId') or None,
+                    side=item.get("side"),
+                    side_name=item.get("sideName"),
 
-                    digital_lamination_id=item.get('laminationId') or None,
-
-                    side=item.get('side') or "",
-
-                    side_name=item.get('sideName') or "",
-
-                    qty=item['qty'],
-
-                    job=item.get('job', 1),
-
-                    price=item['price'],
-
-                    discount=item['discount'],
-
+                    qty=item.get("qty"),
+                    job=item.get("job", 1),
+                    price=item.get("price"),
+                    discount=item.get("discount", 0),
                     extra_charge=item.get("extraCharge", 0),
-
                     extra_purpose=item.get("extraPurpose", ""),
-
-                    total=item['total'],
+                    total=item.get("total"),
                 )
 
         # customer.points = max(customer.points - points, 0)
@@ -2545,6 +2543,10 @@ def add_quotation(request):
 
                 digital_lamination_id=item.get("lamination_id") or None,
 
+                customer_type=item.get("customer_type"),
+
+                work_type=item.get("delivery_type"),
+
                 side=item.get("side"),
                 side_name=item.get("side_name"),
 
@@ -2562,6 +2564,7 @@ def add_quotation(request):
         "customers": customers,
         "categories": categories,
         "digital_categories": digital_categories,
+        "delivery_types": DeliveryType.objects.all(),
         }
     )
 
@@ -2604,6 +2607,9 @@ def edit_quotation(request, id):
                     digital_product_id=item.get("variant_id") or None,
 
                     digital_lamination_id=item.get("lamination_id") or None,
+                    customer_type=item.get("customer_type"),
+
+                    work_type=item.get("delivery_type"),
 
                     side=item.get("side"),
                     side_name=item.get("side_name"),
@@ -2643,6 +2649,7 @@ def edit_quotation(request, id):
             "quotation": quotation,
             "categories": Category.objects.all(),
             "digital_categories": DigitalCategory.objects.all(),
+            "delivery_types": DeliveryType.objects.all(),
         }
     )
 
@@ -2813,6 +2820,7 @@ def edit_order(request, id):
         sizes = request.POST.getlist("item_size[]")
         variants = request.POST.getlist("item_variant[]")
         laminations = request.POST.getlist("item_lamination[]")
+        delivery_types = request.POST.getlist("item_delivery_type[]")
         qtys = request.POST.getlist("item_qty[]")
         prices = request.POST.getlist("item_price[]")
         totals = request.POST.getlist("item_total[]")
@@ -2849,6 +2857,12 @@ def edit_order(request, id):
                     work_type=work_types[i] if i < len(work_types) else "",
                     
                     side=sides[i] if i < len(sides) else "",
+
+                    delivery_type_id=(
+                        delivery_types[i]
+                        if i < len(delivery_types)
+                        else None
+                    ),
 
                     side_name=side_names[i] if i < len(side_names) else "",
 
@@ -2895,6 +2909,7 @@ def edit_order(request, id):
         'customers': customers,
         'categories': categories,
         'digital_categories': digital_categories,
+        "delivery_types": DeliveryType.objects.all(),
     })
 
 from .models import (Customer, Category, Order, OrderItem)
@@ -2975,6 +2990,7 @@ def add_order(request):
             sizes = request.POST.getlist("item_size[]")
             variants = request.POST.getlist("item_variant[]")
             laminations = request.POST.getlist("item_lamination[]")
+            delivery_types = request.POST.getlist("item_delivery_type[]")
 
             sides = request.POST.getlist("item_side[]")
             side_names = request.POST.getlist("item_side_name[]")
@@ -3043,7 +3059,13 @@ def add_order(request):
 
                         price=Decimal(str(prices[i] or 0)),
 
-                        total=Decimal(str(totals[i] or 0))
+                        total=Decimal(str(totals[i] or 0)),
+
+                        delivery_type_id=(
+                                delivery_types[i]
+                                if i < len(delivery_types)
+                                else None
+                            ),
                     )
 
                 # NORMAL PRINT
@@ -3079,13 +3101,15 @@ def add_order(request):
 
             messages.error(request, str(e))
 
-
-    return render(request,"add_order.html", {
+    context = {
         "customers": customers,
         "today": date.today(),
         "digital_categories": digital_categories,
         "categories":categories,
-    })
+        "delivery_types": DeliveryType.objects.all(),
+    }
+
+    return render(request, "add_order.html", context)
 
 
 # Delete Order

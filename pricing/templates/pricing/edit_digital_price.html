@@ -178,12 +178,25 @@
                 <!-- ONE DAY -->
                 <div class="form-group">
 
-                    <label>1 Day Rate</label>
+                    <label>Delivery Type</label>
 
-                    <input type="number"
-                           step="0.01"
-                           name="one_day_rate"
-                           value="{{ item.one_day_rate }}">
+                        <select name="delivery_type" required>
+
+                            {% for delivery in delivery_types %}
+
+                            <option value="{{ delivery.id }}"
+                                {% if item.delivery_type.id == delivery.id %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ delivery.name }}
+
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
 
                 </div>
 

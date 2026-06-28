@@ -140,9 +140,9 @@
                         <th>Lamination</th>
                         <th>Side</th>
                         <th>Qty</th>
-                        <th>1 Day</th>
-                        <th>Shop</th>
-                        <th>Customer</th>
+                        <th>Delivery</th>
+                        <th>Shop Rate</th>
+                        <th>Customer Rate</th>
                         <th>Discount</th>
                         <th>Actions</th>
 
@@ -174,7 +174,7 @@
                         </td>
 
                         <td>
-                            {{ item.side }}
+                            {{ item.get_side_display }}
                         </td>
 
                         <td>
@@ -190,7 +190,7 @@
                         </td>
 
                         <td>
-                            ₹{{ item.one_day_rate }}
+                            {{ item.delivery_type.name }}
                         </td>
 
                         <td>
