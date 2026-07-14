@@ -2060,16 +2060,32 @@ else if (categoryText.includes("print out")) {
             sizeText.includes("legal")
         ) {
 
-            if (qty <= 10) {
-                gross = 10 + ((qty - 1) * 3);
-                price = gross;
+            if (isBlackSingle) {
+                if (qty <= 10) {
+                    gross = 10 + ((qty - 1) * 3);
+                    price = gross;
+                }
+                else if (qty <= 20) {
+                    gross = 37 + ((qty - 10) * 3) - 5;
+                    price = gross;
+                }
+                else {
+                    gross = qty * price * job;
+                }
             }
-            else if (qty <= 20) {
-                gross = 37 + ((qty - 10) * 3) - 5;
-                price = gross;
-            }
-            else {
-                gross = qty * price * job;
+
+            else if (isBlackDouble) {
+                if (qty <= 10) {
+                    gross = 10 + ((qty - 1) * 4);
+                    price = gross;
+                }
+                else if (qty <= 20) {
+                    gross = 37 + ((qty - 10) * 4) - 5;
+                    price = gross;
+                }
+                else {
+                    gross = qty * price * job;
+                }
             }
         }
 
@@ -2141,21 +2157,16 @@ else if (categoryText.includes("print out")) {
         }
     }
 
+    else {
+        gross = qty * price * job;
+    }
+
     
 }
 /* DEFAULT FOR ALL OTHER CATEGORIES */
     else {
         gross = qty * price * job;
     }
-
-    console.log({
-        categoryText,
-        sizeText,
-        variantText,
-        price,
-        gross
-    });
-
 
 
 

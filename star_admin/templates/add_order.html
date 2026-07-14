@@ -1317,10 +1317,7 @@ else if (
     ) {
 
         /* BLACK */
-        if (
-            isBlackSingle ||
-            isBlackDouble
-        ) {
+        if (isBlackSingle) {
 
             if (qty <= 10) {
 
@@ -1339,7 +1336,27 @@ else if (
 
                 grossAmount = qty * price * job;
             }
+        } else if (isBlackDouble) {
+
+            if (qty <= 10) {
+
+              grossAmount = 10 + ((qty - 1) * 4);
+              priceInput.value = (grossAmount).toFixed(2);
+            }
+
+            else if (qty <= 20) {
+
+                grossAmount = 37 + ((qty - 10) * 4) - 5;
+                priceInput.value = (grossAmount).toFixed(2);
+
+            }
+
+            else {
+
+                grossAmount = qty * price * job;
+            }
         }
+
 
         /* INKJET */
         else if (isInkjetSingle) {
@@ -1367,7 +1384,14 @@ else if (
                 grossAmount = qty * price * job;
             }
         }
+
+        /* FALLBACK — e.g. Color Laser S/D or any other unlisted variant */
+        else {
+
+            grossAmount = qty * price * job;
+        }
     }
+
 
 
     else if (
@@ -1400,15 +1424,18 @@ else if (
                 grossAmount = qty * price * job;
             }
         }
+
         else {
 
-    grossAmount = qty * price * job;
-  }
+            grossAmount = qty * price * job;
+        }
     }
+
+    /* FALLBACK — any size other than A4/Legal/A3 (e.g. 12x18) */
     else {
 
-    grossAmount = qty * price * job;
-}
+        grossAmount = qty * price * job;
+    }
 
 }
 }

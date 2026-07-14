@@ -1299,16 +1299,14 @@ categorySelect.addEventListener("change", function () {
 
 function calculateItemTotal() {
 
-    let qty =
-      parseFloat(qtyInput.value) || 0;
+    let qty = parseFloat(qtyInput.value) || 0;
 
-    let price =
-      parseFloat(priceInput.value) || 0;
+    let price = parseFloat(priceInput.value) || 0;
 
-      let job =
-  parseFloat(
-    document.getElementById("itemJob").value
-  ) || 1;
+    let job =
+    parseFloat(
+        document.getElementById("itemJob").value
+    ) || 1;
 
     let categoryName = "";
 
@@ -1340,49 +1338,41 @@ function calculateItemTotal() {
 
     /* NORMAL ITEMS */
         /* TRAIN TICKET */
-    /* TRAIN TICKET */
-else if (
-    categoryName.includes("train ticket")
-) {
+    else if (
+        categoryName.includes("train ticket")
+    ) {
 
-    let sizeText = "";
+        let sizeText = "";
 
-    if (sizeSelect.selectedIndex >= 0) {
+        if (sizeSelect.selectedIndex >= 0) {
 
-        sizeText =
-          sizeSelect.options[
-            sizeSelect.selectedIndex
-          ].text.toLowerCase();
-    }
+            sizeText =
+              sizeSelect.options[
+                sizeSelect.selectedIndex
+              ].text.toLowerCase();
+        }
 
-    let basePrice = 0;
+        let basePrice = 0;
 
-    if (sizeText.includes("minimum")) {
+        if (sizeText.includes("minimum")) {
 
-        basePrice = 50;
+            basePrice = 50;
 
-    } else if (sizeText.includes("thakkal")) {
+        } else if (sizeText.includes("thakkal")) {
 
-        basePrice = 75;
+            basePrice = 75;
 
-    } else if (sizeText.includes("premium")) {
+        } else if (sizeText.includes("premium")) {
 
-        basePrice = 100;
-    }
-
-    if (qty > 0) {
+            basePrice = 100;
+        }
 
         grossAmount =
           basePrice + ((qty - 1) * 20);
 
-    } else {
-
-        grossAmount = 0;
+        priceInput.value =
+          basePrice.toFixed(2);
     }
-
-    priceInput.value =
-      basePrice.toFixed(2);
-}
     /* ONLINE APPLICATION */
 else if (
     categoryName.includes("online application")
@@ -1420,7 +1410,9 @@ else if (
 
         grossAmount = qty * price * job;
     }
-}else if (
+}
+/* PRINT OUT */
+else if (
     categoryName.includes("print out")
 ) {
 
@@ -1469,10 +1461,7 @@ else if (
     ) {
 
         /* BLACK */
-        if (
-            isBlackSingle ||
-            isBlackDouble
-        ) {
+        if (isBlackSingle) {
 
             if (qty <= 10) {
 
@@ -1491,7 +1480,27 @@ else if (
 
                 grossAmount = qty * price * job;
             }
+        } else if (isBlackDouble) {
+
+            if (qty <= 10) {
+
+              grossAmount = 10 + ((qty - 1) * 4);
+              priceInput.value = (grossAmount).toFixed(2);
+            }
+
+            else if (qty <= 20) {
+
+                grossAmount = 37 + ((qty - 10) * 4) - 5;
+                priceInput.value = (grossAmount).toFixed(2);
+
+            }
+
+            else {
+
+                grossAmount = qty * price * job;
+            }
         }
+
 
         /* INKJET */
         else if (isInkjetSingle) {
@@ -1519,7 +1528,14 @@ else if (
                 grossAmount = qty * price * job;
             }
         }
+
+        /* FALLBACK — e.g. Color Laser S/D or any other unlisted variant */
+        else {
+
+            grossAmount = qty * price * job;
+        }
     }
+
 
 
     else if (
@@ -1552,26 +1568,30 @@ else if (
                 grossAmount = qty * price * job;
             }
         }
+
         else {
+
+            grossAmount = qty * price * job;
+        }
+    }
+
+    /* FALLBACK — any size other than A4/Legal/A3 (e.g. 12x18) */
+    else {
 
         grossAmount = qty * price * job;
     }
-    }
-    else {
 
-    grossAmount = qty * price * job;
 }
 }
-}
+
 /* NORMAL ITEMS */
 else {
 
     grossAmount = qty * price * job;
 }
 
-    totalInput.value =
-      grossAmount.toFixed(2);
 
+    totalInput.value = grossAmount.toFixed(2);
 
 }
 
