@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import time
 import traceback
@@ -15,7 +16,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
 from .models import Customer, Bill, BillItem, OffersHistory, Setting, MembershipTransaction, LoginAttempt, PointTransaction, Order, StaffActivity, Quotation, QuotationItem
 from django.utils import timezone
-from .utils import send_whatsapp_template
+from .utils import send_order_complete_message, send_whatsapp_template
 from datetime import timedelta, datetime, date
 from openpyxl.styles import Font, Alignment
 from django.http import JsonResponse
@@ -3197,11 +3198,9 @@ def get_order_price(request):
 @csrf_exempt
 def whatsapp_webhook(request):
 
-    VERIFY_TOKEN = "staroffsets2015"
+    VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN")
 
-    # VERIFY WEBHOOK
     if request.method == "GET":
-
         mode = request.GET.get("hub.mode")
         token = request.GET.get("hub.verify_token")
         challenge = request.GET.get("hub.challenge")
@@ -3211,11 +3210,60 @@ def whatsapp_webhook(request):
 
         return HttpResponse("Verification failed", status=403)
 
-    # RECEIVE MESSAGE STATUS
     elif request.method == "POST":
-
         data = json.loads(request.body)
-
         print("WEBHOOK DATA:", data)
 
+        try:
+            entry = data["entry"][0]["changes"][0]["value"]
+
+            # Delivery status updates (sent / delivered / read / failed)
+            if "statuses" in entry:
+                status = entry["statuses"][0]
+                msg_id = status.get("id")
+                msg_status = status.get("status")
+                recipient = status.get("recipient_id")
+
+                print(f"[STATUS] {recipient} -> {msg_status} (id: {msg_id})")
+
+                if msg_status == "failed":
+                    errors = status.get("errors", [])
+                    for err in errors:
+                        print(f"[FAILED] code={err.get('code')} title={err.get('title')} "
+                              f"message={err.get('message')} details={err.get('error_data', {}).get('details')}")
+
+            # Incoming replies from customers
+            if "messages" in entry:
+                msg = entry["messages"][0]
+                if msg.get("type") == "button":
+                    button_text = msg["button"]["text"]
+                    customer_phone = msg.get("from")
+
+                    print(f"[BUTTON REPLY] from {customer_phone}: {button_text}")
+
+                    if button_text == "Confirm Pickup":
+                        print(f"-> Customer {customer_phone} confirmed they're picking up the order")
+                        # optional: update Order status/flag here, e.g. order.pickup_confirmed = True
+                    elif button_text == "Got it, thanks!":
+                        print(f"-> Customer {customer_phone} acknowledged only")
+
+                else:
+                    print(f"[INCOMING] from {msg.get('from')}: {msg.get('text', {}).get('body')}")
+
+        except (KeyError, IndexError) as e:
+            print("Parse error:", e)
+
         return JsonResponse({"status": "received"})
+    
+def send_order_whatsapp(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+
+    result = send_order_complete_message(order)
+
+    if result.get("messages"):
+        messages.success(request, f"WhatsApp message sent to {order.customer.name}")
+    else:
+        error_msg = result.get("error", {}).get("message", "Unknown error")
+        messages.error(request, f"Failed to send WhatsApp: {error_msg}")
+
+    return redirect(request.META.get('HTTP_REFERER', 'orders_page'))

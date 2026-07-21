@@ -127,6 +127,17 @@
                         {% endif %}
                         {% endif %}
 
+                        {% if order.status == "completed" %}
+                        <div class="tooltip">
+                            <a href="{% url 'send_order_whatsapp' order.id %}"
+                            class="icon whatsapp"
+                            onclick="return confirm('Send WhatsApp notification to {{ order.customer.name }}?');">
+                                <i class="fa-brands fa-whatsapp"></i>
+                            </a>
+                            <span class="tooltip-text">Notify via WhatsApp</span>
+                        </div>
+                        {% endif %}
+
                             {% if request.user.is_superuser %}
                             <div class="tooltip">
                                 <a href="{% url 'edit_order' order.id %}?page={{ orders.number }}" class="icon edit">

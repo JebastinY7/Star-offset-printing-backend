@@ -1,6 +1,7 @@
 import requests
 import os
 from dotenv import load_dotenv
+import datetime
 
 load_dotenv()
 
@@ -45,9 +46,58 @@ def send_whatsapp_template(phone, customer_name, offer_message, shop_number):
         }
     }
 
+    # ---- ADD THIS BLOCK ----
+    print("=" * 50)
+    print("SENDING AT:", datetime.datetime.now())
+    print("Sending to:", phone)
+    print("=" * 50)
+    # -------------------------
+
+
     response = requests.post(url, headers=headers, json=data)
     print("Status:", response.status_code)
     print("Full Response:", response.text)
     print("Response:", response.json())
+
+    return response.json()
+
+
+def send_order_complete_message(order):
+    phone = format_phone(order.customer.phone)
+
+    url = f"https://graph.facebook.com/v25.0/{PHONE_NUMBER_ID}/messages"
+
+    headers = {
+        "Authorization": f"Bearer {TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    data = {
+        "messaging_product": "whatsapp",
+        "to": phone,
+        "type": "template",
+        "template": {
+            "name": "order_completed",
+            "language": {"code": "en"},
+            "components": [
+                {
+                    "type": "body",
+                    "parameters": [
+                        {"type": "text", "text": order.customer.name},
+                        {"type": "text", "text": order.work_name},
+                    ]
+                }
+            ]
+        }
+    }
+
+    print("=" * 50)
+    print("SENDING ORDER COMPLETE MSG AT:", datetime.datetime.now())
+    print("Order:", order.id, "-> Phone:", phone)
+    print("=" * 50)
+
+    response = requests.post(url, headers=headers, json=data)
+    print("Status:", response.status_code)
+    print("Response:", response.text)
 
     return response.json()

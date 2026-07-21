@@ -39,6 +39,7 @@ urlpatterns = [
     path('get-price/', views.get_price, name='get_price'),
     path('get-discount/', views.get_discount, name='get_discount'),
     path('orders/', views.orders_page, name='orders_page'),
+    path('send-order-whatsapp/<int:order_id>/', views.send_order_whatsapp, name='send_order_whatsapp'),
     path('edit-order/<int:id>/', views.edit_order, name='edit_order'),
     path('delete-order/<int:id>/', views.delete_order, name='delete_order'),
     path('update-order-status/<int:id>/<str:new_status>/', views.update_order_status, name='update_order_status'),
