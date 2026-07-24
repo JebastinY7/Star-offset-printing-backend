@@ -129,11 +129,11 @@
 
                         {% if order.status == "completed" %}
                         <div class="tooltip">
-                            <a href="{% url 'send_order_whatsapp' order.id %}"
-                            class="icon whatsapp"
-                            onclick="return confirm('Send WhatsApp notification to {{ order.customer.name }}?');">
+                            <button type="button"
+                                    class="icon whatsapp"
+                                    onclick="openWhatsappModal('{{ order.id }}', '{{ order.customer.name|escapejs }}', '{{ order.customer.phone|escapejs }}', '{{ order.work_name|escapejs }}')">
                                 <i class="fa-brands fa-whatsapp"></i>
-                            </a>
+                            </button>
                             <span class="tooltip-text">Notify via WhatsApp</span>
                         </div>
                         {% endif %}
@@ -301,6 +301,26 @@
     </div>
 </div>
 
+
+<div id="whatsappModal" class="ordx-modal">
+    <div class="ordx-modal-content">
+        <h3><i class="fa-brands fa-whatsapp" style="color:#25D366;"></i> Send WhatsApp Notification</h3>
+
+        <div class="whatsapp-preview-box">
+            <p><strong>Customer:</strong> <span id="wa-customer-name"></span></p>
+            <p><strong>Mobile:</strong> <span id="wa-customer-phone"></span></p>
+            <p><strong>Work:</strong> <span id="wa-work-name"></span></p>
+        </div>
+
+        <p class="wa-confirm-text">Send order completion message to this customer?</p>
+
+        <form id="whatsappForm" method="GET">
+            <button type="submit" class="confirm-delete">Yes, Send</button>
+            <button type="button" class="cancel-delete" onclick="closeWhatsappModal()">Cancel</button>
+        </form>
+    </div>
+</div>
+
 </div>
 <script>
 function openDeleteModal(orderId) {
@@ -331,6 +351,23 @@ function openCancelModal(orderId) {
 function closeCancelModal() {
 
     document.getElementById("cancelOrderModal").style.display = "none";
+}
+</script>
+
+<script>
+function openWhatsappModal(orderId, customerName, phone, workName) {
+    document.getElementById("wa-customer-name").innerText = customerName;
+    document.getElementById("wa-customer-phone").innerText = phone;
+    document.getElementById("wa-work-name").innerText = workName;
+
+    const form = document.getElementById("whatsappForm");
+    form.action = `/send-order-whatsapp/${orderId}/`;
+
+    document.getElementById("whatsappModal").style.display = "flex";
+}
+
+function closeWhatsappModal() {
+    document.getElementById("whatsappModal").style.display = "none";
 }
 </script>
 
