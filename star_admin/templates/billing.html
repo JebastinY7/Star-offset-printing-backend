@@ -867,19 +867,34 @@ itemName += ` - ${deliveryDropdown.options[deliveryDropdown.selectedIndex].text}
                 sizeText.includes("legal")
                 ) {
                   
-                  if (qty <= 10) {
-                    grossAmount = 10 + ((qty - 1) * 3);
-                    price = grossAmount;
-                  }
-                  else if (qty <= 20) {
+                  if (isBlackSingle) {
 
-                    grossAmount = 37 + ((qty - 10) * 3) - 5;
-                    price = grossAmount;
-                  }
-                  else {
+          if (qty <= 10) {
+            grossAmount = 10 + ((qty - 1) * 3);
+            price = grossAmount;
+          }
+          else if (qty <= 20) {
+            grossAmount = 37 + ((qty - 10) * 3);
+            price = grossAmount;
+          }
+          else {
+            grossAmount = qty * price * job;
+          }
+        }
+        else if (isBlackDouble) {
 
-                    grossAmount = qty * price * job;
-                  }
+          if (qty <= 10) {
+            grossAmount = 10 + ((qty - 1) * 4);
+            price = grossAmount;
+          }
+          else if (qty <= 20) {
+            grossAmount = 46 + ((qty - 10) * 4);
+            price = grossAmount;
+          }
+          else {
+            grossAmount = qty * price * job;
+          }
+        }
                 }
                 else if (
                   sizeText.includes("a3")
