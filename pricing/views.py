@@ -273,14 +273,52 @@ def manage_pricing(request):
     })
 
 
+# @login_required
+# def delete_price_rule(request, rule_id):
+#     if not request.user.is_superuser:
+#         return render(request, '403.html', status=403)
+    
+#     rule = get_object_or_404(PriceRule, id=rule_id)
+
+#     rule.delete()
+
+#     return redirect("manage_pricing")
+
 @login_required
 def delete_price_rule(request, rule_id):
     if not request.user.is_superuser:
         return render(request, '403.html', status=403)
-    
-    rule = get_object_or_404(PriceRule, id=rule_id)
 
+    rule = get_object_or_404(PriceRule, id=rule_id)
     rule.delete()
+
+    page = request.GET.get("page", "")
+    category = request.GET.get("category", "")
+    search = request.GET.get("search", "")
+
+    url = reverse("manage_pricing")
+    return redirect(f"{url}?page={page}&category={category}&search={search}")
+
+@login_required
+def delete_selected_price_rules(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+
+    if request.method == "POST":
+        rule_ids = request.POST.getlist("selected_rules")
+
+        if rule_ids:
+            PriceRule.objects.filter(id__in=rule_ids).delete()
+            messages.success(request, f"{len(rule_ids)} rule(s) deleted successfully.")
+        else:
+            messages.warning(request, "No rules were selected.")
+
+        page = request.POST.get("page", "")
+        category = request.POST.get("category", "")
+        search = request.POST.get("search", "")
+
+        url = reverse("manage_pricing")
+        return redirect(f"{url}?page={page}&category={category}&search={search}")
 
     return redirect("manage_pricing")
 
@@ -501,6 +539,30 @@ def digital_price_table(request):
             "categories": categories,
         }
     )
+
+
+@login_required
+def delete_selected_digital_prices(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+
+    if request.method == "POST":
+        price_ids = request.POST.getlist("selected_prices")
+
+        if price_ids:
+            DigitalPrice.objects.filter(id__in=price_ids).delete()
+            messages.success(request, f"{len(price_ids)} price rule(s) deleted successfully.")
+        else:
+            messages.warning(request, "No prices were selected.")
+
+        page = request.POST.get("page", "")
+        category = request.POST.get("category", "")
+        search = request.POST.get("search", "")
+
+        url = reverse("digital_price_table")
+        return redirect(f"{url}?page={page}&category={category}&search={search}")
+
+    return redirect("digital_price_table")
 
 # Edit Digital
 # Edit Digital

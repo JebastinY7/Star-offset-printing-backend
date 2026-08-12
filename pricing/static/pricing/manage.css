@@ -325,6 +325,74 @@ input[type=number]::-webkit-outer-spin-button {
   margin: 0;
 }
 
+/* Bulk actions bar */
+.manage-bulk-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #eef0f2;
+}
+
+.manage-bulk-delete-btn {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.manage-bulk-delete-btn:hover:not(:disabled) {
+    background-color: #c82333;
+}
+
+.manage-bulk-delete-btn:disabled {
+    background-color: #e9ecef;
+    color: #adb5bd;
+    cursor: not-allowed;
+}
+
+/* Checkbox column */
+.manage-table th:first-child,
+.manage-table td:first-child {
+    width: 40px;
+    text-align: center;
+}
+
+.manage-table input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #16a34a;
+}
+
+/* Match your existing green bold header style, if not already global */
+.manage-table thead th {
+    color: #16a34a;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: none;
+    background-color: #f8faf9;
+    padding: 12px 10px;
+    text-align: left;
+    border-bottom: 1px solid #eef0f2;
+}
+
+.manage-table tbody td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #f1f3f4;
+    font-size: 14px;
+    color: #333;
+}
+
+.manage-table tbody tr:hover {
+    background-color: #fafbfa;
+}
+
 /* =========================
    MOBILE
 ========================= */

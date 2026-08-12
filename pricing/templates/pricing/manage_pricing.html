@@ -61,7 +61,7 @@
 
 
 
-<div class="manage-category-card">
+{% comment %} <div class="manage-category-card">
 
     <div class="manage-category-top">
         <h2 class="manage-category-title">
@@ -115,10 +115,10 @@
                              onclick="localStorage.setItem('editRuleId', 'rule-{{ rule.id }}')">
                              Edit
                             </a>
-                            <a href="{% url 'delete_price_rule' rule.id %}"
-                               class="manage-delete-btn"
-                               onclick="return confirm('Delete this rule?')">
-                               Delete
+                            <a href="{% url 'delete_price_rule' rule.id %}?page={{ page_obj.number }}&category={{ selected_category }}&search={{ search_query }}"
+                                class="manage-delete-btn"
+                                onclick="return confirm('Delete this rule?')">
+                                Delete
                             </a>
                         </div>
                     </td>
@@ -132,8 +132,102 @@
         </table>
     </div>
 
-</div>
+</div> {% endcomment %}
 
+<div class="manage-category-card">
+
+    <div class="manage-category-top">
+        <h2 class="manage-category-title">
+            {% if selected_category %}
+                {{ page_obj.object_list.0.category.name }} Rules
+            {% else %}
+                All Pricing Rules
+            {% endif %}
+        </h2>
+
+        {% if selected_category %}
+        <a href="{% url 'delete_category' selected_category %}"
+           class="manage-delete-table-btn"
+           onclick="return confirm('Delete full category?')">
+           Delete Full Table
+        </a>
+        {% endif %}
+    </div>
+
+    <form method="post" action="{% url 'delete_selected_price_rules' %}" id="bulk-delete-form">
+        {% csrf_token %}
+
+        <input type="hidden" name="page" value="{{ page_obj.number }}">
+        <input type="hidden" name="category" value="{{ selected_category }}">
+        <input type="hidden" name="search" value="{{ search_query }}">
+
+        <div class="manage-bulk-actions">
+            <button type="submit"
+                    class="manage-bulk-delete-btn"
+                    onclick="return confirm('Delete all selected rules?')"
+                    disabled
+                    id="bulk-delete-btn">
+                Delete Selected
+            </button>
+        </div>
+
+        <div class="manage-table-wrap">
+            <table class="manage-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="select-all"></th>
+                        <th>Category</th>
+                        <th>Size</th>
+                        <th>Variant</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                        <th>Shop</th>
+                        <th>CS</th>
+                        <th>Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for rule in page_obj %}
+                    <tr id="rule-{{ rule.id }}">
+                        <td>
+                            <input type="checkbox" name="selected_rules" value="{{ rule.id }}" class="row-checkbox">
+                        </td>
+                        <td>{{ rule.category.name }}</td>
+                        <td>{{ rule.size.name }}</td>
+                        <td>{{ rule.variant.name }}</td>
+                        <td>{{ rule.min_qty }} - {{ rule.max_qty }}</td>
+                        <td>₹{{ rule.price }}</td>
+                        <td>{{ rule.shop_discount }}%</td>
+                        <td>{{ rule.cs_discount }}%</td>
+                        <td>{{ rule.notes|default:"-" }}</td>
+                        <td>
+                            <div class="manage-action-group">
+                                <a href="{% url 'edit_price_rule' rule.id %}?page={{ page_obj.number }}&category={{ selected_category }}&search={{ search_query }}"
+                                 class="manage-edit-btn"
+                                 onclick="localStorage.setItem('editRuleId', 'rule-{{ rule.id }}')">
+                                 Edit
+                                </a>
+                                <a href="{% url 'delete_price_rule' rule.id %}?page={{ page_obj.number }}&category={{ selected_category }}&search={{ search_query }}"
+                                   class="manage-delete-btn"
+                                   onclick="return confirm('Delete this rule?')">
+                                   Delete
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="manage-empty">No price rules found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </form>
+
+</div>
 
 
 
@@ -209,6 +303,31 @@ window.onload = function () {
         localStorage.removeItem("editRuleId");
     }
 };
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectAll = document.getElementById('select-all');
+    const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+    const bulkBtn = document.getElementById('bulk-delete-btn');
+
+    function updateBulkBtn() {
+        const anyChecked = Array.from(rowCheckboxes).some(cb => cb.checked);
+        bulkBtn.disabled = !anyChecked;
+    }
+
+    selectAll.addEventListener('change', function () {
+        rowCheckboxes.forEach(cb => cb.checked = selectAll.checked);
+        updateBulkBtn();
+    });
+
+    rowCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function () {
+            if (!cb.checked) selectAll.checked = false;
+            updateBulkBtn();
+        });
+    });
+});
 </script>
 
 </body>
