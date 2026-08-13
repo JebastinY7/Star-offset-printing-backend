@@ -717,3 +717,74 @@ def delete_digital_category(request, id):
     )
 
     return redirect("digital_price_table")
+
+
+@login_required
+def print_price_rules(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+
+    search = request.GET.get("search", "")
+    category_filter = request.GET.get("category", "")
+
+    rules = PriceRule.objects.select_related(
+        "category", "size", "variant"
+    ).order_by("category__name", "size__name", "min_qty")
+
+    if search:
+        rules = rules.filter(category__name__icontains=search)
+
+    if category_filter:
+        try:
+            rules = rules.filter(category__id=int(category_filter))
+        except ValueError:
+            pass
+
+    category_name = ""
+    if category_filter:
+        category_obj = Category.objects.filter(id=category_filter).first()
+        category_name = category_obj.name if category_obj else ""
+
+    return render(request, "pricing/print_price_rules.html", {
+        "rules": rules,
+        "category_name": category_name,
+        "search": search,
+    })
+
+@login_required
+def print_digital_prices(request):
+    if not request.user.is_superuser:
+        return render(request, '403.html', status=403)
+
+    search = request.GET.get("search", "")
+    category_filter = request.GET.get("category", "")
+
+    prices = DigitalPrice.objects.select_related(
+        "lamination",
+        "lamination__product",
+        "lamination__product__gsm",
+        "lamination__product__gsm__category"
+    )
+
+    if search:
+        prices = prices.filter(
+            lamination__product__gsm__category__name__icontains=search
+        )
+
+    if category_filter:
+        prices = prices.filter(
+            lamination__product__gsm__category_id=category_filter
+        )
+
+    prices = prices.order_by("lamination__product__gsm__category__name")
+
+    category_name = ""
+    if category_filter:
+        category_obj = DigitalCategory.objects.filter(id=category_filter).first()
+        category_name = category_obj.name if category_obj else ""
+
+    return render(request, "pricing/print_digital_prices.html", {
+        "prices": prices,
+        "category_name": category_name,
+        "search": search,
+    })

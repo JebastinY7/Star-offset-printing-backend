@@ -17,5 +17,7 @@ urlpatterns = [
     path("delete-digital-category/<int:id>/", views.delete_digital_category, name="delete_digital_category"),
     path('pricing/delete-selected/', views.delete_selected_price_rules, name='delete_selected_price_rules'),
     path('digital-price/delete-selected/', views.delete_selected_digital_prices, name='delete_selected_digital_prices'),
+    path('pricing/print/', views.print_price_rules, name='print_price_rules'),
+    path('digital-price/print/', views.print_digital_prices, name='print_digital_prices'),
 
 ]

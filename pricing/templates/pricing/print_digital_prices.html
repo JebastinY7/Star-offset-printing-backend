@@ -1,0 +1,124 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Digital Price Table - Print</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            color: #1a1a1a;
+        }
+        h1 {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        .print-subtitle {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: 700;
+        }
+        tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+        .print-footer {
+            margin-top: 16px;
+            font-size: 11px;
+            color: #777;
+        }
+        @media print {
+            .no-print { display: none; }
+            body { padding: 0; }
+        }
+        .print-btn {
+            margin-bottom: 16px;
+            padding: 8px 16px;
+            background: #16a34a;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <button class="print-btn no-print" onclick="window.print()">
+        Print
+    </button>
+
+    <h1>
+        {% if category_name %}
+            {{ category_name }} - Digital Price Table
+        {% else %}
+            All Digital Prices
+        {% endif %}
+    </h1>
+
+    <div class="print-subtitle">
+        {% if search %}Filtered by search: "{{ search }}" &nbsp;|&nbsp;{% endif %}
+        Total rules: {{ prices|length }}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>GSM</th>
+                <th>Product</th>
+                <th>Lamination</th>
+                <th>Side</th>
+                <th>Qty</th>
+                <th>Delivery</th>
+                <th>Shop Rate</th>
+                <th>Customer Rate</th>
+                <th>Discount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in prices %}
+            <tr>
+                <td>{{ item.lamination.product.gsm.category.name }}</td>
+                <td>{{ item.lamination.product.gsm.name }}</td>
+                <td>{{ item.lamination.product.name }}</td>
+                <td>{{ item.lamination.name }}</td>
+                <td>{{ item.get_side_display }}</td>
+                <td>
+                    {{ item.min_qty }}
+                    {% if item.max_qty %}- {{ item.max_qty }}{% else %}+{% endif %}
+                </td>
+                <td>{{ item.delivery_type.name }}</td>
+                <td>₹{{ item.shop_rate }}</td>
+                <td>₹{{ item.customer_rate }}</td>
+                <td>{{ item.customer_discount }}%</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10" style="text-align:center;">No digital prices found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="print-footer">
+        Generated on {% now "d M Y, h:i A" %}
+    </div>
+
+</body>
+</html>

@@ -546,3 +546,24 @@ input[type=number]::-webkit-outer-spin-button {
 .manage-table tbody tr:hover {
     background-color: #fafbfa;
 }
+
+.manage-category-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.manage-print-btn {
+    background-color: #2563eb;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.manage-print-btn:hover {
+    background-color: #1d4ed8;
+}

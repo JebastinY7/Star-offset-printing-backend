@@ -99,13 +99,21 @@
                 {% endif %}
             </h2>
 
-            {% if request.GET.category %}
-            <a href="{% url 'delete_digital_category' request.GET.category %}"
-            class="manage-delete-table-btn"
-            onclick="return confirm('Delete full category table?')">
-                Delete Full Table
-            </a>
-            {% endif %}
+            <div class="manage-category-actions">
+                <a href="{% url 'print_digital_prices' %}?category={{ request.GET.category }}&search={{ request.GET.search }}"
+                target="_blank"
+                class="manage-print-btn">
+                Print
+                </a>
+
+                {% if request.GET.category %}
+                <a href="{% url 'delete_digital_category' request.GET.category %}"
+                class="manage-delete-table-btn"
+                onclick="return confirm('Delete full category table?')">
+                    Delete Full Table
+                </a>
+                {% endif %}
+            </div>
         </div>
 
         <!-- BULK DELETE FORM -->
