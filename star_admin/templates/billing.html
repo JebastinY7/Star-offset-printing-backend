@@ -504,6 +504,205 @@ function parseDiscount(total, discountInput){
   return total * (value / 100);
 }
 
+/* =========================================
+   BILL BOOK CUSTOM PRICE CALCULATOR
+   (Category: Bill Book | Normal Print)
+   Fully JS-calculated, does NOT use PriceRule table.
+
+   qty        -> number of BOOKS entered in the Qty field
+   job        -> repeat multiplier (same as other categories)
+   variantText-> lower-cased variant name, used to pick paper type:
+                   contains "dupl"           -> Duplicate book (original + carbon sheet)
+                   contains "low"            -> Original sheet uses Low Quality rate
+                   anything else (default)   -> Original sheet, Normal quality
+   sizeText   -> lower-cased size name, used to pick the size profile:
+                   contains "legal"          -> Legal Paper profile
+                   contains "a5"             -> A5 profile (A4 paper/print/design, own binding)
+                   contains "a6"             -> A6 profile (A4 paper/print/design, own binding)
+                   anything else (default)   -> A4 profile
+
+   Used identically by addItem() and updatePrice() (and kept in sync with
+   Order/Quotation pages) so pricing never disagrees anywhere.
+========================================= */
+function calculateBillBookPrice(qty, job, variantText, sizeText) {
+
+    qty = parseFloat(qty) || 0;
+    job = parseFloat(job) || 1;
+    variantText = (variantText || "").toLowerCase();
+    sizeText = (sizeText || "").toLowerCase();
+
+    const PAPERS_PER_BOOK = 100;
+
+    let totalBooks = qty;
+    let totalPapers = totalBooks * PAPERS_PER_BOOK;
+
+    let isLegal = sizeText.includes("legal");
+    let isA5 = sizeText.includes("a5");
+    let isA6 = sizeText.includes("a6");
+
+    /* ---- Paper / print / design profile ----
+       A4, A5 and A6 all share the same paper rate, print slab rate
+       and design charge. Legal Paper uses its own rates for all three.
+    */
+    let originalRate, duplicateRate, printCostPerSlab, designChargeAmount;
+
+    if (isLegal) {
+        // Legal: 500 original papers = ₹300 -> ₹0.60/sheet, 500 duplicate = ₹200 -> ₹0.40/sheet
+        originalRate = 0.60;
+        duplicateRate = 0.40;
+        printCostPerSlab = 300; // per 100–1000 papers slab
+        designChargeAmount = 200; // one-time design charge per line item
+    } else {
+        // A4 / A5 / A6 share the same material rates
+        originalRate = variantText.includes("low") ? 0.35 : 0.42;
+        duplicateRate = 0.30;
+        printCostPerSlab = 250; // per 100–1000 papers slab
+        designChargeAmount = 150; // one-time design charge per line item
+    }
+
+    /* ---- Paper rate (per sheet) ----
+       A "Duplicate" bill book has TWO sheets per page (original + carbon
+       copy), so its paper cost is Original-rate + Duplicate-rate combined.
+       "Low" only ever changes the Original sheet's rate.
+    */
+    let paperRate = variantText.includes("dupl")
+        ? originalRate + duplicateRate   // Dupl. book = original sheet + carbon sheet
+        : originalRate;                  // Original-only book = just the original sheet
+
+    let paperCost = Math.round(totalPapers * paperRate * 100) / 100;
+
+    /* ---- Print cost: 100-1000 papers = per-slab rate above ---- */
+    let printCost = totalPapers > 0
+        ? Math.ceil(totalPapers / 1000) * printCostPerSlab
+        : 0;
+
+    /* ---- Design charge: one time per line item ---- */
+    let designCharge = totalBooks > 0 ? designChargeAmount : 0;
+
+    /* ---- Binding cost: per book, slab based on number of books AND size ---- */
+    let bindingRate;
+
+    if (isLegal) {
+        if (totalBooks <= 10) {
+            bindingRate = 60;
+        } else if (totalBooks <= 30) {
+            bindingRate = 50;
+        } else {
+            bindingRate = 40;
+        }
+    } else if (isA5) {
+        if (totalBooks <= 10) {
+            bindingRate = 30;
+        } else if (totalBooks <= 30) {
+            bindingRate = 25;
+        } else {
+            bindingRate = 20;
+        }
+    } else if (isA6) {
+        if (totalBooks <= 10) {
+            bindingRate = 20;
+        } else if (totalBooks <= 30) {
+            bindingRate = 15;
+        } else {
+            bindingRate = 12;
+        }
+    } else {
+        // Default: A4
+        if (totalBooks <= 10) {
+            bindingRate = 50;
+        } else if (totalBooks <= 30) {
+            bindingRate = 40;
+        } else {
+            bindingRate = 30;
+        }
+    }
+
+    let bindingCost = totalBooks * bindingRate;
+
+    let gross = Math.round((paperCost + printCost + designCharge + bindingCost) * job * 100) / 100;
+
+    return gross;
+}
+
+/* =========================================
+   NOTICE CUSTOM PRICE CALCULATOR
+   Fully JS-calculated, does NOT use PriceRule table.
+
+   qty         -> number of notices/copies entered in the Qty field
+   job         -> repeat multiplier (same as other categories)
+   sizeText    -> lower-cased size name, used only for the one-time
+                  Design charge:
+                    contains "legal"/"lgl" -> ₹200
+                    contains "a5"          -> ₹100
+                    anything else (A4 default) -> ₹150
+   variantText -> lower-cased variant name, used only for side:
+                    contains "double" -> Print cost is doubled
+                    anything else (Single, default) -> Print cost as-is
+
+   Paper cost is a flat ₹0.42 per notice, same for every size and side.
+
+   Print cost is a range-based slab that repeats every 1000 copies:
+     qty <= 100        -> ₹150
+     100 < qty <= 200   -> ₹180
+     200 < qty < 500    -> ₹200
+     500 <= qty <= 1000 -> ₹250
+   For qty above 1000, add ₹250 for every full 1000, then apply the
+   same slab to whatever remains (e.g. 1200 = 1000's ₹250 + 200's
+   ₹180 = ₹430; 2100 = 2×₹250 + 100's ₹150 = ₹650).
+   Double Side simply doubles this print cost; paper and design stay
+   the same either way.
+
+   Used identically by addItem() and updatePrice().
+========================================= */
+function calculateNoticePrice(qty, job, sizeText, variantText) {
+
+    qty = parseFloat(qty) || 0;
+    job = parseFloat(job) || 1;
+    sizeText = (sizeText || "").toLowerCase();
+    variantText = (variantText || "").toLowerCase();
+
+    const PER_NOTICE_RATE = 0.42;
+
+    let paperCost = Math.round(qty * PER_NOTICE_RATE * 100) / 100;
+
+    /* ---- Design charge: one time per line item, by size ---- */
+    let designCharge = 0;
+
+    if (qty > 0) {
+        if (sizeText.includes("legal") || sizeText.includes("lgl")) {
+            designCharge = 200;
+        } else if (sizeText.includes("a5")) {
+            designCharge = 100;
+        } else {
+            // Default: A4
+            designCharge = 150;
+        }
+    }
+
+    /* ---- Print cost: range-based slab, repeats every 1000 copies ---- */
+    function printSlab(q) {
+        if (q <= 0) return 0;
+        if (q <= 100) return 150;
+        if (q <= 200) return 180;
+        if (q < 500) return 200;
+        return 250; // 500 - 1000
+    }
+
+    let fullThousands = Math.floor(qty / 1000);
+    let remainder = qty % 1000;
+
+    let printCost = (fullThousands * 250) + printSlab(remainder);
+
+    /* ---- Double Side: print cost only, doubled ---- */
+    if (variantText.includes("double")) {
+        printCost = printCost * 2;
+    }
+
+    let gross = Math.round((paperCost + designCharge + printCost) * job * 100) / 100;
+
+    return gross;
+}
+
 /* ADD ITEM */
 function addItem() {
 
@@ -782,7 +981,9 @@ itemName += ` - ${deliveryDropdown.options[deliveryDropdown.selectedIndex].text}
       let allowCustomPricing =
     categoryName.toLowerCase().includes("print out") ||
     categoryName.toLowerCase().includes("train ticket") ||
-    categoryName.toLowerCase().includes("online application");
+    categoryName.toLowerCase().includes("online application") ||
+    categoryName.toLowerCase().includes("bill book") ||
+    categoryName.toLowerCase().includes("notice");
 
 
       if (!price && !allowCustomPricing) {
@@ -803,15 +1004,21 @@ itemName += ` - ${deliveryDropdown.options[deliveryDropdown.selectedIndex].text}
       let isInkjetDouble = variantText.includes("color inkjet d");
         
       if (
-          categoryName.toLowerCase().includes("notice") ||
           categoryName.toLowerCase().includes("banner") ||
-          categoryName.toLowerCase().includes("bill book") ||
           categoryName.toLowerCase().includes("poster") ||
           categoryName.toLowerCase().includes("letter pad") ||
           categoryName.toLowerCase().includes("printing") ||
           categoryName.toLowerCase().includes("invitation")
         ) {
           grossAmount = price * job;
+        }
+        else if (categoryName.toLowerCase().includes("notice")) {
+          grossAmount = calculateNoticePrice(qty, job, sizeName.toLowerCase(), variantText);
+          price = grossAmount;
+        }
+        else if (categoryName.toLowerCase().includes("bill book")) {
+          grossAmount = calculateBillBookPrice(qty, job, variantText, sizeName.toLowerCase());
+          price = grossAmount;
         }
         else if (categoryName.toLowerCase().includes("train ticket")) {
           let sizeText = sizeName.toLowerCase();
@@ -1976,7 +2183,9 @@ EVEN IF DB PRICE NOT FOUND
 
 if (
     price <= 0 &&
-    !categoryText.includes("print out")
+    !categoryText.includes("print out") &&
+    !categoryText.includes("bill book") &&
+    !categoryText.includes("notice")
 ) {
     document.getElementById("itemPrice").value = "";
     document.getElementById("itemDiscount").value = "";
@@ -1999,9 +2208,7 @@ if (
 
 /* FIXED PRICE ITEMS */
 if (
-    categoryText.includes("notice") ||
     categoryText.includes("banner") ||
-    categoryText.includes("bill book") ||
     categoryText.includes("poster") ||
     categoryText.includes("letter pad") ||
     categoryText.includes("printing") ||
@@ -2009,6 +2216,18 @@ if (
 
 ) {
     gross = price * job;
+}
+
+/* NOTICE - fully custom JS pricing (flat paper rate + range-based print slab + design) */
+else if (categoryText.includes("notice")) {
+    gross = calculateNoticePrice(qty, job, sizeText, variantText);
+    price = gross;
+}
+
+/* BILL BOOK - fully custom JS pricing (paper + print + design + binding) */
+else if (categoryText.includes("bill book")) {
+    gross = calculateBillBookPrice(qty, job, variantText, sizeText);
+    price = gross;
 }
 
 /* TRAIN TICKET */
