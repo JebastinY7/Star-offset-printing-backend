@@ -524,6 +524,39 @@ function parseDiscount(total, discountInput){
    Used identically by addItem() and updatePrice() (and kept in sync with
    Order/Quotation pages) so pricing never disagrees anywhere.
 ========================================= */
+/* =========================================
+   BILL BOOK PRINT COST (Notice-style step table)
+   Same breakpoint tables/behavior as the Notice category's print
+   charge, but keyed on total PAPERS (books x 100) instead of pieces.
+   Values come straight from the size-wise printing charge sheet.
+========================================= */
+function billBookPrintCost(totalPapers, isLegal, isA5, isA6) {
+
+    const A4_TABLE  = [[100,150],[200,180],[300,200],[500,250],[1000,250],[2000,500],[3000,750],[4000,1000],[5000,1250],[10000,2500]];
+    const A5_TABLE  = [[100,150],[200,150],[300,180],[500,200],[1000,250],[2000,250],[3000,500],[4000,500],[5000,750],[10000,1250]];
+    const LGL_TABLE = [[100,180],[200,200],[300,220],[500,270],[1000,300],[2000,600],[3000,900],[4000,1200],[5000,1500],[10000,3000]];
+    const A6_TABLE  = [[400,150],[600,150],[800,180],[1200,200],[1500,250],[4000,250],[6000,500],[8000,750],[12000,1000],[15000,1250],[40000,2500]];
+
+    let table = isLegal ? LGL_TABLE : (isA5 ? A5_TABLE : (isA6 ? A6_TABLE : A4_TABLE));
+
+    if (totalPapers <= 0) return 0;
+
+    for (let i = 0; i < table.length; i++) {
+        if (totalPapers <= table[i][0]) {
+            return table[i][1];
+        }
+    }
+
+    /* Beyond the last listed breakpoint: extrapolate using the slope
+       between the last two breakpoints (per 1000 papers). */
+    let last = table[table.length - 1];
+    let prev = table[table.length - 2];
+    let ratePer1000 = (last[1] - prev[1]) / ((last[0] - prev[0]) / 1000);
+    let extraSteps = Math.ceil((totalPapers - last[0]) / 1000);
+
+    return Math.round((last[1] + (extraSteps * ratePer1000)) * 100) / 100;
+}
+
 function calculateBillBookPrice(qty, job, variantText, sizeText) {
 
     qty = parseFloat(qty) || 0;
@@ -540,23 +573,22 @@ function calculateBillBookPrice(qty, job, variantText, sizeText) {
     let isA5 = sizeText.includes("a5");
     let isA6 = sizeText.includes("a6");
 
-    /* ---- Paper / print / design profile ----
-       A4, A5 and A6 all share the same paper rate, print slab rate
-       and design charge. Legal Paper uses its own rates for all three.
+    /* ---- Paper / design profile ----
+       A4, A5 and A6 all share the same paper rate and design charge.
+       Legal Paper uses its own rates. Print cost now comes from the
+       Notice-style step tables above (size-specific), not a flat slab.
     */
-    let originalRate, duplicateRate, printCostPerSlab, designChargeAmount;
+    let originalRate, duplicateRate, designChargeAmount;
 
     if (isLegal) {
         // Legal: 500 original papers = ₹300 -> ₹0.60/sheet, 500 duplicate = ₹200 -> ₹0.40/sheet
         originalRate = 0.60;
         duplicateRate = 0.40;
-        printCostPerSlab = 300; // per 100–1000 papers slab
         designChargeAmount = 200; // one-time design charge per line item
     } else {
         // A4 / A5 / A6 share the same material rates
         originalRate = variantText.includes("low") ? 0.35 : 0.42;
         duplicateRate = 0.30;
-        printCostPerSlab = 250; // per 100–1000 papers slab
         designChargeAmount = 150; // one-time design charge per line item
     }
 
@@ -571,10 +603,8 @@ function calculateBillBookPrice(qty, job, variantText, sizeText) {
 
     let paperCost = Math.round(totalPapers * paperRate * 100) / 100;
 
-    /* ---- Print cost: 100-1000 papers = per-slab rate above ---- */
-    let printCost = totalPapers > 0
-        ? Math.ceil(totalPapers / 1000) * printCostPerSlab
-        : 0;
+    /* ---- Print cost: Notice-style step table, by size ---- */
+    let printCost = billBookPrintCost(totalPapers, isLegal, isA5, isA6);
 
     /* ---- Design charge: one time per line item ---- */
     let designCharge = totalBooks > 0 ? designChargeAmount : 0;
@@ -661,22 +691,19 @@ function calculateNoticePrice(qty, job, sizeText, variantText) {
     sizeText = (sizeText || "").toLowerCase();
     variantText = (variantText || "").toLowerCase();
 
-    const PER_NOTICE_RATE = 0.42;
+    let isLegal = sizeText.includes("legal") || sizeText.includes("lgl");
+    let isA5 = sizeText.includes("a5");
 
-    let paperCost = Math.round(qty * PER_NOTICE_RATE * 100) / 100;
+    /* ---- Paper rate (per notice), by size ---- */
+    let paperRate = isLegal ? 0.60 : (isA5 ? 0.21 : 0.42); // A4 default
+
+    let paperCost = Math.round(qty * paperRate * 100) / 100;
 
     /* ---- Design charge: one time per line item, by size ---- */
-    let designCharge = 0;
+    let baseDesignCharge = 0;
 
     if (qty > 0) {
-        if (sizeText.includes("legal") || sizeText.includes("lgl")) {
-            designCharge = 200;
-        } else if (sizeText.includes("a5")) {
-            designCharge = 100;
-        } else {
-            // Default: A4
-            designCharge = 150;
-        }
+        baseDesignCharge = isLegal ? 200 : (isA5 ? 100 : 150); // A4 default
     }
 
     /* ---- Print cost: range-based slab, repeats every 1000 copies ---- */
@@ -692,10 +719,12 @@ function calculateNoticePrice(qty, job, sizeText, variantText) {
     let remainder = qty % 1000;
 
     let printCost = (fullThousands * 250) + printSlab(remainder);
+    let designCharge = baseDesignCharge;
 
-    /* ---- Double Side: print cost only, doubled ---- */
+    /* ---- Double Side: print cost AND design charge both doubled ---- */
     if (variantText.includes("double")) {
         printCost = printCost * 2;
+        designCharge = designCharge * 2;
     }
 
     let gross = Math.round((paperCost + designCharge + printCost) * job * 100) / 100;
