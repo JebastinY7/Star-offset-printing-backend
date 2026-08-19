@@ -1169,6 +1169,28 @@ categorySelect.addEventListener("change", function () {
    charge, but keyed on total PAPERS (books x 100) instead of pieces.
    Values come straight from the size-wise printing charge sheet.
 ========================================= */
+/* =========================================
+   BILL BOOK ROUND-OFF
+   Only for Bill Book category totals.
+     last digit 1-4 -> round UP to nearest 5
+     last digit 6-9 -> round UP to nearest 10
+     last digit 0 or 5 -> unchanged
+   e.g. 422 -> 425, 426 -> 430
+========================================= */
+function billBookRoundOff(amount) {
+
+    let rounded = Math.round(amount);
+    let lastDigit = rounded % 10;
+
+    if (lastDigit === 0 || lastDigit === 5) {
+        return rounded;
+    } else if (lastDigit >= 1 && lastDigit <= 4) {
+        return rounded + (5 - lastDigit);
+    } else {
+        return rounded + (10 - lastDigit);
+    }
+}
+
 function billBookPrintCost(totalPapers, isLegal, isA5, isA6) {
 
     const A4_TABLE  = [[100,150],[200,180],[300,200],[500,250],[1000,250],[2000,500],[3000,750],[4000,1000],[5000,1250],[10000,2500]];
@@ -1259,7 +1281,7 @@ function calculateBillBookPrice(qty, job, variantText, sizeText) {
 
     let bindingCost = totalBooks * bindingRate;
 
-    return Math.round((paperCost + printCost + designCharge + bindingCost) * job * 100) / 100;
+    return billBookRoundOff(Math.round((paperCost + printCost + designCharge + bindingCost) * job * 100) / 100);
 }
 
 /* =========================================
