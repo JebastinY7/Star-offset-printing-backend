@@ -1238,10 +1238,24 @@ function calculateBillBookPrice(qty, job, variantText, sizeText) {
         duplicateRate = 0.40;
         designChargeAmount = 200;
     } else {
-        // A4 / A5 / A6 share the same material rates
-        originalRate = variantText.includes("low") ? 0.35 : 0.42;
-        duplicateRate = 0.30;
-        designChargeAmount = 150;
+        // Base original-sheet and duplicate-sheet rates (A4 full rate); A5 is half, A6 is a quarter.
+        // "Low" quality only ever applies to the Original sheet, at the A4 base rate.
+        let baseOriginalRate = variantText.includes("low") ? 0.35 : 0.42;
+        let baseDuplicateRate = 0.30;
+
+        if (isA5) {
+            originalRate = baseOriginalRate / 2;   // A5 = 0.21 (or 0.175 if low)
+            duplicateRate = baseDuplicateRate / 2; // A5 = 0.15
+            designChargeAmount = 100;
+        } else if (isA6) {
+            originalRate = baseOriginalRate / 4;   // A6 = 0.105 (or 0.0875 if low)
+            duplicateRate = baseDuplicateRate / 4; // A6 = 0.075
+            designChargeAmount = 100;
+        } else {
+            originalRate = baseOriginalRate;   // A4 = 0.42 (or 0.35 if low)
+            duplicateRate = baseDuplicateRate; // A4 = 0.30
+            designChargeAmount = 150;
+        }
     }
 
     let paperRate = variantText.includes("dupl")
