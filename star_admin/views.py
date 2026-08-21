@@ -2526,6 +2526,29 @@ def add_quotation(request):
         for item in items:
 
             is_digital = item.get("billing_type") == "digital"
+            is_manual = item.get("category_id") == "manual"
+
+            if is_manual:
+
+                QuotationItem.objects.create(
+                    quotation=quotation,
+
+                    billing_type="normal",
+                    manual_name=item.get("variant"),  # front-end stores the typed name in "variant"
+
+                    category_id=None,
+                    size_id=None,
+                    variant_id=None,
+
+                    customer_type=item.get("customer_type"),
+                    work_type=item.get("delivery_type"),
+
+                    qty=item.get("qty"),
+                    job=item.get("job"),
+                    price=item.get("price"),
+                    total=item.get("total"),
+                )
+                continue
 
             QuotationItem.objects.create(
                 quotation=quotation,
@@ -2596,6 +2619,27 @@ def edit_quotation(request, id):
 
         # Create new items
         for item in items:
+
+            if item.get("category_id") == "manual":
+
+                QuotationItem.objects.create(
+                    quotation=quotation,
+                    billing_type="normal",
+                    manual_name=item.get("variant"),
+
+                    category_id=None,
+                    size_id=None,
+                    variant_id=None,
+
+                    customer_type=item.get("customer_type"),
+                    work_type=item.get("delivery_type"),
+
+                    qty=item.get("qty"),
+                    job=item.get("job", 1),
+                    price=item.get("price"),
+                    total=item.get("total"),
+                )
+                continue
 
             if item.get("billing_type") == "digital":
 

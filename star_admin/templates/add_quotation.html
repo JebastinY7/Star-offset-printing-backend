@@ -99,6 +99,7 @@
         <option value="">
         Select Category
     </option>
+        <option value="manual">OTHERS</option>
 
     {% for cat in categories %}
 
@@ -108,6 +109,11 @@
 
     {% endfor %}
     </select>
+
+    <input type="text"
+           id="manualItemName"
+           placeholder="Manual Item Name"
+           style="display:none;">
 
     <select id="itemSize">
         <option value="">Select Size</option>
@@ -306,6 +312,83 @@ let editIndex = -1;
 /* ADD ITEM */
 function addOrderItem() {
 
+    const categoryValue =
+        document.getElementById("itemCategory").value;
+
+    /* =========================
+       MANUAL ITEM (OTHERS)
+    ========================= */
+    if (billingType.value === "normal" && categoryValue === "manual") {
+
+        let manualName =
+            document.getElementById("manualItemName").value.trim();
+
+        let qty =
+            parseFloat(document.getElementById("itemQty").value) || 0;
+
+        let job =
+            parseFloat(document.getElementById("itemJob").value) || 1;
+
+        let price =
+            parseFloat(document.getElementById("itemPrice").value) || 0;
+
+        let total =
+            parseFloat(document.getElementById("itemTotal").value) ||
+            (qty * price * job);
+
+        if (!manualName || qty <= 0 || price <= 0) {
+            showToast("Enter manual item details");
+            return;
+        }
+
+        let itemData = {
+
+            category_id: "manual",
+            category: "OTHERS",
+
+            size_id: "",
+            size: "",
+
+            variant_id: "",
+            variant: manualName,
+
+            lamination_id: "",
+            lamination: "",
+
+            side: "",
+            side_name: "",
+
+            delivery_type: "",
+
+            customer_type:
+                document.getElementById("customerType").value,
+
+            qty: qty,
+            job: job,
+            price: price,
+            total: total,
+
+            billing_type: "normal"
+        };
+
+        if (editIndex >= 0) {
+
+            orderItems.splice(editIndex, 0, itemData);
+            editIndex = -1;
+
+            document.querySelector(".add-item-btn").innerText = "Add";
+
+        } else {
+
+            orderItems.push(itemData);
+        }
+
+        renderItems();
+        clearItemFields();
+
+        return;
+    }
+
     const isDigital =
       billingType.value === "digital";
 
@@ -471,17 +554,19 @@ function renderItems() {
 
         gross += item.total;
 
+        let itemLabel = [
+            item.category,
+            item.size,
+            item.variant,
+            item.lamination,
+            item.side_name
+        ].filter(Boolean).join(" - ");
+
         tbody.innerHTML += `
         <tr>
 
           <td>
-            ${item.category}
-            -
-            ${item.size}
-            -
-            ${item.variant}
-            ${item.lamination ? " - " + item.lamination : ""}
-            ${item.side_name ? "- " + item.side_name : ""}
+            ${itemLabel}
             <input type="hidden" name="item_category[]" value="${item.category_id}">
             <input type="hidden" name="item_size[]" value="${item.size_id}">
             <input type="hidden" name="item_variant[]" value="${item.variant_id}">
@@ -557,6 +642,34 @@ function editItem(index) {
 
     document.querySelector(".add-item-btn").innerText =
       "Update";
+
+    /* MANUAL (OTHERS) */
+    if (item.category_id === "manual") {
+
+        billingType.value = "normal";
+
+        updateBillingView();
+
+        document.getElementById("itemCategory").value = "manual";
+        document.getElementById("itemCategory").dispatchEvent(new Event("change"));
+
+        document.getElementById("manualItemName").value =
+          item.variant || "";
+
+        document.getElementById("itemQty").value =
+          item.qty;
+
+        document.getElementById("itemJob").value =
+          item.job || 1;
+
+        document.getElementById("itemPrice").value =
+          item.price;
+
+        document.getElementById("itemTotal").value =
+          item.total;
+
+        return;
+    }
 
     /* DIGITAL */
     if (item.billing_type === "digital") {
@@ -655,6 +768,8 @@ else {
     document.getElementById("itemCategory").value =
       item.category_id;
 
+    document.getElementById("itemCategory").dispatchEvent(new Event("change"));
+
     document.getElementById("itemJob").value =
       item.job || 1;
 
@@ -734,17 +849,44 @@ function calculateDue() {
 const categorySelect = document.getElementById("itemCategory");
 const sizeSelect = document.getElementById("itemSize");
 const variantSelect = document.getElementById("itemVariant");
+const manualItemNameInput = document.getElementById("manualItemName");
 
 categorySelect.addEventListener("change", function () {
 
     const categoryId = this.value;
 
+    document.getElementById("itemPrice").value = "";
+    document.getElementById("itemTotal").value = "";
+
+    /* MANUAL (OTHERS) */
+    if (categoryId === "manual") {
+
+        manualItemNameInput.style.display = "block";
+        sizeSelect.style.display = "none";
+        variantSelect.style.display = "none";
+
+        sizeSelect.innerHTML = '<option value="">Select Size</option>';
+        variantSelect.innerHTML = '<option value="">Select Variant</option>';
+
+        document.getElementById("itemPrice").readOnly = false;
+
+        return;
+    }
+
+    manualItemNameInput.style.display = "none";
+    sizeSelect.style.display = "";
+    variantSelect.style.display = "";
+
+    document.getElementById("itemPrice").readOnly = true;
+
+    sizeSelect.innerHTML = '<option value="">Select Size</option>';
+    variantSelect.innerHTML = '<option value="">Select Variant</option>';
+
+    if (!categoryId) return;
+
     fetch(`/get-sizes/?category_id=${categoryId}`)
         .then(response => response.json())
         .then(data => {
-
-            sizeSelect.innerHTML =
-                '<option value="">Select Size</option>';
 
             data.sizes.forEach(size => {
 
@@ -761,6 +903,10 @@ categorySelect.addEventListener("change", function () {
 sizeSelect.addEventListener("change", function () {
 
     const sizeId = this.value;
+
+    variantSelect.innerHTML = '<option value="">Select Variant</option>';
+
+    if (!sizeId) return;
 
     fetch(`/get-variants/?size_id=${sizeId}`)
         .then(response => response.json())
@@ -1040,9 +1186,26 @@ document.getElementById("customerType")
     fetchDigitalPrice
 );
 
+/* MANUAL (OTHERS) TOTAL */
+function calculateManualTotal() {
+
+    let qty = parseFloat(qtyInput.value) || 0;
+    let price = parseFloat(priceInput.value) || 0;
+    let job = parseFloat(document.getElementById("itemJob").value) || 1;
+
+    totalInput.value = (qty * price * job).toFixed(2);
+}
+
 function fetchPrice() {
 
     const categoryId = categorySelect.value;
+
+    /* MANUAL (OTHERS) */
+    if (categoryId === "manual") {
+        calculateManualTotal();
+        return;
+    }
+
     const sizeId = sizeSelect.value;
     const variantId = variantSelect.value;
     const qty = qtyInput.value || 1;
@@ -1081,10 +1244,21 @@ qtyInput.addEventListener(
     fetchPrice
 );
 
+priceInput.addEventListener(
+    "input",
+    fetchPrice
+);
+
 document.getElementById("itemJob")
 .addEventListener(
     "input",
-    calculateItemTotal
+    function () {
+        if (categorySelect.value === "manual") {
+            calculateManualTotal();
+        } else {
+            calculateItemTotal();
+        }
+    }
 );
 
 document.getElementById("digitalJob")
@@ -1097,12 +1271,6 @@ sizeSelect.addEventListener(
     "change",
     fetchPrice
 );
-
-categorySelect.addEventListener("change", function () {
-
-    document.getElementById("itemPrice").value = "";
-    document.getElementById("itemTotal").value = "";
-});
 
 /* =========================================
    BILL BOOK CUSTOM PRICE CALCULATOR
@@ -1629,8 +1797,12 @@ function clearItemFields() {
 
     // Normal
     document.getElementById("itemCategory").value = "";
+    document.getElementById("manualItemName").value = "";
+    document.getElementById("manualItemName").style.display = "none";
+    document.getElementById("itemSize").style.display = "";
     document.getElementById("itemSize").innerHTML =
         '<option value="">Select Size</option>';
+    document.getElementById("itemVariant").style.display = "";
     document.getElementById("itemVariant").innerHTML =
         '<option value="">Select Variant</option>';
     document.getElementById("itemQty").value = "";
@@ -1649,6 +1821,7 @@ function clearItemFields() {
     document.getElementById("digitalQty").value = "";
     document.getElementById("digitalJob").value = 1;
 
+    document.getElementById("itemPrice").readOnly = true;
     document.getElementById("itemPrice").value = "";
     document.getElementById("itemTotal").value = "";
 }

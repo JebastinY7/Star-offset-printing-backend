@@ -252,7 +252,7 @@ class Quotation(models.Model):
 class QuotationItem(models.Model):
 
     quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE, related_name="items")
-
+    manual_name = models.CharField(max_length=255, blank=True, null=True)
     billing_type = models.CharField(max_length=20,
         choices=[
             ("normal", "Normal"),
