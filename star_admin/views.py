@@ -5,6 +5,7 @@ import time
 import traceback
 from decimal import Decimal, InvalidOperation
 from django.utils.timezone import now
+from django.db import transaction
 from django.db.models import Max
 from django.conf import settings as django_settings
 from django.core.mail import send_mail
@@ -687,9 +688,14 @@ def billing_system(request):
     if selected_order:
         advance_paid = selected_order.advance_paid or 0
 
+    # Customer's due before the bill being edited (saved on the bill)
+    edit_previous_due = Decimal('0')
+
     if bill_id:
         bill = get_object_or_404(Bill, id=bill_id)
         items = BillItem.objects.filter(bill=bill)
+
+        edit_previous_due = bill.previous_due
     
     if order_id:
         selected_order = get_object_or_404(Order, id=order_id)
@@ -792,6 +798,7 @@ def billing_system(request):
         'categories': categories,
         'digital_categories': digital_categories,
         'delivery_types': delivery_types,
+        'edit_previous_due': edit_previous_due,
     })
 
 def get_digital_price(request):
@@ -1456,6 +1463,7 @@ def custom_round_amount(amount):
     return whole + 1
 
 @login_required
+@transaction.atomic
 def save_bill(request):
     if request.method == "POST":
 
@@ -1479,7 +1487,11 @@ def save_bill(request):
             messages.error(request, "No items added")
             return redirect('/billing/')
 
-        customer = get_object_or_404(Customer, id=customer_id)
+        # Lock the customer row so two bills saved at the same moment
+        # cannot overwrite each other's due balance.
+        customer = get_object_or_404(
+            Customer.objects.select_for_update(), id=customer_id
+        )
 
         today = timezone.now().date()
 
@@ -1502,12 +1514,12 @@ def save_bill(request):
             (
                 Decimal(str(item['total'])) -
                 Decimal(str(item.get('extraCharge', 0)))  + 
-                Decimal(str(item['discount']))
+                Decimal(str(item.get('discount', 0)))
             ) 
             for item in items
         )
 
-        item_discount_total = sum(Decimal(str(item['discount'])) for item in items)
+        item_discount_total = sum(Decimal(str(item.get('discount', 0))) for item in items)
         extra_discount = Decimal(request.POST.get("extraDiscount") or 0)
 
         if customer_type == "Shop":
@@ -1519,14 +1531,80 @@ def save_bill(request):
         else:
             total_discount = extra_discount
 
-        # points = int(float(request.POST.get("points") or 0))if customer_type == "Member" else 0
-
-        if customer_type == "Member" and customer.due_amount <=0:
-            points = 0
-        else:
-            points = 0
+        points = 0
 
         total_extra_charge = sum(Decimal(str(item.get("extraCharge", 0))) for item in items)
+
+        # ------------------------------------------------------------------
+        # DUE CALCULATION
+        #
+        #   customer due after this bill =
+        #       (due the customer had BEFORE this bill)
+        #       - (old due paid on this bill)
+        #       + (unpaid part of this bill)
+        #
+        # Every bill keeps three numbers so the invoice can show them:
+        #   previous_due -> customer's due before this bill
+        #   current_due  -> unpaid part of this bill only
+        #   due_amount   -> total due after this bill (previous + current)
+        # ------------------------------------------------------------------
+        bill = None
+        later_change = Decimal('0')
+
+        if bill_id:
+            bill = get_object_or_404(Bill, id=int(bill_id))
+
+            if bill.customer_id == customer.id:
+                bill_owner = customer
+
+                # Due the customer had before this bill (saved on the bill)
+                previous_due = bill.previous_due
+
+                # Anything that happened AFTER this bill (newer bills,
+                # Pay Due payments) is kept as it is
+                later_change = customer.due_amount - bill.due_amount
+            else:
+                # Bill moved to another customer
+                bill_owner = Customer.objects.select_for_update().get(id=bill.customer_id)
+
+                previous_due = customer.due_amount
+
+            # Undo old points
+            for t in PointTransaction.objects.filter(bill=bill):
+                if t.type == 'redeem':
+                    bill_owner.points += t.points_used
+                elif t.type == 'earn':
+                    bill_owner.points -= t.points_added
+
+            PointTransaction.objects.filter(bill=bill).delete()
+
+            if bill_owner.id != customer.id:
+                # give the old customer back what this bill added to his due
+                bill_owner.due_amount = max(
+                    bill_owner.due_amount - (bill.due_amount - bill.previous_due),
+                    Decimal('0')
+                )
+                bill_owner.save()
+        else:
+            previous_due = customer.due_amount
+
+        old_due_payment = Decimal(request.POST.get("old_due_payment") or 0)
+        old_due_payment = max(min(old_due_payment, previous_due), Decimal('0'))
+
+        remaining_old_due = previous_due - old_due_payment
+
+        # No discount while old due is still pending (same rule as billing screen)
+        if remaining_old_due > 0:
+            for item in items:
+                item_gross = (
+                    Decimal(str(item['total'])) -
+                    Decimal(str(item.get('extraCharge', 0))) +
+                    Decimal(str(item.get('discount', 0)))
+                )
+                item['discount'] = 0
+                item['total'] = item_gross + Decimal(str(item.get('extraCharge', 0)))
+
+            total_discount = extra_discount
 
         raw_final = max(gross_total - total_discount + total_extra_charge - Decimal(points), Decimal('0'))
 
@@ -1535,46 +1613,17 @@ def save_bill(request):
         paid_raw = request.POST.get("paid_amount", "").strip()
 
         if paid_raw == "":
-            paid_amount =Decimal('0')
+            paid_amount = Decimal('0')
         else:
             paid_amount = Decimal(paid_raw)
 
-        old_due_payment = Decimal(request.POST.get("old_due_payment") or 0)
-        old_due_payment = min(old_due_payment, customer.due_amount)
+        # paid_amount is the payment for THIS bill, old due payment is separate
+        current_due = max(final - paid_amount, Decimal('0'))
 
-        previous_due = customer.due_amount
-
-        remaining_payment = max(paid_amount - old_due_payment, Decimal('0'))
-
-        current_due = max(final - remaining_payment, Decimal('0'))
-
-        # remaining_old_due = max(previous_due - old_due_payment, Decimal('0'))
-
-
-        # if (remaining_old_due > 0 or current_due > 0):
-        #     for item in items:
-        #         item['discount'] = 0    
-        #     total_discount = extra_discount
-        #     raw_final = gross_total - extra_discount  + total_extra_charge
-        #     final = raw_final.quantize(Decimal('1'))
-        #     current_due = max(final - paid_amount, Decimal('0'))
-
-        remaining_old_due = max(previous_due - old_due_payment, Decimal('0'))
-
-        
-        if previous_due > 0:
-            for item in items:
-                item['discount'] = 0
-
-            total_discount = extra_discount
-            raw_final = gross_total - extra_discount + total_extra_charge
-            final = raw_final.quantize(Decimal('1'))
-            current_due = max(final - paid_amount, Decimal('0'))
-
+        # total due = old due still pending + this bill's unpaid part
         due_amount = current_due + remaining_old_due
 
-        customer.due_amount = due_amount
-        customer.save()
+        customer.due_amount = max(due_amount + later_change, Decimal('0'))
 
         if paid_amount >= final:
             payment_status = "paid"
@@ -1583,21 +1632,7 @@ def save_bill(request):
         else:
             payment_status = "due"
 
-        if bill_id:
-            bill = get_object_or_404(Bill, id=int(bill_id))
-
-            customer.due_amount = max(customer.due_amount - bill.due_amount + bill.old_due_paid, Decimal('0'))
-
-            old_transactions = PointTransaction.objects.filter(bill=bill)
-
-            for t in old_transactions:
-                if t.type == 'redeem':
-                    customer.points += t.points_used
-                elif t.type == 'earn':
-                    customer.points -= t.points_added
-
-            old_transactions.delete()
-
+        if bill:
 
             bill.customer = customer
             bill.gross_total = gross_total
@@ -1608,13 +1643,12 @@ def save_bill(request):
             bill.final_amount = final
             bill.paid_amount = paid_amount
             bill.old_due_paid = old_due_payment
+            bill.previous_due = previous_due
+            bill.current_due = current_due
             bill.due_amount = due_amount
-            bill.previous_due = customer.due_amount
             bill.payment_status = payment_status
             # bill.bill_date = timezone.now()
             bill.save()
-
-            print("OLD:", customer.due_amount)
 
             # delete old items
             bill.billitem_set.all().delete()

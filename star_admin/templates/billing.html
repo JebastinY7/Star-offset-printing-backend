@@ -1829,9 +1829,7 @@ let currentBillDue = Math.max(remainingBillAmount - paid, 0);
 
 let due = currentBillDue;
 
-{% if not bill %}
 due += remainingOldDue;
-{% endif %}
 
   {% comment %} let status = "PAID";
 
@@ -1993,7 +1991,7 @@ document.addEventListener("DOMContentLoaded", function () {
     is_member: {{ bill.customer.is_member|yesno:"true,false" }},
     member_id: "{{ bill.customer.member_id|default:''|escapejs }}",
     points: {{ bill.customer.points|default:0 }},
-    due_amount: {{ bill.customer.due_amount|default:0 }},
+    due_amount: {{ edit_previous_due|default:0 }},
     expiry_date: "{{ bill.customer.expiry_date|date:'Y-m-d' }}"
   });
 

@@ -149,10 +149,17 @@
       </div>
 
       <div class="summary-row">
-          <span>Due Amount :</span>
+          <span>Due Amount (This Bill) :</span>
           <span>₹ {{ bill.current_due }}</span>
       </div>
 
+      {% endif %}
+
+      {% if bill.previous_due > 0 %}
+      <div class="summary-row">
+        <span>Previous Due :</span>
+        <span>₹ {{ bill.previous_due }}</span>
+      </div>
       {% endif %}
 
       {% if bill.old_due_paid > 0 %}
@@ -164,6 +171,13 @@
       <div class="summary-row">
         <span>Total Paid :</span>
         <span>₹ {{ bill.paid_amount|add:bill.old_due_paid|floatformat:2 }}</span>
+      </div>
+      {% endif %}
+
+      {% if bill.due_amount > 0 and bill.due_amount != bill.current_due %}
+      <div class="summary-row final">
+        <span>Total Due :</span>
+        <span>₹ {{ bill.due_amount }}</span>
       </div>
       {% endif %}
 
