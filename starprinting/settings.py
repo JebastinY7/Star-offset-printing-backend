@@ -86,6 +86,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'star_admin.context_processors.whatsapp_unread',
             ],
         },
     },
@@ -140,6 +141,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Stores downloaded WhatsApp images/PDFs (WhatsApp's own media URLs expire
+# after a few minutes, so we pull the file down once and keep our own copy)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 STATICFILES_DIRS = [
     BASE_DIR / "static",

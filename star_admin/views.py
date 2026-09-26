@@ -3,6 +3,8 @@ import os
 import random
 import time
 import traceback
+import mimetypes
+from django.core.files.base import ContentFile
 from decimal import Decimal, InvalidOperation
 from django.utils.timezone import now
 from django.db import transaction
@@ -15,9 +17,9 @@ from .models import PasswordResetOTP
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
-from .models import Customer, Bill, BillItem, OffersHistory, Setting, MembershipTransaction, LoginAttempt, PointTransaction, Order, StaffActivity, Quotation, QuotationItem
+from .models import Customer, Bill, BillItem, OffersHistory, Setting, MembershipTransaction, LoginAttempt, PointTransaction, Order, StaffActivity, Quotation, QuotationItem, WhatsappMessage
 from django.utils import timezone
-from .utils import send_order_complete_message, send_whatsapp_template
+from .utils import send_order_complete_message, send_whatsapp_template, send_whatsapp_text, download_whatsapp_media, format_phone
 from datetime import timedelta, datetime, date
 from openpyxl.styles import Font, Alignment
 from django.http import JsonResponse
@@ -3313,26 +3315,171 @@ def whatsapp_webhook(request):
             # Incoming replies from customers
             if "messages" in entry:
                 msg = entry["messages"][0]
-                if msg.get("type") == "button":
-                    button_text = msg["button"]["text"]
-                    customer_phone = msg.get("from")
+                customer_phone = msg.get("from")
+                wa_message_id = msg.get("id")
+                msg_type = msg.get("type", "text")
 
-                    print(f"[BUTTON REPLY] from {customer_phone}: {button_text}")
+                body_text = ""
+                media_bytes = None
+                media_mime_type = ""
+                media_filename = ""
 
-                    if button_text == "Confirm Pickup":
+                if msg_type == "button":
+                    body_text = msg["button"]["text"]
+                    print(f"[BUTTON REPLY] from {customer_phone}: {body_text}")
+
+                    if body_text == "Confirm Pickup":
                         print(f"-> Customer {customer_phone} confirmed they're picking up the order")
                         # optional: update Order status/flag here, e.g. order.pickup_confirmed = True
-                    elif button_text == "Got it, thanks!":
+                    elif body_text == "Got it, thanks!":
                         print(f"-> Customer {customer_phone} acknowledged only")
 
+                elif msg_type in ("image", "document", "video", "audio", "sticker"):
+                    media_obj = msg.get(msg_type, {})
+                    media_id = media_obj.get("id")
+                    body_text = media_obj.get("caption", "")
+                    media_filename = media_obj.get("filename", "")
+
+                    print(f"[MEDIA] {msg_type} from {customer_phone} (media_id={media_id})")
+
+                    if media_id:
+                        media_bytes, media_mime_type = download_whatsapp_media(media_id)
+                        if not media_bytes:
+                            print(f"-> Could not download media {media_id}; message will be saved without the file")
+
                 else:
-                    print(f"[INCOMING] from {msg.get('from')}: {msg.get('text', {}).get('body')}")
+                    body_text = msg.get("text", {}).get("body", "")
+                    print(f"[INCOMING] from {customer_phone}: {body_text}")
+
+                # Persist the message so it shows up in the admin panel,
+                # instead of only being printed to the server log.
+                if wa_message_id and customer_phone:
+                    matching_customer = Customer.objects.filter(
+                        phone__endswith=customer_phone[-10:]
+                    ).first()
+
+                    wa_msg, created = WhatsappMessage.objects.get_or_create(
+                        wa_message_id=wa_message_id,
+                        defaults={
+                            "direction": "in",
+                            "phone": customer_phone,
+                            "customer": matching_customer,
+                            "message_type": msg_type,
+                            "body": body_text,
+                            "media_mime_type": media_mime_type,
+                            "media_filename": media_filename,
+                            "raw_payload": msg,
+                        },
+                    )
+
+                    if created and media_bytes:
+                        ext = media_filename.rsplit(".", 1)[-1] if "." in media_filename else (
+                            mimetypes.guess_extension(media_mime_type or "") or ""
+                        ).lstrip(".")
+                        safe_name = media_filename or f"{wa_message_id}.{ext or 'bin'}"
+                        wa_msg.media.save(safe_name, ContentFile(media_bytes), save=True)
 
         except (KeyError, IndexError) as e:
             print("Parse error:", e)
 
         return JsonResponse({"status": "received"})
-    
+
+
+def whatsapp_messages_page(request):
+    """Admin inbox: one row per customer conversation (like a normal chat app),
+    not one row per raw message. Click 'View Chat' to open the full thread."""
+
+    search_query = request.GET.get("q", "").strip()
+
+    phones = WhatsappMessage.objects.values("phone").annotate(last_time=Max("created_at")).order_by("-last_time")
+
+    conversations = []
+    for row in phones:
+        phone = row["phone"]
+
+        last_msg = WhatsappMessage.objects.filter(phone=phone).order_by("-created_at").first()
+        if not last_msg:
+            continue
+
+        customer_name = last_msg.customer.name if last_msg.customer else None
+
+        if search_query:
+            haystack = f"{phone} {customer_name or ''} {last_msg.body}".lower()
+            if search_query.lower() not in haystack:
+                continue
+
+        unread = WhatsappMessage.objects.filter(phone=phone, direction="in", is_read=False).count()
+
+        conversations.append({
+            "phone": phone,
+            "customer_name": customer_name,
+            "last_message": last_msg,
+            "unread": unread,
+        })
+
+    paginator = Paginator(conversations, 25)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    unread_count = (
+        WhatsappMessage.objects.filter(direction="in", is_read=False)
+        .values("phone")
+        .distinct()
+        .count()
+    )
+
+    return render(request, "whatsapp_messages.html", {
+        "page_obj": page_obj,
+        "unread_count": unread_count,
+    })
+
+
+def whatsapp_chat_view(request, phone):
+    """Full two-way conversation with one customer: view history (text, images,
+    documents) and send a text reply, WhatsApp-style."""
+
+    if request.method == "POST":
+        text = request.POST.get("message", "").strip()
+        if text:
+            result = send_whatsapp_text(phone, text)
+            if result.get("messages"):
+                wa_id = result["messages"][0].get("id")
+                WhatsappMessage.objects.create(
+                    direction="out",
+                    phone=phone,
+                    customer=Customer.objects.filter(phone__endswith=phone[-10:]).first(),
+                    message_type="text",
+                    body=text,
+                    wa_message_id=wa_id,
+                    is_read=True,
+                )
+            else:
+                error_msg = result.get("error", {}).get("message", "Unknown error")
+                messages.error(request, f"Failed to send: {error_msg}")
+
+        return redirect("whatsapp_chat", phone=phone)
+
+    thread = WhatsappMessage.objects.filter(phone=phone).order_by("created_at")
+
+    # Opening the chat = reading it
+    thread.filter(direction="in", is_read=False).update(is_read=True)
+
+    customer = Customer.objects.filter(phone__endswith=phone[-10:]).first()
+
+    return render(request, "whatsapp_chat.html", {
+        "phone": phone,
+        "customer": customer,
+        "thread": thread,
+    })
+
+
+@require_POST
+def mark_whatsapp_message_read(request, id):
+    msg = get_object_or_404(WhatsappMessage, id=id)
+    msg.is_read = True
+    msg.save(update_fields=["is_read"])
+    return redirect(request.META.get("HTTP_REFERER", "whatsapp_messages"))
+
+
 def send_order_whatsapp(request, order_id):
     order = get_object_or_404(Order, id=order_id)
 

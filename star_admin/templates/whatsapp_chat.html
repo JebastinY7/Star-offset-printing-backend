@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-wrapper" style="height:100vh;">
+  <div class="content" style="height:100%;">
+
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 20px;background:#075E54;color:#fff;flex-shrink:0;">
+      <a href="{% url 'whatsapp_messages' %}" style="color:#fff;text-decoration:none;font-size:20px;">←</a>
+      <div>
+        <div style="font-weight:600;">{{ customer.name|default:phone }}</div>
+        <div style="font-size:12px;opacity:0.85;">{{ phone }}</div>
+      </div>
+    </div>
+
+    <div id="chat-scroll" style="background:#e5ddd5;padding:16px 20px;flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+      {% for m in thread %}
+        <div style="align-self:{% if m.direction == 'out' %}flex-end{% else %}flex-start{% endif %};max-width:45%;">
+          <div style="font-size:11px;color:#555;margin-bottom:2px;{% if m.direction == 'out' %}text-align:right;{% endif %}">
+            {% if m.direction == 'out' %}You{% else %}{{ customer.name|default:"Customer" }}{% endif %}
+          </div>
+          <div style="background:{% if m.direction == 'out' %}#dcf8c6{% else %}#ffffff{% endif %};border-radius:8px;padding:8px 10px;box-shadow:0 1px 1px rgba(0,0,0,.1);">
+
+            {% if m.is_image and m.media %}
+              <a href="{{ m.media.url }}" target="_blank" rel="noopener">
+                <img src="{{ m.media.url }}" alt="photo" style="max-width:100%;border-radius:6px;display:block;">
+              </a>
+              {% if m.body %}<div style="margin-top:6px;">{{ m.body }}</div>{% endif %}
+
+            {% elif m.is_document %}
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span>📎</span>
+                <span>{{ m.media_filename|default:"Document" }}</span>
+              </div>
+              {% if m.media %}
+                <a href="{{ m.media.url }}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;color:#075E54;font-weight:600;">[Open document]</a>
+              {% else %}
+                <div style="font-size:12px;color:#999;margin-top:4px;">(file could not be downloaded)</div>
+              {% endif %}
+
+            {% else %}
+              <div>{{ m.body }}</div>
+            {% endif %}
+
+            <div style="font-size:10px;color:#999;text-align:right;margin-top:4px;">{{ m.created_at|date:"h:i A" }}</div>
+          </div>
+        </div>
+      {% empty %}
+        <div style="margin:auto;color:#777;">No messages yet</div>
+      {% endfor %}
+    </div>
+
+    {% if messages %}
+      {% for msg in messages %}
+        <div style="padding:8px 20px;background:#fdecea;color:#a33;font-size:13px;flex-shrink:0;">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST" style="display:flex;gap:10px;padding:14px 20px;background:#f0f0f0;flex-shrink:0;">
+      {% csrf_token %}
+      <input type="text" name="message" placeholder="Type a message..." required
+             style="flex:1;padding:12px 16px;border-radius:24px;border:1px solid #ccc;font-size:14px;">
+      <button type="submit" style="background:#25D366;color:#fff;border:none;border-radius:24px;padding:12px 26px;font-weight:600;flex-shrink:0;">Send</button>
+    </form>
+
+    <p style="font-size:12px;color:#888;padding:0 20px 12px;flex-shrink:0;">
+      Note: WhatsApp only allows free-text replies within 24 hours of the customer's last message.
+      Outside that window, use a template message instead.
+    </p>
+  </div>
+</div>
+
+<script>
+  var box = document.getElementById('chat-scroll');
+  if (box) { box.scrollTop = box.scrollHeight; }
+</script>
+{% endblock %}

@@ -16,9 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.views.static import serve as serve_media
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('star_admin.urls')),
     path('pricing/', include('pricing.urls')),
+    # Serves downloaded WhatsApp images/PDFs (whitenoise only serves STATIC_ROOT,
+    # not MEDIA_ROOT). Fine for a small admin tool; move to S3/Cloudinary if the
+    # host's disk is wiped on every deploy.
+    path('media/<path:path>', serve_media, {'document_root': settings.MEDIA_ROOT}),
 ]

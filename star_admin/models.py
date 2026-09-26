@@ -291,3 +291,40 @@ class QuotationItem(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+# Incoming / outgoing WhatsApp messages log
+class WhatsappMessage(models.Model):
+    DIRECTION_CHOICES = [
+        ("in", "Incoming"),
+        ("out", "Outgoing"),
+    ]
+ 
+    direction = models.CharField(max_length=3, choices=DIRECTION_CHOICES, default="in")
+    phone = models.CharField(max_length=20, db_index=True)
+    customer = models.ForeignKey(
+        Customer, on_delete=models.SET_NULL, null=True, blank=True, related_name="whatsapp_messages"
+    )
+    message_type = models.CharField(max_length=30, blank=True)  # text, image, document, etc.
+    body = models.TextField(blank=True)  # text body, or caption for media messages
+    media = models.FileField(upload_to="whatsapp_media/%Y/%m/", blank=True, null=True)
+    media_mime_type = models.CharField(max_length=100, blank=True)
+    media_filename = models.CharField(max_length=255, blank=True)  # original filename for documents
+    wa_message_id = models.CharField(max_length=100, blank=True, null=True, unique=True)
+    is_read = models.BooleanField(default=False)
+    raw_payload = models.JSONField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+ 
+    @property
+    def is_image(self):
+        return self.message_type == "image"
+ 
+    @property
+    def is_document(self):
+        return self.message_type == "document"
+ 
+    class Meta:
+        ordering = ["-created_at"]
+ 
+    def __str__(self):
+        return f"{self.phone} ({self.direction}): {self.body[:30]}"
+

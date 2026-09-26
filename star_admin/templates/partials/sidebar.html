@@ -59,6 +59,19 @@
     </a>
     </li>
 
+    <li>
+      <a class="{% if '/whatsapp-messages/' in request.path %}active{% endif %}" href="/whatsapp-messages/" style="display:flex;align-items:center;justify-content:space-between;">
+      <span><i class="fab fa-whatsapp"></i> <span>Messages</span></span>
+      {% if whatsapp_unread_count %}
+      <span style="background:#25D366;color:#fff;border-radius:50%;min-width:20px;height:20px;padding:0 5px;font-size:12px;line-height:20px;text-align:center;font-weight:600;">{{ whatsapp_unread_count }}</span>
+      {% endif %}
+    </a>
+    </li>
+
+
+
+
+
     {% if request.user.is_superuser %}
     <li>
       <a class="{% if '/offers/' in request.path %}active{% endif %}" href="/offers/">

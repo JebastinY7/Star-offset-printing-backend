@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="history-page page-wrapper">
+  <div class="content">
+    <div class="history-header">
+      <h2>WhatsApp Messages {% if unread_count %}<span style="background:#25D366;color:#fff;border-radius:12px;padding:2px 10px;font-size:14px;margin-left:8px;">{{ unread_count }} new</span>{% endif %}</h2>
+
+      <form method="GET" class="history-search">
+        <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search name or phone...">
+        <button type="submit">Search</button>
+      </form>
+    </div>
+
+    <div class="history-card">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Phone</th>
+            <th>Last message</th>
+            <th>Time</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for c in page_obj %}
+          <tr style="{% if c.unread %}font-weight:600;background:#f5fff8;{% endif %}">
+            <td>{{ c.customer_name|default:"—" }}</td>
+            <td>{{ c.phone }}</td>
+            <td>
+              {% if c.last_message.direction == 'out' %}You: {% endif %}
+              {% if c.last_message.message_type == 'image' %}📷 Photo{% if c.last_message.body %} - {{ c.last_message.body }}{% endif %}
+              {% elif c.last_message.message_type == 'document' %}📎 {{ c.last_message.media_filename|default:"Document" }}
+              {% else %}{{ c.last_message.body|default:"(non-text message)"|truncatechars:50 }}
+              {% endif %}
+            </td>
+            <td>{{ c.last_message.created_at|date:"d M, h:i A" }}</td>
+            <td>
+              {% if c.unread %}<span style="background:#25D366;color:#fff;border-radius:12px;padding:2px 8px;font-size:12px;">{{ c.unread }} new</span>{% else %}Read{% endif %}
+            </td>
+            <td class="action-icons">
+              <a href="{% url 'whatsapp_chat' c.phone %}" class="icon view" title="View Chat">View Chat</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6">No WhatsApp conversations yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="pagination">
+    {% if page_obj.has_previous %}
+      <a href="?q={{ request.GET.q }}&page=1" class="nav-btn">«</a>
+      <a href="?q={{ request.GET.q }}&page={{ page_obj.previous_page_number }}" class="nav-btn">‹</a>
+    {% endif %}
+    <span class="nav-btn disabled">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a href="?q={{ request.GET.q }}&page={{ page_obj.next_page_number }}" class="nav-btn">›</a>
+      <a href="?q={{ request.GET.q }}&page={{ page_obj.paginator.num_pages }}" class="nav-btn">»</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
