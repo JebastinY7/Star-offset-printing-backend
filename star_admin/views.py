@@ -3480,15 +3480,55 @@ def mark_whatsapp_message_read(request, id):
     return redirect(request.META.get("HTTP_REFERER", "whatsapp_messages"))
 
 
+# def send_order_whatsapp(request, order_id):
+#     order = get_object_or_404(Order, id=order_id)
+
+#     result = send_order_complete_message(order)
+
+#     if result.get("messages"):
+#         messages.success(request, f"WhatsApp message sent to {order.customer.name}")
+#     else:
+#         error_msg = result.get("error", {}).get("message", "Unknown error")
+#         messages.error(request, f"Failed to send WhatsApp: {error_msg}")
+
+#     return redirect(request.META.get('HTTP_REFERER', 'orders_page'))
+
 def send_order_whatsapp(request, order_id):
     order = get_object_or_404(Order, id=order_id)
 
     result = send_order_complete_message(order)
 
     if result.get("messages"):
-        messages.success(request, f"WhatsApp message sent to {order.customer.name}")
-    else:
-        error_msg = result.get("error", {}).get("message", "Unknown error")
-        messages.error(request, f"Failed to send WhatsApp: {error_msg}")
+        wa_message_id = result["messages"][0].get("id")
 
-    return redirect(request.META.get('HTTP_REFERER', 'orders_page'))
+        phone = format_phone(order.customer.phone)
+
+        WhatsappMessage.objects.create(
+            direction="out",
+            phone=phone,
+            customer=order.customer,
+            message_type="template",
+            body=f"Order completed notification sent for: {order.work_name}",
+            wa_message_id=wa_message_id,
+            is_read=True,
+            raw_payload=result,
+        )
+
+        messages.success(
+            request,
+            f"WhatsApp message sent to {order.customer.name}"
+        )
+    else:
+        error_msg = result.get("error", {}).get(
+            "message",
+            "Unknown error"
+        )
+
+        messages.error(
+            request,
+            f"Failed to send WhatsApp: {error_msg}"
+        )
+
+    return redirect(
+        request.META.get("HTTP_REFERER", "orders_page")
+    )
