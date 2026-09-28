@@ -86,33 +86,109 @@ def send_whatsapp_text(phone, text):
     return response.json()
 
 
+# def download_whatsapp_media(media_id):
+#     """
+#     WhatsApp media comes through the webhook only as a media_id.
+#     Step 1: ask Graph API for the real (temporary, ~5 min) download URL.
+#     Step 2: download the bytes from that URL, still passing the auth header.
+#     Returns (content_bytes, mime_type) or (None, None) on failure.
+#     """
+#     headers = {"Authorization": f"Bearer {TOKEN}"}
+
+#     meta_resp = requests.get(f"https://graph.facebook.com/v25.0/{media_id}", headers=headers)
+#     if meta_resp.status_code != 200:
+#         print("Media lookup failed:", meta_resp.status_code, meta_resp.text)
+#         return None, None
+
+#     meta = meta_resp.json()
+#     media_url = meta.get("url")
+#     mime_type = meta.get("mime_type")
+
+#     if not media_url:
+#         return None, None
+
+#     file_resp = requests.get(media_url, headers=headers)
+#     if file_resp.status_code != 200:
+#         print("Media download failed:", file_resp.status_code)
+#         return None, None
+
+#     return file_resp.content, mime_type
+
 def download_whatsapp_media(media_id):
     """
-    WhatsApp media comes through the webhook only as a media_id.
-    Step 1: ask Graph API for the real (temporary, ~5 min) download URL.
-    Step 2: download the bytes from that URL, still passing the auth header.
-    Returns (content_bytes, mime_type) or (None, None) on failure.
+    Download WhatsApp media using the WhatsApp Cloud API.
+
+    Returns:
+        (bytes, mime_type)
     """
-    headers = {"Authorization": f"Bearer {TOKEN}"}
 
-    meta_resp = requests.get(f"https://graph.facebook.com/v25.0/{media_id}", headers=headers)
-    if meta_resp.status_code != 200:
-        print("Media lookup failed:", meta_resp.status_code, meta_resp.text)
+    headers = {
+        "Authorization": f"Bearer {TOKEN}"
+    }
+
+    try:
+        # Step 1: Get the temporary media URL
+        meta_resp = requests.get(
+            f"https://graph.facebook.com/v25.0/{media_id}",
+            headers=headers,
+            timeout=30,
+        )
+
+        print(
+            "[MEDIA META]",
+            media_id,
+            meta_resp.status_code,
+            meta_resp.text[:500]
+        )
+
+        if meta_resp.status_code != 200:
+            print(
+                "Media lookup failed:",
+                meta_resp.status_code,
+                meta_resp.text
+            )
+            return None, None
+
+        meta = meta_resp.json()
+
+        media_url = meta.get("url")
+        mime_type = meta.get("mime_type", "")
+
+        if not media_url:
+            print("Media URL missing:", meta)
+            return None, None
+
+        # Step 2: Download the actual file
+        file_resp = requests.get(
+            media_url,
+            headers=headers,
+            timeout=60,
+        )
+
+        print(
+            "[MEDIA DOWNLOAD]",
+            media_id,
+            file_resp.status_code,
+            file_resp.headers.get("Content-Type"),
+            len(file_resp.content)
+        )
+
+        if file_resp.status_code != 200:
+            print(
+                "Media download failed:",
+                file_resp.status_code,
+                file_resp.text[:500]
+            )
+            return None, None
+
+        return file_resp.content, mime_type
+
+    except requests.RequestException as e:
+        print("Media request error:", str(e))
         return None, None
-
-    meta = meta_resp.json()
-    media_url = meta.get("url")
-    mime_type = meta.get("mime_type")
-
-    if not media_url:
+    except Exception as e:
+        print("Media download error:", str(e))
         return None, None
-
-    file_resp = requests.get(media_url, headers=headers)
-    if file_resp.status_code != 200:
-        print("Media download failed:", file_resp.status_code)
-        return None, None
-
-    return file_resp.content, mime_type
 
 
 def send_order_complete_message(order):

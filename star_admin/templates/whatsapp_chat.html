@@ -20,28 +20,56 @@
           </div>
           <div style="background:{% if m.direction == 'out' %}#dcf8c6{% else %}#ffffff{% endif %};border-radius:8px;padding:8px 10px;box-shadow:0 1px 1px rgba(0,0,0,.1);">
 
-            {% if m.is_image and m.media %}
-              <a href="{{ m.media.url }}" target="_blank" rel="noopener">
-                <img src="{{ m.media.url }}" alt="photo" style="max-width:100%;border-radius:6px;display:block;">
-              </a>
-              {% if m.body %}<div style="margin-top:6px;">{{ m.body }}</div>{% endif %}
+            {% if m.is_image %}
+              {% if m.media %}
+                <a href="{{ m.media.url }}" target="_blank" rel="noopener">
+                  <img
+                    src="{{ m.media.url }}"
+                    alt="{{ m.media_filename|default:'Image' }}"
+                    style="max-width:100%;max-height:400px;border-radius:6px;display:block;object-fit:contain;"
+                  >
+                </a>
+              {% else %}
+                <div style="display:flex;align-items:center;gap:8px;color:#777;">
+                  <span style="font-size:22px;">🖼️</span>
+                  <span>Image unavailable</span>
+                </div>
+              {% endif %}
+
+              {% if m.body %}
+                <div style="margin-top:6px;">{{ m.body }}</div>
+              {% endif %}
 
             {% elif m.is_document %}
-              <div style="display:flex;align-items:center;gap:8px;">
-                <span>📎</span>
-                <span>{{ m.media_filename|default:"Document" }}</span>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:25px;">📎</span>
+                <div>
+                  <div style="font-weight:600;">
+                    {{ m.media_filename|default:"Document" }}
+                  </div>
+
+                  {% if m.media %}
+                    <a
+                      href="{{ m.media.url }}"
+                      target="_blank"
+                      rel="noopener"
+                      style="display:inline-block;margin-top:5px;color:#075E54;font-weight:600;"
+                    >
+                      Open / Download
+                    </a>
+                  {% else %}
+                    <div style="font-size:12px;color:#999;margin-top:4px;">
+                      File unavailable
+                    </div>
+                  {% endif %}
+                </div>
               </div>
-              {% if m.media %}
-                <a href="{{ m.media.url }}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;color:#075E54;font-weight:600;">[Open document]</a>
-              {% else %}
-                <div style="font-size:12px;color:#999;margin-top:4px;">(file could not be downloaded)</div>
-              {% endif %}
 
             {% else %}
               <div>{{ m.body }}</div>
             {% endif %}
 
-            <div style="font-size:10px;color:#999;text-align:right;margin-top:4px;">{{ m.created_at|date:"h:i A" }}</div>
+            <div style="font-size:10px;color:#999;text-align:right;margin-top:4px;">{{ m.created_at|localtime|date:"d M, h:i A" }}</div>
           </div>
         </div>
       {% empty %}

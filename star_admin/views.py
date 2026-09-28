@@ -3358,6 +3358,27 @@ def whatsapp_webhook(request):
                         phone__endswith=customer_phone[-10:]
                     ).first()
 
+                    # wa_msg, created = WhatsappMessage.objects.get_or_create(
+                    #     wa_message_id=wa_message_id,
+                    #     defaults={
+                    #         "direction": "in",
+                    #         "phone": customer_phone,
+                    #         "customer": matching_customer,
+                    #         "message_type": msg_type,
+                    #         "body": body_text,
+                    #         "media_mime_type": media_mime_type,
+                    #         "media_filename": media_filename,
+                    #         "raw_payload": msg,
+                    #     },
+                    # )
+
+                    # if created and media_bytes:
+                    #     ext = media_filename.rsplit(".", 1)[-1] if "." in media_filename else (
+                    #         mimetypes.guess_extension(media_mime_type or "") or ""
+                    #     ).lstrip(".")
+                    #     safe_name = media_filename or f"{wa_message_id}.{ext or 'bin'}"
+                    #     wa_msg.media.save(safe_name, ContentFile(media_bytes), save=True)
+
                     wa_msg, created = WhatsappMessage.objects.get_or_create(
                         wa_message_id=wa_message_id,
                         defaults={
@@ -3372,12 +3393,50 @@ def whatsapp_webhook(request):
                         },
                     )
 
-                    if created and media_bytes:
-                        ext = media_filename.rsplit(".", 1)[-1] if "." in media_filename else (
-                            mimetypes.guess_extension(media_mime_type or "") or ""
-                        ).lstrip(".")
+                    # Update media information even if the WhatsApp webhook
+                    # is received again for the same message.
+                    if not created:
+                        changed = False
+
+                        if not wa_msg.media_mime_type and media_mime_type:
+                            wa_msg.media_mime_type = media_mime_type
+                            changed = True
+
+                        if not wa_msg.media_filename and media_filename:
+                            wa_msg.media_filename = media_filename
+                            changed = True
+
+                        if changed:
+                            wa_msg.save(
+                                update_fields=[
+                                    "media_mime_type",
+                                    "media_filename",
+                                ]
+                            )
+
+                    # Save WhatsApp image/PDF/video/audio when downloaded.
+                    # Do this even if the database message already existed.
+                    if media_bytes and not wa_msg.media:
+                        ext = (
+                            media_filename.rsplit(".", 1)[-1]
+                            if "." in media_filename
+                            else (
+                                mimetypes.guess_extension(media_mime_type or "") or ""
+                            ).lstrip(".")
+                        )
+
                         safe_name = media_filename or f"{wa_message_id}.{ext or 'bin'}"
-                        wa_msg.media.save(safe_name, ContentFile(media_bytes), save=True)
+
+                        wa_msg.media.save(
+                            safe_name,
+                            ContentFile(media_bytes),
+                            save=True,
+                        )
+
+                        print(
+                            f"[MEDIA SAVED] {msg_type}: "
+                            f"{wa_msg.media.name}"
+                        )
 
         except (KeyError, IndexError) as e:
             print("Parse error:", e)
