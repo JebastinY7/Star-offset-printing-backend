@@ -3533,27 +3533,117 @@ def whatsapp_chat_view(request, phone):
 
         return redirect("whatsapp_chat", phone=phone)
 
-    thread = (
-        WhatsappMessage.objects
-        .filter(phone=phone)
-        .order_by("created_at")
-    )
+    thread = WhatsappMessage.objects.filter(
+        phone=phone
+    ).order_by("created_at")
 
-    # Opening chat marks incoming messages as read
+    # ---------------------------------------------------------
+    # Repair WhatsApp media that was saved without the file.
+    #
+    # Older messages may have the WhatsApp media ID inside
+    # raw_payload even though the actual file was not downloaded.
+    # ---------------------------------------------------------
+    for wa_msg in thread:
+
+        if wa_msg.message_type not in (
+            "image",
+            "document",
+            "video",
+            "audio",
+            "sticker",
+        ):
+            continue
+
+        # File already exists
+        if wa_msg.media:
+            continue
+
+        try:
+            payload = wa_msg.raw_payload or {}
+
+            media_data = payload.get(
+                wa_msg.message_type,
+                {}
+            )
+
+            media_id = media_data.get("id")
+
+            if not media_id:
+                continue
+
+            print(
+                f"[MEDIA RETRY] {wa_msg.message_type} "
+                f"message={wa_msg.id} media_id={media_id}"
+            )
+
+            media_bytes, media_mime_type = download_whatsapp_media(
+                media_id
+            )
+
+            if not media_bytes:
+                print(
+                    f"[MEDIA RETRY FAILED] "
+                    f"message={wa_msg.id}"
+                )
+                continue
+
+            # Update MIME type if missing
+            if not wa_msg.media_mime_type and media_mime_type:
+                wa_msg.media_mime_type = media_mime_type
+
+            # Find a suitable extension
+            if wa_msg.media_filename and "." in wa_msg.media_filename:
+                filename = wa_msg.media_filename
+            else:
+                extension = (
+                    mimetypes.guess_extension(
+                        media_mime_type or ""
+                    ) or ""
+                ).lstrip(".")
+
+                filename = (
+                    f"{media_id}.{extension or 'bin'}"
+                )
+
+            wa_msg.media.save(
+                filename,
+                ContentFile(media_bytes),
+                save=False,
+            )
+
+            wa_msg.save(
+                update_fields=[
+                    "media",
+                    "media_mime_type",
+                ]
+            )
+
+            print(
+                f"[MEDIA RETRY SUCCESS] "
+                f"{wa_msg.media.name}"
+            )
+
+        except Exception as e:
+            print(
+                f"[MEDIA RETRY ERROR] "
+                f"message={wa_msg.id}: {e}"
+            )
+
+    # Opening the chat = reading it
     thread.filter(
         direction="in",
         is_read=False
     ).update(is_read=True)
 
-    return render(
-        request,
-        "whatsapp_chat.html",
-        {
-            "phone": phone,
-            "customer": customer,
-            "thread": thread,
-        }
-    )
+    customer = Customer.objects.filter(
+        phone__endswith=phone[-10:]
+    ).first()
+
+    return render(request, "whatsapp_chat.html", {
+        "phone": phone,
+        "customer": customer,
+        "thread": thread,
+    })
 
 
 @require_POST
