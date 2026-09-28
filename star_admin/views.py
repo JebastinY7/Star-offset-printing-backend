@@ -3492,43 +3492,68 @@ def whatsapp_messages_page(request):
     })
 
 
+@login_required
 def whatsapp_chat_view(request, phone):
-    """Full two-way conversation with one customer: view history (text, images,
-    documents) and send a text reply, WhatsApp-style."""
+    """Full two-way WhatsApp conversation."""
+
+    phone = str(phone).strip()
+
+    # Find customer safely
+    customer = Customer.objects.filter(
+        phone__endswith=phone[-10:]
+    ).first()
 
     if request.method == "POST":
         text = request.POST.get("message", "").strip()
+
         if text:
             result = send_whatsapp_text(phone, text)
+
             if result.get("messages"):
                 wa_id = result["messages"][0].get("id")
+
                 WhatsappMessage.objects.create(
                     direction="out",
                     phone=phone,
-                    customer=Customer.objects.filter(phone__endswith=phone[-10:]).first(),
+                    customer=customer,
                     message_type="text",
                     body=text,
                     wa_message_id=wa_id,
                     is_read=True,
                 )
             else:
-                error_msg = result.get("error", {}).get("message", "Unknown error")
-                messages.error(request, f"Failed to send: {error_msg}")
+                error_msg = result.get("error", {}).get(
+                    "message",
+                    "Unknown error"
+                )
+                messages.error(
+                    request,
+                    f"Failed to send: {error_msg}"
+                )
 
         return redirect("whatsapp_chat", phone=phone)
 
-    thread = WhatsappMessage.objects.filter(phone=phone).order_by("created_at")
+    thread = (
+        WhatsappMessage.objects
+        .filter(phone=phone)
+        .order_by("created_at")
+    )
 
-    # Opening the chat = reading it
-    thread.filter(direction="in", is_read=False).update(is_read=True)
+    # Opening chat marks incoming messages as read
+    thread.filter(
+        direction="in",
+        is_read=False
+    ).update(is_read=True)
 
-    customer = Customer.objects.filter(phone__endswith=phone[-10:]).first()
-
-    return render(request, "whatsapp_chat.html", {
-        "phone": phone,
-        "customer": customer,
-        "thread": thread,
-    })
+    return render(
+        request,
+        "whatsapp_chat.html",
+        {
+            "phone": phone,
+            "customer": customer,
+            "thread": thread,
+        }
+    )
 
 
 @require_POST
